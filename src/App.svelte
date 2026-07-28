@@ -201,6 +201,7 @@ $: if (renderer && active !== R.cur) show(active);
     <div class="cset" class:on={active === 7}>
       <button class="btn lit" id="p8rot">AUTO-ROTATE</button>
       <button class="btn" id="p8comp">COMPLEMENT</button>
+      <button class="btn" id="p8inv">INVERSION</button>
       <button class="btn" id="p8v_side">SIDE</button>
       <button class="btn" id="p8v_top">TOP</button>
       <button class="btn" id="p8v_hero">HERO</button>
@@ -308,6 +309,18 @@ node.y  = baseY(step) * breath;
 label.y = baseY(step) * breath;
 line.y  = baseY(step) * breath;  // applied to both line endpoints</code></pre>
     <p>All parts of the structure use the same breath value. The structure expands and contracts as one unit.</p>
+
+    <hr>
+
+    <h2>The Pulsating Inversion (F₈ = 21)</h2>
+    <p>The helix runs 21 steps — F₈, the 8th Fibonacci number. After 21 steps the total rotation is 21 × 137.508° ≈ 8 full turns plus 7.7°, nearly closing.</p>
+    <p>Press <strong>INVERSION</strong> to reveal a counter-phase ghost layer anchored at step 20 (count 21). The ghost nodes occupy the same orbital positions as Strand A but breathe in opposition:</p>
+    <pre><code>const breathInv = 1 - 0.10 * Math.sin(t * 0.50); // counter-phase
+
+ghost.y = baseY(step) * breathInv;
+// when breath = 1.10, breathInv = 0.90 — inversion contracts as main expands</code></pre>
+    <p>Phase-tension lines connect each primary node to its ghost counterpart, stretching and collapsing twice per cycle. The golden ring at step 20 is the anchor: the boundary inside which the inversion lives.</p>
+    <p>The structure has a 3×7 interpretation: 3 full orbit cycles of 7 values (6 active + the nil 6) = 21. It is also the triangular number T₆ = 21. Both readings converge on the same boundary.</p>
   </article>
 </div>
 {/if}

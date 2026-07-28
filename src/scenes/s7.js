@@ -6,12 +6,16 @@
  * together via a single accordion scalar. Every node carries a radial
  * leader line to its balanced-ternary label, tip at the leader endpoint.
  *
+ * Pulsating inversion: a counter-phase ghost layer anchored at step 20
+ * (count 21 = F₈). When the main helix expands, the inversion contracts.
+ * Toggle with the INVERSION button.
+ *
  * Mathematical foundations:
  *   - Orbit:    1→2→4→8→7→5  (×2 mod 9, period 6; 3/6/9 excluded)
  *   - Echoes:   1↔8, 2↔7, 4↔5  (complement pairs summing to 9)
  *   - Trits:    5=−1, 6=0, 7=+1  (balanced ternary centered on 6, the nil element)
  *   - Geometry: golden angle GA=2π(2−φ) per step, expanding radius, constant Y step
- *   - Arc:      step 21 ≈ F₈ is where the spiral nearly closes → next extension point
+ *   - Arc:      step 21 ≈ F₈ is where the spiral nearly closes → inversion anchor
  */
 import {
   THREE, CSS2DObject, R, mkCamera, mkControls,
@@ -23,8 +27,10 @@ export function buildS7() {
   const scene  = R.scene  = new THREE.Scene();
   const camera = R.camera = mkCamera();
   camera.position.set(14, 5, 5);
-  camera.lookAt(0, 6, 0);
+  camera.lookAt(0, 7, 0);
   const controls = R.controls = mkControls(camera);
+  controls.target.set(0, 7, 0);
+  controls.update();
   controls.autoRotate = true;
   controls.autoRotateSpeed = 0.28;
 
@@ -32,7 +38,7 @@ export function buildS7() {
   const ORBIT   = [1, 2, 4, 8, 7, 5]; // ×2 mod 9, period 6
   const CYCLES  = 3;
   const M       = ORBIT.length;        // 6
-  const STEPS   = CYCLES * M;          // 18 total nodes per strand
+  const STEPS   = 21;                  // F₈ — 3 full cycles (18) + 3 into the 4th
   const COMP_OF = { 1:8, 2:7, 4:5, 5:4, 7:2, 8:1 }; // echo complement: a+COMP_OF[a]=9
 
   // ── Fibonacci golden angle ───────────────────────────────────────────────
@@ -64,11 +70,6 @@ export function buildS7() {
 
   // ── Balanced ternary centered on 6 ──────────────────────────────────────
   // Digit map: 5=−1  6=0 (nil/absent)  7=+1
-  // 6 is the "nil element" of mod-9 (dr(897)=6), excluded from the orbit.
-  // Centering the trit notation on the excluded element is intentional.
-  //
-  // Verified representations:
-  //   1→'7'  2→'75'  4→'77'  5→'755'  7→'757'  8→'765'
   const toBT = n => {
     if (n === 0) return '6';
     const digits = [];
@@ -85,7 +86,6 @@ export function buildS7() {
   ORBIT.forEach(v => { BT[v] = toBT(v); });
 
   // ── Colour palette ───────────────────────────────────────────────────────
-  // Groups from orbit structure: {2,4,7} sum=13, {5,8} sum=13, {1} identity
   const STYLE = {
     1: { c: 0xFFD700, cs: '#FFD700' },
     2: { c: 0x00E5FF, cs: '#00E5FF' },
@@ -102,14 +102,17 @@ export function buildS7() {
   const rungData   = []; // { attr, arr, mat, s }
   const nilRingData = []; // { attr, arr, s, N } — 6-nil axis rings
 
+  // ── Inversion layer state ─────────────────────────────────────────────────
+  let showInversion = false;
+  const invMeshes   = []; // ghost nodes (same orbital XZ as strand A)
+  const invLineData = []; // { attr, arr, s } — vertical phase-tension lines
+
   // ── Build one helix strand ───────────────────────────────────────────────
-  // φ=0 → Strand A (orbit values); φ=π → Strand B (echo/complement values, opposite side)
   const buildStrand = (φ, isEcho) => {
     for (let s = 0; s < STEPS; s++) {
       const val = isEcho ? COMP_OF[ORBIT[s % M]] : ORBIT[s % M];
       const st  = STYLE[val];
 
-      // Node sphere
       const geo = new THREE.SphereGeometry(0.14, 16, 10);
       const mat = new THREE.MeshPhongMaterial({
         color: st.c,
@@ -126,7 +129,7 @@ export function buildS7() {
       scene.add(mesh);
       allMeshes.push(mesh);
 
-      // Leader line: from node outward to label endpoint (horizontal, same Y as node)
+      // Leader line: from node outward to label endpoint
       const nx = baseX(s, φ);
       const nz = baseZ(s, φ);
       const { lx, lz } = labelEndpoint(s, φ);
@@ -160,10 +163,9 @@ export function buildS7() {
   };
 
   buildStrand(0,         false); // Strand A: orbit  (φ=0)
-  buildStrand(Math.PI,   true);  // Strand B: echoes (φ=π, opposite side of axis)
+  buildStrand(Math.PI,   true);  // Strand B: echoes (φ=π, opposite side)
 
   // ── Strand backbone lines ────────────────────────────────────────────────
-  // DynamicDrawUsage because Y coords are rewritten every frame during breath animation.
   const makeStrandLine = (φ, color) => {
     const arr = new Float32Array(STEPS * 3);
     for (let s = 0; s < STEPS; s++) {
@@ -181,8 +183,8 @@ export function buildS7() {
     return { attr, arr };
   };
   const strandLines = [
-    makeStrandLine(0,       0xff2d78), // Strand A — pink/magenta
-    makeStrandLine(Math.PI, 0x0080aa), // Strand B — teal
+    makeStrandLine(0,       0xff2d78),
+    makeStrandLine(Math.PI, 0x0080aa),
   ];
 
   // ── Rungs — horizontal cross-connectors between echo pairs ──────────────
@@ -201,11 +203,9 @@ export function buildS7() {
   }
 
   // ── 6-nil axis rings ─────────────────────────────────────────────────────
-  // 6 is excluded from the orbit but is the zero of the trit system.
-  // Faint blue rings at each cycle midpoint mark where 6 "would" appear.
   for (let c = 0; c < CYCLES; c++) {
     const s    = c * M + 2.5;
-    const N    = 49; // 48 segments + close
+    const N    = 49;
     const arr  = new Float32Array(N * 3);
     const r    = helixR(s);
     for (let i = 0; i < N; i++) {
@@ -225,7 +225,6 @@ export function buildS7() {
   }
 
   // ── Tornado envelope ─────────────────────────────────────────────────────
-  // A faint spiral tracing the outermost radius — shows the cone silhouette.
   const N_ENV   = 60;
   const envArr  = new Float32Array(N_ENV * 3);
   const envGeo  = new THREE.BufferGeometry();
@@ -241,6 +240,82 @@ export function buildS7() {
   const envMat = new THREE.LineBasicMaterial({ color: 0x0a1a0a, transparent: true, opacity: 0.15 });
   R.disposables.push(envGeo, envMat);
   scene.add(new THREE.Line(envGeo, envMat));
+
+  // ── Pulsating inversion — ghost nodes anchored at step 20 (count 21 = F₈) ─
+  // Each ghost node sits at the same XZ as Strand A but breathes counter-phase.
+  // breathInv = 1 − 0.10·sin(t·0.50), so when main expands, inversion contracts.
+  // The anchor ring at step 20 marks the F₈ boundary where both phases equal rest.
+  for (let s = 0; s < STEPS; s++) {
+    const geo = new THREE.SphereGeometry(0.09, 12, 8);
+    const mat = new THREE.MeshPhongMaterial({
+      color: 0x88aaff,
+      emissive: 0x4466cc,
+      emissiveIntensity: 0.55,
+      transparent: true,
+      opacity: 0.50,
+      shininess: 90,
+    });
+    R.disposables.push(geo, mat);
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(baseX(s, 0), baseY(s), baseZ(s, 0));
+    mesh.visible = false;
+    mesh.userData = { s };
+    scene.add(mesh);
+    invMeshes.push(mesh);
+
+    // Phase-tension line: vertical segment from main Y to inversion Y at this step
+    const pArr  = new Float32Array(6);
+    pArr[0] = baseX(s, 0); pArr[1] = baseY(s); pArr[2] = baseZ(s, 0);
+    pArr[3] = baseX(s, 0); pArr[4] = baseY(s); pArr[5] = baseZ(s, 0);
+    const pGeo  = new THREE.BufferGeometry();
+    const pAttr = new THREE.BufferAttribute(pArr, 3);
+    pAttr.setUsage(THREE.DynamicDrawUsage);
+    pGeo.setAttribute('position', pAttr);
+    const pMat  = new THREE.LineBasicMaterial({ color: 0x6677ff, transparent: true, opacity: 0.30 });
+    R.disposables.push(pGeo, pMat);
+    const pLine = new THREE.Line(pGeo, pMat);
+    pLine.visible = false;
+    scene.add(pLine);
+    invLineData.push({ attr: pAttr, arr: pArr, s, line: pLine });
+  }
+
+  // Inversion backbone line
+  const invLineArr  = new Float32Array(STEPS * 3);
+  const invLineGeo  = new THREE.BufferGeometry();
+  const invLineAttr = new THREE.BufferAttribute(invLineArr, 3);
+  invLineAttr.setUsage(THREE.DynamicDrawUsage);
+  invLineGeo.setAttribute('position', invLineAttr);
+  for (let s = 0; s < STEPS; s++) {
+    invLineArr[s * 3]     = baseX(s, 0);
+    invLineArr[s * 3 + 1] = baseY(s);
+    invLineArr[s * 3 + 2] = baseZ(s, 0);
+  }
+  const invBackboneMat = new THREE.LineBasicMaterial({ color: 0x4455cc, transparent: true, opacity: 0.35 });
+  R.disposables.push(invLineGeo, invBackboneMat);
+  const invBackbone = new THREE.Line(invLineGeo, invBackboneMat);
+  invBackbone.visible = false;
+  scene.add(invBackbone);
+
+  // Anchor ring at step 20 (count 21 = F₈) — visible whenever inversion is on
+  const ANCHOR_S = STEPS - 1; // step 20
+  const anchorN  = 64;
+  const anchorArr  = new Float32Array((anchorN + 1) * 3);
+  const anchorGeo  = new THREE.BufferGeometry();
+  const anchorAttr = new THREE.BufferAttribute(anchorArr, 3);
+  anchorAttr.setUsage(THREE.DynamicDrawUsage);
+  anchorGeo.setAttribute('position', anchorAttr);
+  const anchorR    = helixR(ANCHOR_S) + 0.55;
+  for (let i = 0; i <= anchorN; i++) {
+    const θ = (i / anchorN) * Math.PI * 2;
+    anchorArr[i * 3]     = anchorR * Math.cos(θ);
+    anchorArr[i * 3 + 1] = baseY(ANCHOR_S);
+    anchorArr[i * 3 + 2] = anchorR * Math.sin(θ);
+  }
+  const anchorMat  = new THREE.LineBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.65 });
+  R.disposables.push(anchorGeo, anchorMat);
+  const anchorLine = new THREE.Line(anchorGeo, anchorMat);
+  anchorLine.visible = false;
+  scene.add(anchorLine);
 
   // ── Lighting ─────────────────────────────────────────────────────────────
   scene.add(new THREE.AmbientLight(0xffffff, 0.1));
@@ -258,7 +333,7 @@ export function buildS7() {
       `<span style="color:#FF6B35">5,8</span> &nbsp;` +
       `<span style="color:#FFD700">1</span></div>` +
     `<div style="color:#2a4a3a;font-size:7px;margin-top:2px">trits: 5=−1 &nbsp;<b style="color:#aaf">6=0</b> &nbsp;7=+1</div>` +
-    `<div style="color:#2a3a4a;font-size:7px;margin-top:1px">golden angle ≈137.5° · arc at step 21</div>`;
+    `<div style="color:#2a3a4a;font-size:7px;margin-top:1px">golden angle ≈137.5° · F₈=21 anchor</div>`;
 
   // ── Controls ──────────────────────────────────────────────────────────────
   document.getElementById('p8rot').onclick = () => {
@@ -274,11 +349,21 @@ export function buildS7() {
     allLabels.forEach(l => { l.lbl.element.textContent = showDecimal ? l.val : l.bt; });
   };
 
-  // Camera presets — each shows the structure from a distinct angle
+  // INVERSION button: toggle counter-phase ghost layer
+  document.getElementById('p8inv').onclick = () => {
+    showInversion = !showInversion;
+    document.getElementById('p8inv').classList.toggle('lit', showInversion);
+    invMeshes.forEach(m => { m.visible = showInversion; });
+    invLineData.forEach(({ line }) => { line.visible = showInversion; });
+    invBackbone.visible = showInversion;
+    anchorLine.visible  = showInversion;
+  };
+
+  // Camera presets
   const PRESETS = {
-    side: { pos: [14,  5,  5], tgt: [0, 6, 0] }, // tornado / DNA silhouette (default)
-    top:  { pos: [ 0, 22,  3], tgt: [0, 6, 0] }, // Fibonacci sunflower from above
-    hero: { pos: [ 8,  1, 10], tgt: [0, 6, 0] }, // low heroic angle, large foreground nodes
+    side: { pos: [14,  5,  5], tgt: [0, 7, 0] },
+    top:  { pos: [ 0, 24,  3], tgt: [0, 7, 0] },
+    hero: { pos: [ 8,  1, 10], tgt: [0, 7, 0] },
   };
   const applyPreset = key => {
     const { pos, tgt } = PRESETS[key];
@@ -348,12 +433,13 @@ export function buildS7() {
   });
 
   // ── Animation loop ───────────────────────────────────────────────────────
-  // All geometry shares a single breath scalar so the structure inhales and
-  // exhales as one unit. Every y-coordinate is baseY(s) * breath.
-  // Lines use DynamicDrawUsage + needsUpdate=true; static setFromPoints() won't work.
+  // Main breath: all primary geometry scales from Y=0 together.
+  // Inversion breath: counter-phase — when main expands, inversion contracts.
+  // The anchor at step 20 (count 21 = F₈) is where the inversion terminates.
   R.animFn = () => {
-    const t      = Date.now() * 0.001;
-    const breath = 1 + 0.10 * Math.sin(t * 0.50); // ±10%, ~12.6 s full cycle
+    const t        = Date.now() * 0.001;
+    const breath   = 1 + 0.10 * Math.sin(t * 0.50); // ±10%, ~12.6 s cycle
+    const breathInv= 1 - 0.10 * Math.sin(t * 0.50); // counter-phase
 
     allMeshes.forEach((m, i) => {
       m.position.y = baseY(m.userData.s) * breath;
@@ -365,8 +451,8 @@ export function buildS7() {
 
     leaderData.forEach(({ attr, arr, s }) => {
       const y = baseY(s) * breath;
-      arr[1] = y; // line start (at node)
-      arr[4] = y; // line end (at label) — stays horizontal: same Y
+      arr[1] = y;
+      arr[4] = y;
       attr.needsUpdate = true;
     });
 
@@ -397,6 +483,32 @@ export function buildS7() {
       envArr[i * 3 + 1] = s * H_STEP * breath;
     }
     envAttr.needsUpdate = true;
+
+    if (showInversion) {
+      invMeshes.forEach(m => {
+        const s = m.userData.s;
+        m.position.y = baseY(s) * breathInv;
+        m.material.emissiveIntensity = 0.45
+          + 0.15 * Math.abs(Math.sin(t * 1.1 + s * 0.42 + Math.PI));
+      });
+
+      invLineData.forEach(({ attr, arr, s }) => {
+        arr[1] = baseY(s) * breath;    // main strand A node Y
+        arr[4] = baseY(s) * breathInv; // ghost node Y
+        attr.needsUpdate = true;
+      });
+
+      for (let s = 0; s < STEPS; s++) {
+        invLineArr[s * 3 + 1] = baseY(s) * breathInv;
+      }
+      invLineAttr.needsUpdate = true;
+
+      // Anchor ring pulses gently at step 20's inversion Y
+      const anchorY = baseY(ANCHOR_S) * breathInv;
+      for (let i = 0; i <= anchorN; i++) anchorArr[i * 3 + 1] = anchorY;
+      anchorAttr.needsUpdate = true;
+      anchorMat.opacity = 0.45 + 0.25 * Math.abs(Math.sin(t * 0.5 + Math.PI));
+    }
 
     R.labelRenderer.render(scene, camera);
   };
