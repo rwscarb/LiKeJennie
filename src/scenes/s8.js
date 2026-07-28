@@ -11,7 +11,7 @@ export function buildS8() {
   const scene = R.scene = new THREE.Scene();
   const camera = R.camera = mkCamera(); camera.position.set(0, 2.2, 15.5); camera.lookAt(0, .5, 0);
   const controls = R.controls = mkControls(camera);
-  controls.autoRotate = true; controls.autoRotateSpeed = .5;
+  controls.autoRotate = false; controls.autoRotateSpeed = .5;
 
   const CLK = new THREE.Group(); CLK.position.set(-4.6, 1.0, 0);
   CLK.rotation.x = Math.PI * 0.12;  // permanent tilt — not facing camera dead-on

@@ -331,7 +331,7 @@ afterUpdate(() => {
       </div>
     </div>
     <div class="cset" class:on={active === 8}>
-      <button class="btn lit" id="p9rot">AUTO-ROTATE</button>
+      <button class="btn" id="p9rot">AUTO-ROTATE</button>
       <button class="btn" id="p9ring">RING SPIN</button>
       <span class="stat">drag to rotate &nbsp;&middot;&nbsp; hover a clock digit</span>
       <span class="stat" id="p9stat"></span>
