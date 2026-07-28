@@ -215,3 +215,95 @@ $: if (renderer && active !== R.cur) show(active);
 </div>
 
 <div class="hint">&larr; &rarr; arrow keys &nbsp;&middot;&nbsp; tabs or dots &nbsp;&middot;&nbsp; keys 1&ndash;9</div>
+
+{#if active === 7}
+<div class="writeup">
+  <div class="writeup-hdr">08 · JENNIE 21 — how it works</div>
+  <article>
+    <h1>The Number</h1>
+    <p><strong>896 = 2<sup>7</sup> × 7.</strong> Seven doublings of 1, then multiplied by 7.
+    The divisor count τ(896) = 16. Digital root 5. Its neighbor: dr(897) = 6 — the nil element.
+    That adjacency matters.</p>
+
+    <hr>
+
+    <h2>The Orbit</h2>
+    <p>Start at 1. Double it. Take the result mod 9. Repeat.</p>
+    <pre><code>1 → 2 → 4 → 8 → 16 mod 9 = 7 → 14 mod 9 = 5 → 10 mod 9 = 1 → ...</code></pre>
+    <p>Six values cycling forever: <em>1 → 2 → 4 → 8 → 7 → 5</em>.
+    Missing: 3, 6, and 9. They form their own closed system under ×2 mod 9 and never enter this orbit.
+    <strong>9 does not appear.</strong> It is structurally excluded, not suppressed.</p>
+    <pre><code>orbit = []
+n, seen = 1, set()
+while n not in seen:
+    seen.add(n); orbit.append(n); n = (n * 2) % 9
+# [1, 2, 4, 8, 7, 5]</code></pre>
+
+    <hr>
+
+    <h2>The Echo Pairs</h2>
+    <p>Every orbit value has a complement: the number you add to it to reach 9.</p>
+    <p>1↔8 &nbsp;·&nbsp; 2↔7 &nbsp;·&nbsp; 4↔5</p>
+    <p>The visualization runs two helix strands π radians apart — Strand A carries the orbit,
+    Strand B carries the echoes. Every rung connects a node to its echo across the axis.
+    The structure is a self-complementing double helix.</p>
+    <p>Note: 2+4+7 = 13 &nbsp;·&nbsp; 5+8 = 13. Two groups, same sum, different form.</p>
+
+    <hr>
+
+    <h2>Balanced Ternary, Centered on 6</h2>
+    <p>Standard balanced ternary uses digits &lbrace;−1, 0, +1&rbrace;. Here they map to
+    <em>&lbrace;5, 6, 7&rbrace;</em> — a contiguous digit run with <strong>6 as zero</strong>.</p>
+    <p>Why 6? It is the nil element of the mod-9 system — dr(897), excluded from the orbit,
+    the number that isn't there. Centering the trit notation on the absent element is the point.</p>
+    <pre><code>def to_bt(n):
+    if n == 0: return '6'
+    digits = []
+    while n != 0:
+        r = n % 3
+        if r == 0:   digits.append('6'); n //= 3
+        elif r == 1: digits.append('7'); n = (n - 1) // 3
+        else:        digits.append('5'); n = (n + 1) // 3
+    return ''.join(reversed(digits))
+
+# 1→'7'  2→'75'  4→'77'  5→'755'  7→'757'  8→'765'</code></pre>
+    <p><code>757</code> — a palindrome. The orbit's fourth value, in a system balanced on absence.</p>
+
+    <hr>
+
+    <h2>The Geometry: Golden Angle Tornado</h2>
+    <p>Each node is placed using the <em>golden angle</em>: 137.508° ≈ 2π(2−φ) per step.
+    This is irrational, so no two nodes ever share an angular position.
+    Combined with an expanding radius and a constant height step, the result is a cone —
+    a tornado — showing the Fibonacci sunflower from above and the expanding helix from the side.</p>
+    <pre><code>const PHI = (1 + Math.sqrt(5)) / 2;
+const GA  = 2 * Math.PI * (2 - PHI);   // golden angle ≈ 137.508°
+
+const nodePos = (step, offset = 0) => (&lbrace;
+  x: (0.28 + step * 0.13) * Math.cos(step * GA + offset),
+  y:  step * 0.68,
+  z: (0.28 + step * 0.13) * Math.sin(step * GA + offset),
+&rbrace;);
+// Strand B: offset = Math.PI  (echo strand, opposite side)</code></pre>
+
+    <hr>
+
+    <h2>The 21 Arc</h2>
+    <p>After 21 golden-angle steps: 21 × 137.508° = 2887.7° — exactly 7.7° past 8 full rotations.
+    The spiral has nearly closed on itself. This near-return at F₈ = 21 is where the visible
+    Fibonacci arm folds back. The helix currently runs 18 steps (3 cycles). <em>Step 21 is the next thing to build.</em></p>
+
+    <hr>
+
+    <h2>The Breath</h2>
+    <p>Every node, line, and label shares one oscillating scalar:</p>
+    <pre><code>const breath = 1 + 0.10 * Math.sin(t * 0.50);
+// ±10% at 0.5 rad/s — one full breath every ≈12.6 seconds
+
+node.y  = baseY(step) * breath;
+label.y = baseY(step) * breath;
+line.y  = baseY(step) * breath;  // both endpoints</code></pre>
+    <p>One number. Everything moves together. The accordion expands and contracts as a single structure.</p>
+  </article>
+</div>
+{/if}
