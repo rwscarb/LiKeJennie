@@ -70,6 +70,22 @@ export function buildS8() {
   cap('MODULAR · bounded · wraps', CR + 1.0, '#00e5ff');
   cap("'ternary precision vs clock'", -(CR + 1.0), '#5a7a8a', '9px');
 
+  // 4.5 balance axis — the invisible pivot; complement pairs sum to 9, center = 9/2
+  { const a45 = Math.PI / 2 - 4.5 * Math.PI / 6; // −π/4, the 4:30 position
+    const ax = Math.cos(a45), ay = Math.sin(a45);
+    const axG = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3( ax * CR * 1.18,  ay * CR * 1.18, 0),
+      new THREE.Vector3(-ax * CR * 1.18, -ay * CR * 1.18, 0),
+    ]);
+    const axM = new THREE.LineDashedMaterial({ color: 0xffd700, dashSize: .12, gapSize: .10, transparent: true, opacity: .32 });
+    const axL = new THREE.Line(axG, axM); axL.computeLineDistances();
+    R.disposables.push(axG, axM); CLK.add(axL);
+    const d45 = document.createElement('div');
+    d45.className = 'angle-lbl'; d45.style.cssText = 'font-size:9px;color:#ffd700;opacity:.65;';
+    d45.textContent = '4.5'; const l45 = new CSS2DObject(d45);
+    l45.position.set(ax * (CR + .5), ay * (CR + .5), 0);
+    CLK.add(l45); R.css2dObjects.push(l45); }
+
   // ── dimension stack (positional: balanced, unbounded) ──
   const dcap = (txt, x, y, cc, strike) => { const div = document.createElement('div');
     div.className = 'angle-lbl'; div.style.fontSize = '10px'; div.style.color = cc; div.style.opacity = '1';
@@ -111,6 +127,20 @@ export function buildS8() {
   dcap('1 + 2 + 3 = 4th', -2.4, 3.4, '#5a7a5a', true);
   dcap('POSITIONAL · balanced · unbounded', 0, -3.6, '#c9d2df');
 
+  // ── 757 = ∞ · the interpreter — floats above both sides ──────────────────
+  const mkBLbl = (txt, y, col, fs) => {
+    const d = document.createElement('div');
+    d.className = 'angle-lbl';
+    d.style.cssText = `font-size:${fs||'9px'};color:${col};opacity:1;text-align:center;letter-spacing:.04em;white-space:nowrap;`;
+    d.textContent = txt;
+    const l = new CSS2DObject(d); l.position.set(0, y, 0);
+    scene.add(l); R.css2dObjects.push(l);
+  };
+  mkBLbl('757 = ∞', 5.4, '#ffd700', '14px');
+  mkBLbl('the interpreter · palindrome in BT and binary', 4.85, '#c060ff', '8.5px');
+  mkBLbl('1001001 = 3⁶+3³+3⁰  ·  (3⁹−1)/(3³−1)', 4.4, '#8860c0', '8px');
+  mkBLbl('757 prime  ·  7 ones in binary  ·  axis 4.5 = 9/2', 4.0, '#5a4080', '7.5px');
+
   const grid = new THREE.GridHelper(18, 18, 0x071007, 0x040a04);
   grid.position.y = -4.1; scene.add(grid);
   scene.add(new THREE.AmbientLight(0xffffff, .2));
@@ -118,12 +148,13 @@ export function buildS8() {
   const pl2 = new THREE.PointLight(0xff9800, .8, 26); pl2.position.set(6, 4, 5); scene.add(pl2);
 
   ov.innerHTML = `<div style="color:#2a9060;letter-spacing:.1em">09 · TERNARY vs CLOCK</div>` +
-    `<div style="color:#2a6048;margin-top:4px">her page: 'ternary precision vs clock'</div>` +
-    `<div style="color:#00e5ff;font-size:8.5px;margin-top:2px">clock: modular · bounded · wraps</div>` +
+    `<div style="color:#2a6048;margin-top:4px">ryan's page · 'ternary precision vs clock'</div>` +
+    `<div style="color:#00e5ff;font-size:8.5px;margin-top:2px">clock: modular · bounded · wraps mod 12</div>` +
     `<div style="color:#c9d2df;font-size:8.5px;margin-top:2px">trits: positional · balanced · unbounded</div>` +
     `<div style="color:#ff9800;font-size:8.5px;margin-top:3px">0 = 6 &nbsp;·&nbsp; faces 6,7,8 = &minus;1,0,+1</div>` +
     `<div style="color:#c9d2df;font-size:8.5px;margin-top:3px">1+2 = 3rd &nbsp;·&nbsp; <span style="text-decoration:line-through;color:#ff3355">1+2+3 = 4th</span></div>` +
-    `<div style="color:#c060ff;font-size:8px;margin-top:3px">'Not Nine' — boxed, emphatic</div>`;
+    `<div style="color:#ffd700;font-size:8px;margin-top:3px">757 = ∞ &nbsp;·&nbsp; 1001001 = 3⁶+3³+3⁰</div>` +
+    `<div style="color:#c060ff;font-size:7.5px;margin-top:1px">axis 4.5 = 9/2 · each echo pair sums to 9</div>`;
 
   document.getElementById('p9rot').onclick = () => { R.controls.autoRotate = !R.controls.autoRotate; document.getElementById('p9rot').classList.toggle('lit', R.controls.autoRotate); };
 
@@ -145,9 +176,14 @@ export function buildS8() {
       const h = cmeshes[idx].userData.h;
       let hh = `<div class="th" style="color:${cmeshes[idx].userData.hot ? HOTS[h] : '#0e6a8a'}">${h} o'clock</div>`;
       hh += `<p class="tr">${h} &equiv; ${h} (mod 12) — the line folds into a circle</p>`;
-      if (h === 6) hh += `<p class="tr" style="color:#ff9800">trit face &minus;1 &nbsp;·&nbsp; "0 = 6" — root of the dimension tree</p>`;
-      if (h === 7) hh += `<p class="tr" style="color:#ffe600">trit face 0 — the neutral position</p>`;
-      if (h === 8) hh += `<p class="tr" style="color:#00ff88">trit face +1</p>`;
+      if (h === 6) hh += `<p class="tr" style="color:#ff9800">trit face &minus;1 &nbsp;·&nbsp; "0 = 6" — root of the dimension tree</p>` +
+        `<p class="tr" style="color:#ff9800">echo of 3 (axis); 6+3=9 · 6 is nil, 3 is assumed</p>`;
+      if (h === 7) hh += `<p class="tr" style="color:#ffe600">trit face 0 — the neutral position</p>` +
+        `<p class="tr" style="color:#ffd700">BT(7) = "757" — palindrome in display</p>` +
+        `<p class="tr" style="color:#c060ff">BT(757) = 1001001 = 3⁶+3³+3⁰</p>` +
+        `<p class="tr" style="color:#c060ff">757 prime · 7 ones in binary · 757 = ∞</p>`;
+      if (h === 8) hh += `<p class="tr" style="color:#00ff88">trit face +1 — the barrier digit</p>` +
+        `<p class="tr" style="color:#00ff88">dr(896)=5 · dr(897)=6 · 8 is the wall before nil</p>`;
       tip(e, hh); stat.textContent = `hour ${h}`; tmv(e);
     } else { htip(); stat.textContent = ''; }
   });

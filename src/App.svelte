@@ -100,7 +100,63 @@ onMount(async () => {
   labelHost.appendChild(labelRenderer.domElement);
   R.renderer = renderer; R.labelRenderer = labelRenderer;
 
-  show(7);
+  // ── URL param restore ────────────────────────────────────────────────────
+  const urlP = new URLSearchParams(location.search);
+  const initScene = Math.min(Math.max(parseInt(urlP.get('s') ?? '7', 10), 0), scenes.length - 1);
+  if (initScene !== 7) cur.set(initScene);   // sync store if needed
+  show(initScene);
+  // apply saved camera
+  if (urlP.has('cx') && R.camera) {
+    const [cx, cy, cz] = ['cx','cy','cz'].map(k => parseFloat(urlP.get(k) ?? '0'));
+    const [tx, ty, tz] = ['tx','ty','tz'].map(k => parseFloat(urlP.get(k) ?? '0'));
+    R.camera.position.set(cx, cy, cz);
+    R.camera.lookAt(tx, ty, tz);
+    if (R.controls) { R.controls.target.set(tx, ty, tz); R.controls.update(); }
+  }
+  // apply scene-7 slider/toggle params
+  if (initScene === 7) {
+    for (const key of ['rbase','rgrow','hstep','bamp','bfreq','spin']) {
+      if (!urlP.has(key)) continue;
+      const el = document.getElementById(`p8_${key}`);
+      if (el) { el.value = urlP.get(key); el.dispatchEvent(new Event('input')); }
+    }
+    for (const id of ['inv','shade','comp']) {
+      if (urlP.get(id) === '1') {
+        const btn = document.getElementById(`p8${id}`);
+        if (btn && !btn.classList.contains('lit')) btn.click();
+      }
+    }
+  }
+
+  // ── SHARE button ──────────────────────────────────────────────────────────
+  document.getElementById('shareBtn').addEventListener('click', () => {
+    const p = new URLSearchParams();
+    p.set('s', R.cur);
+    if (R.camera) {
+      const pos = R.camera.position;
+      p.set('cx', pos.x.toFixed(2)); p.set('cy', pos.y.toFixed(2)); p.set('cz', pos.z.toFixed(2));
+    }
+    if (R.controls) {
+      const tgt = R.controls.target;
+      p.set('tx', tgt.x.toFixed(2)); p.set('ty', tgt.y.toFixed(2)); p.set('tz', tgt.z.toFixed(2));
+    }
+    if (R.cur === 7) {
+      for (const key of ['rbase','rgrow','hstep','bamp','bfreq','spin']) {
+        const el = document.getElementById(`p8_${key}`); if (el) p.set(key, el.value);
+      }
+      for (const id of ['inv','shade','comp']) {
+        const btn = document.getElementById(`p8${id}`);
+        if (btn) p.set(id, btn.classList.contains('lit') ? '1' : '0');
+      }
+    }
+    const url = `${location.origin}${location.pathname}?${p}`;
+    navigator.clipboard.writeText(url).then(() => {
+      const btn = document.getElementById('shareBtn');
+      const orig = btn.textContent; btn.textContent = 'COPIED!';
+      setTimeout(() => { btn.textContent = orig; }, 1400);
+    });
+  });
+
   const stopRain = startRain();
   rafId = requestAnimationFrame(loop);
   addEventListener('resize', resize);
@@ -145,6 +201,7 @@ $: if (renderer && active !== R.cur) show(active);
   </div>
   <div class="slide-info">{active + 1} / {scenes.length}</div>
   <button class="nav-arr" disabled={active === scenes.length - 1} on:click={() => goTo(active + 1)}>NEXT &rarr;</button>
+  <button class="nav-arr" id="shareBtn">&#x2398; SHARE</button>
 </div>
 
 <div class="tabs">
