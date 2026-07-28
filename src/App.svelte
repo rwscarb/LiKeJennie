@@ -203,6 +203,12 @@ $: if (renderer && active !== R.cur) show(active);
       <button class="btn" id="p8comp">COMPLEMENT</button>
       <button class="btn" id="p8inv">INVERSION</button>
       <button class="btn" id="p8shade">SHADING</button>
+      <span class="clbl">A</span>
+      <button class="btn" id="p8a_cw">CW</button>
+      <button class="btn" id="p8a_ccw">CCW</button>
+      <span class="clbl">B</span>
+      <button class="btn" id="p8b_cw">CW</button>
+      <button class="btn" id="p8b_ccw">CCW</button>
       <button class="btn" id="p8v_side">SIDE</button>
       <button class="btn" id="p8v_top">TOP</button>
       <button class="btn" id="p8v_hero">HERO</button>
