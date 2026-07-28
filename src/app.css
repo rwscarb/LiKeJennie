@@ -57,6 +57,11 @@ h1{font-size:3.5rem;color:#ff9800;letter-spacing:.35em;line-height:1;margin-bott
 select{background:#040408;border:1px solid #0a2028;color:#1a6040;font-family:'Courier New',monospace;font-size:.56rem;padding:2px 4px;border-radius:2px;cursor:pointer}
 #s6input,#s6speed{background:#040408;border:1px solid #0a2028;color:#00ff88;font-family:'Courier New',monospace;font-size:.56rem;padding:3px 7px;border-radius:2px;outline:none}
 #s6input{width:7rem}
+.srow{display:flex;align-items:center;gap:5px;flex-wrap:wrap;width:100%;margin-top:3px}
+.sval{font-family:'Courier New',monospace;font-size:.50rem;color:#1a6040;min-width:2.6rem;letter-spacing:.03em}
+input[type=range]{-webkit-appearance:none;appearance:none;height:2px;background:#0a2028;border-radius:1px;outline:none;width:68px;cursor:pointer;vertical-align:middle}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:8px;height:8px;background:#00ff88;border-radius:50%;cursor:pointer}
+input[type=range]::-moz-range-thumb{width:8px;height:8px;background:#00ff88;border-radius:50%;cursor:pointer;border:none}
 #s6speed{padding:3px 5px}
 .stat{font-size:.54rem;color:#c1c1c1;letter-spacing:.04em;margin-left:3px}
 .node-lbl{font-family:'Courier New',monospace;font-size:13px;letter-spacing:.04em;text-shadow:0 0 8px currentColor,0 0 2px #000;pointer-events:none;white-space:nowrap;}

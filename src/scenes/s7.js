@@ -32,9 +32,11 @@ export function buildS7() {
   const PHI = (1 + Math.sqrt(5)) / 2;
   const GA  = 2 * Math.PI * (2 - PHI);
 
-  const R_BASE = 0.28;
-  const R_GROW = 0.13;
-  const H_STEP = 0.68;
+  let R_BASE = 0.28;
+  let R_GROW = 0.13;
+  let H_STEP = 0.68;
+  let breathAmp  = 0.10;
+  let breathFreq = 0.50;
   const LEADER     = 0.88;
   const LEADER_INV = 0.36; // inversion labels sit inset toward axis
 
@@ -83,7 +85,7 @@ export function buildS7() {
   // ── Per-strand rotation state ─────────────────────────────────────────────
   let rotA = 0, rotB = 0;       // accumulated angles (radians)
   let spinA = 0, spinB = 0;     // rad/s; positive = CCW from above
-  const SPIN_SPEED = 0.40;      // rad/s
+  let SPIN_SPEED = 0.40;         // rad/s
 
   // ── Geometry collections ─────────────────────────────────────────────────
   const allMeshes   = []; // userData: { val, s, φ, isEcho, cs, bt, baseEI }
@@ -404,6 +406,23 @@ export function buildS7() {
   makeSpin('b', 'b', 'cw');
   makeSpin('b', 'b', 'ccw');
 
+  // ── Slider controls ───────────────────────────────────────────────────────
+  const wireSlider = (id, onVal) => {
+    const el  = document.getElementById(id);
+    const vEl = document.getElementById(id + '_v');
+    el.oninput = () => { onVal(+el.value); vEl.textContent = (+el.value).toFixed(2); };
+  };
+  wireSlider('p8_rbase', v => { R_BASE = v; });
+  wireSlider('p8_rgrow', v => { R_GROW = v; });
+  wireSlider('p8_hstep', v => { H_STEP = v; });
+  wireSlider('p8_bamp',  v => { breathAmp = v; });
+  wireSlider('p8_bfreq', v => { breathFreq = v; });
+  wireSlider('p8_spin',  v => {
+    SPIN_SPEED = v;
+    if (spinA !== 0) spinA = spinA < 0 ? -v : v;
+    if (spinB !== 0) spinB = spinB < 0 ? -v : v;
+  });
+
   const PRESETS = {
     side: { pos: [14,  5,  5], tgt: [0, 7, 0] },
     top:  { pos: [ 0, 24,  3], tgt: [0, 7, 0] },
@@ -488,8 +507,8 @@ export function buildS7() {
     rotA += spinA * dt;
     rotB += spinB * dt;
 
-    const breath    = 1 + 0.10 * Math.sin(t * 0.50);
-    const breathInv = 1 - 0.10 * Math.sin(t * 0.50);
+    const breath    = 1 + breathAmp * Math.sin(t * breathFreq);
+    const breathInv = 1 - breathAmp * Math.sin(t * breathFreq);
 
     // ── Primary strand geometry (XYZ all dynamic) ──────────────────────────
     allMeshes.forEach((m, i) => {
@@ -539,14 +558,22 @@ export function buildS7() {
     });
 
     nilRingData.forEach(({ attr, arr, s, N }) => {
+      const r = helixR(s);
       const y = baseY(s) * breath;
-      for (let i = 0; i < N; i++) arr[i * 3 + 1] = y;
+      for (let i = 0; i < N; i++) {
+        const θ = (i / (N - 1)) * Math.PI * 2;
+        arr[i * 3]     = r * Math.cos(θ);
+        arr[i * 3 + 1] = y;
+        arr[i * 3 + 2] = r * Math.sin(θ);
+      }
       attr.needsUpdate = true;
     });
 
     for (let i = 0; i < N_ENV; i++) {
       const s = (i / (N_ENV - 1)) * (STEPS - 1);
-      envArr[i * 3 + 1] = s * H_STEP * breath;
+      envArr[i * 3]     = helixR(s) * Math.cos(s * GA);
+      envArr[i * 3 + 1] = baseY(s) * breath;
+      envArr[i * 3 + 2] = helixR(s) * Math.sin(s * GA);
     }
     envAttr.needsUpdate = true;
 
@@ -581,8 +608,14 @@ export function buildS7() {
       }
       invBBAttr.needsUpdate = true;
 
-      const ancY = baseY(ANCHOR_S) * breathInv;
-      for (let i = 0; i <= ancN; i++) ancArr[i * 3 + 1] = ancY;
+      const ancRcur = helixR(ANCHOR_S) + 0.55;
+      const ancY    = baseY(ANCHOR_S) * breathInv;
+      for (let i = 0; i <= ancN; i++) {
+        const θ = (i / ancN) * Math.PI * 2;
+        ancArr[i * 3]     = ancRcur * Math.cos(θ);
+        ancArr[i * 3 + 1] = ancY;
+        ancArr[i * 3 + 2] = ancRcur * Math.sin(θ);
+      }
       ancAttr.needsUpdate = true;
       ancMat.opacity = 0.45 + 0.25 * Math.abs(Math.sin(t * 0.5 + Math.PI));
     }

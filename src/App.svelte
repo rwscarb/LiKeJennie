@@ -213,6 +213,14 @@ $: if (renderer && active !== R.cur) show(active);
       <button class="btn" id="p8v_top">TOP</button>
       <button class="btn" id="p8v_hero">HERO</button>
       <span class="stat" id="p8stat"></span>
+      <div class="srow">
+        <span class="clbl">base-r</span><input type="range" id="p8_rbase" min="0.05" max="0.80" step="0.01" value="0.28"><span class="sval" id="p8_rbase_v">0.28</span>
+        <span class="clbl">flare</span><input type="range" id="p8_rgrow" min="0.00" max="0.40" step="0.01" value="0.13"><span class="sval" id="p8_rgrow_v">0.13</span>
+        <span class="clbl">pitch</span><input type="range" id="p8_hstep" min="0.20" max="2.00" step="0.02" value="0.68"><span class="sval" id="p8_hstep_v">0.68</span>
+        <span class="clbl">breath</span><input type="range" id="p8_bamp" min="0.00" max="0.30" step="0.01" value="0.10"><span class="sval" id="p8_bamp_v">0.10</span>
+        <span class="clbl">rate</span><input type="range" id="p8_bfreq" min="0.05" max="2.00" step="0.05" value="0.50"><span class="sval" id="p8_bfreq_v">0.50</span>
+        <span class="clbl">spin</span><input type="range" id="p8_spin" min="0.05" max="2.00" step="0.05" value="0.40"><span class="sval" id="p8_spin_v">0.40</span>
+      </div>
     </div>
     <div class="cset" class:on={active === 8}>
       <button class="btn lit" id="p9rot">AUTO-ROTATE</button>
