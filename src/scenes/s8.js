@@ -70,6 +70,38 @@ export function buildS8() {
   cap('MODULAR · bounded · wraps', CR + 1.0, '#00e5ff');
   cap("'ternary precision vs clock'", -(CR + 1.0), '#5a7a8a', '9px');
 
+  // ×3/2 arc — path from dr(640)=1 (h=1) to dr(960)=6 (h=6), crossing 4.5 (h=4.5)
+  { const a1 = Math.PI / 2 - 1 * Math.PI / 6;   // h=1 (60°)
+    const a6 = Math.PI / 2 - 6 * Math.PI / 6;   // h=6 (−90°)
+    const R_ARC = CR * 0.62;
+    const arcPts = [];
+    for (let i = 0; i <= 36; i++) {
+      const frac = i / 36;
+      const ang  = a1 + frac * (a6 - a1);
+      arcPts.push(new THREE.Vector3(R_ARC * Math.cos(ang), R_ARC * Math.sin(ang), 0));
+    }
+    const arcG = new THREE.BufferGeometry().setFromPoints(arcPts);
+    const arcM = new THREE.LineDashedMaterial({ color: 0xffd700, dashSize: .14, gapSize: .09, transparent: true, opacity: .5 });
+    const arcL = new THREE.Line(arcG, arcM); arcL.computeLineDistances();
+    R.disposables.push(arcG, arcM); CLK.add(arcL);
+    // label at arc midpoint
+    const aMid = a1 + 0.5 * (a6 - a1);
+    const dArc = document.createElement('div');
+    dArc.className = 'angle-lbl';
+    dArc.style.cssText = 'font-size:8px;color:#ffd700;opacity:.8;text-align:center;white-space:nowrap;';
+    dArc.textContent = '×3/2';
+    const lArc = new CSS2DObject(dArc);
+    lArc.position.set((R_ARC - .5) * Math.cos(aMid), (R_ARC - .5) * Math.sin(aMid), 0);
+    CLK.add(lArc); R.css2dObjects.push(lArc);
+    // sub-label
+    const dSub = document.createElement('div');
+    dSub.className = 'angle-lbl';
+    dSub.style.cssText = 'font-size:7px;color:#8a7030;opacity:.75;white-space:nowrap;';
+    dSub.textContent = '640→960';
+    const lSub = new CSS2DObject(dSub);
+    lSub.position.set((R_ARC - .5) * Math.cos(aMid), (R_ARC - .5) * Math.sin(aMid) - .36, 0);
+    CLK.add(lSub); R.css2dObjects.push(lSub); }
+
   // 4.5 balance axis — the invisible pivot; complement pairs sum to 9, center = 9/2
   { const a45 = Math.PI / 2 - 4.5 * Math.PI / 6; // −π/4, the 4:30 position
     const ax = Math.cos(a45), ay = Math.sin(a45);

@@ -339,7 +339,9 @@ export function buildS7() {
       `<span style="color:#FF6B35">5,8</span>&nbsp;` +
       `<span style="color:#FFD700">1</span></div>` +
     `<div style="color:#2a4a3a;font-size:7px;margin-top:2px">trits: 5=−1&nbsp;<b style="color:#aaf">6=0</b>&nbsp;7=+1</div>` +
-    `<div style="color:#2a3a4a;font-size:7px;margin-top:1px">golden angle ≈137.5° · F₈=21 anchor</div>`;
+    `<div style="color:#2a3a4a;font-size:7px;margin-top:1px">golden angle ≈137.5° · F₈=21 anchor</div>` +
+    `<div style="color:#ffd700;font-size:7px;margin-top:1px">axis 4.5=9/2 · ×3/2 → 640→960</div>` +
+    `<div style="color:#c060ff;font-size:7px;margin-top:1px">757=∞ · 1001001=3⁶+3³+3⁰ · prime</div>`;
 
   // ── Controls ──────────────────────────────────────────────────────────────
   document.getElementById('p8rot').onclick = () => {
