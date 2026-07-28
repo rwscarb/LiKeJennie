@@ -13,9 +13,7 @@ export function buildS8() {
   const controls = R.controls = mkControls(camera);
   controls.autoRotate = false; controls.autoRotateSpeed = .5;
 
-  const CLK = new THREE.Group(); CLK.position.set(-4.6, 1.0, 0);
-  CLK.rotation.x = Math.PI * 0.12;  // permanent tilt — not facing camera dead-on
-  scene.add(CLK);
+  const CLK = new THREE.Group(); CLK.position.set(-4.6, 1.0, 0); scene.add(CLK);
   const DIM = new THREE.Group(); DIM.position.set(4.6, 0, 0); scene.add(DIM);
 
   // divider
