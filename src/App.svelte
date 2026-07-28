@@ -202,6 +202,7 @@ $: if (renderer && active !== R.cur) show(active);
       <button class="btn lit" id="p8rot">AUTO-ROTATE</button>
       <button class="btn" id="p8comp">COMPLEMENT</button>
       <button class="btn" id="p8inv">INVERSION</button>
+      <button class="btn" id="p8shade">SHADING</button>
       <button class="btn" id="p8v_side">SIDE</button>
       <button class="btn" id="p8v_top">TOP</button>
       <button class="btn" id="p8v_hero">HERO</button>
