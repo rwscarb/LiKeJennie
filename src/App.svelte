@@ -221,41 +221,43 @@ $: if (renderer && active !== R.cur) show(active);
   <div class="writeup-hdr">08 · JENNIE 21 — how it works</div>
   <article>
     <h1>The Number</h1>
-    <p><strong>896 = 2<sup>7</sup> × 7.</strong> Seven doublings of 1, then multiplied by 7.
-    The divisor count τ(896) = 16. Digital root 5. Its neighbor: dr(897) = 6 — the nil element.
-    That adjacency matters.</p>
+    <p>896 equals 2<sup>7</sup> × 7. To get 896, double 1 seven times, then multiply by 7.</p>
+    <p>896 has 16 divisors. Its digital root (dr) is 5. The digital root of 897 is 6.
+    The number 6 is the nil element. Its position next to 896 is important.</p>
 
     <hr>
 
     <h2>The Orbit</h2>
-    <p>Start at 1. Double it. Take the result mod 9. Repeat.</p>
+    <p>Start at 1. Multiply by 2. Divide the result by 9 and keep the remainder. Repeat this step.</p>
     <pre><code>1 → 2 → 4 → 8 → 16 mod 9 = 7 → 14 mod 9 = 5 → 10 mod 9 = 1 → ...</code></pre>
-    <p>Six values cycling forever: <em>1 → 2 → 4 → 8 → 7 → 5</em>.
-    Missing: 3, 6, and 9. They form their own closed system under ×2 mod 9 and never enter this orbit.
-    <strong>9 does not appear.</strong> It is structurally excluded, not suppressed.</p>
+    <p>This process gives 6 values: <em>1 → 2 → 4 → 8 → 7 → 5</em>. These 6 values repeat in the same order. This is the orbit.</p>
+    <p>The values 3, 6, and 9 do not enter the orbit. They follow their own separate cycle. <strong>The value 9 does not appear in this visualization.</strong></p>
     <pre><code>orbit = []
 n, seen = 1, set()
 while n not in seen:
     seen.add(n); orbit.append(n); n = (n * 2) % 9
-# [1, 2, 4, 8, 7, 5]</code></pre>
+# result: [1, 2, 4, 8, 7, 5]</code></pre>
 
     <hr>
 
-    <h2>The Echo Pairs</h2>
-    <p>Every orbit value has a complement: the number you add to it to reach 9.</p>
+    <h2>Echo Pairs</h2>
+    <p>Each orbit value has one echo value. Add an orbit value to its echo value to get 9.</p>
     <p>1↔8 &nbsp;·&nbsp; 2↔7 &nbsp;·&nbsp; 4↔5</p>
-    <p>The visualization runs two helix strands π radians apart — Strand A carries the orbit,
-    Strand B carries the echoes. Every rung connects a node to its echo across the axis.
-    The structure is a self-complementing double helix.</p>
-    <p>Note: 2+4+7 = 13 &nbsp;·&nbsp; 5+8 = 13. Two groups, same sum, different form.</p>
+    <p>This visualization uses two helix strands. Strand A carries the orbit values. Strand B carries the echo values. Strand B is offset by π radians (180°) from Strand A.</p>
+    <p>Each rung connects a node on Strand A to its echo node on Strand B.</p>
+    <p>The orbit values form two groups: {2, 4, 7} with sum 13, and {5, 8} with sum 13. Both groups have the same sum.</p>
 
     <hr>
 
-    <h2>Balanced Ternary, Centered on 6</h2>
-    <p>Standard balanced ternary uses digits &lbrace;−1, 0, +1&rbrace;. Here they map to
-    <em>&lbrace;5, 6, 7&rbrace;</em> — a contiguous digit run with <strong>6 as zero</strong>.</p>
-    <p>Why 6? It is the nil element of the mod-9 system — dr(897), excluded from the orbit,
-    the number that isn't there. Centering the trit notation on the absent element is the point.</p>
+    <h2>Balanced Ternary</h2>
+    <p>Balanced ternary (BT) is a number system that uses 3 digits: −1, 0, and +1.</p>
+    <p>This visualization maps those digits to the values 5, 6, and 7:</p>
+    <ul>
+      <li>5 = −1</li>
+      <li>6 = 0 (nil)</li>
+      <li>7 = +1</li>
+    </ul>
+    <p>The zero digit is 6. The value 6 is the nil element — it does not appear in the orbit. The BT system uses 6 as its center because 6 is the absent value.</p>
     <pre><code>def to_bt(n):
     if n == 0: return '6'
     digits = []
@@ -267,15 +269,15 @@ while n not in seen:
     return ''.join(reversed(digits))
 
 # 1→'7'  2→'75'  4→'77'  5→'755'  7→'757'  8→'765'</code></pre>
-    <p><code>757</code> — a palindrome. The orbit's fourth value, in a system balanced on absence.</p>
+    <p>The value 7 gives the BT string <code>757</code>. This string reads the same forwards and backwards (palindrome). This means 7 is symmetric in this number system.</p>
 
     <hr>
 
-    <h2>The Geometry: Golden Angle Tornado</h2>
-    <p>Each node is placed using the <em>golden angle</em>: 137.508° ≈ 2π(2−φ) per step.
-    This is irrational, so no two nodes ever share an angular position.
-    Combined with an expanding radius and a constant height step, the result is a cone —
-    a tornado — showing the Fibonacci sunflower from above and the expanding helix from the side.</p>
+    <h2>The Shape: Golden Angle Cone</h2>
+    <p>The golden angle (GA) is 137.508°. It equals 2π × (2 − φ), where φ = (1 + √5) / 2.</p>
+    <p>Each new node rotates exactly 137.508° from the previous node. Because this angle is irrational, no two nodes share the same angular position.</p>
+    <p>Each node also moves outward (larger radius) and upward as the step number increases. This produces a cone shape — a tornado.</p>
+    <p>From above, the nodes show the Fibonacci sunflower pattern. From the side, they show a double helix that expands as it rises.</p>
     <pre><code>const PHI = (1 + Math.sqrt(5)) / 2;
 const GA  = 2 * Math.PI * (2 - PHI);   // golden angle ≈ 137.508°
 
@@ -284,26 +286,28 @@ const nodePos = (step, offset = 0) => (&lbrace;
   y:  step * 0.68,
   z: (0.28 + step * 0.13) * Math.sin(step * GA + offset),
 &rbrace;);
-// Strand B: offset = Math.PI  (echo strand, opposite side)</code></pre>
+// Strand A: offset = 0
+// Strand B: offset = Math.PI  (180° apart)</code></pre>
 
     <hr>
 
     <h2>The 21 Arc</h2>
-    <p>After 21 golden-angle steps: 21 × 137.508° = 2887.7° — exactly 7.7° past 8 full rotations.
-    The spiral has nearly closed on itself. This near-return at F₈ = 21 is where the visible
-    Fibonacci arm folds back. The helix currently runs 18 steps (3 cycles). <em>Step 21 is the next thing to build.</em></p>
+    <p>After 21 steps, the total rotation is 21 × 137.508° = 2887.7°.</p>
+    <p>This equals 8 full rotations plus 7.7°. The spiral has almost returned to its starting direction.</p>
+    <p>21 is the 8th Fibonacci number (F₈). At this point, the Fibonacci arm pattern becomes visible. The current visualization runs 18 steps (3 full cycles). Step 21 is the next point of interest.</p>
 
     <hr>
 
-    <h2>The Breath</h2>
-    <p>Every node, line, and label shares one oscillating scalar:</p>
+    <h2>The Breath Animation</h2>
+    <p>All nodes, lines, and labels use one shared scale value called <em>breath</em>.</p>
+    <p>The breath value oscillates between 0.90 and 1.10. One full cycle takes approximately 12.6 seconds.</p>
     <pre><code>const breath = 1 + 0.10 * Math.sin(t * 0.50);
-// ±10% at 0.5 rad/s — one full breath every ≈12.6 seconds
+// range: 0.90 to 1.10  |  cycle: ~12.6 seconds
 
 node.y  = baseY(step) * breath;
 label.y = baseY(step) * breath;
-line.y  = baseY(step) * breath;  // both endpoints</code></pre>
-    <p>One number. Everything moves together. The accordion expands and contracts as a single structure.</p>
+line.y  = baseY(step) * breath;  // applied to both line endpoints</code></pre>
+    <p>All parts of the structure use the same breath value. The structure expands and contracts as one unit.</p>
   </article>
 </div>
 {/if}
