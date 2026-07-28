@@ -172,24 +172,24 @@ export function buildS8() {
 
   // ── floor inscription — the interpreter ──────────────────────────────────
   { const fc = document.createElement('canvas');
-    fc.width = 1024; fc.height = 220;
+    fc.width = 1280; fc.height = 280;
     const ctx = fc.getContext('2d');
-    ctx.clearRect(0, 0, 1024, 220);
+    ctx.clearRect(0, 0, 1280, 280);
     const line = (txt, y, color, size) => {
       ctx.font = `${size}px "Courier New", monospace`;
       ctx.fillStyle = color; ctx.textAlign = 'center';
-      ctx.fillText(txt, 512, y);
+      ctx.fillText(txt, 640, y);
     };
-    line('the interpreter  ·  palindrome in BT and binary', 52, '#c060ff', 28);
-    line('1001001 = 3⁶+3³+3⁰  ·  (3⁹−1)/(3³−1)', 100, '#8860c0', 24);
-    line('757 prime  ·  7 ones in binary  ·  axis 4.5 = 9/2', 146, '#5a4080', 22);
-    line('dr(757) = 1  ·  the return  ·  640 × 3/2 = 960', 186, '#3a2a60', 19);
+    line('the interpreter  ·  palindrome in BT and binary', 60, '#e080ff', 38);
+    line('1001001 = 3⁶+3³+3⁰  ·  (3⁹−1)/(3³−1)', 120, '#b070e0', 32);
+    line('757 prime  ·  7 ones in binary  ·  axis 4.5 = 9/2', 176, '#8050c0', 28);
+    line('dr(757) = 1  ·  the return  ·  640 × 3/2 = 960', 228, '#5030a0', 24);
     const tex = new THREE.CanvasTexture(fc);
     const plane = new THREE.Mesh(
-      new THREE.PlaneGeometry(12, 2.6),
-      new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: .78, depthWrite: false, side: THREE.DoubleSide }));
+      new THREE.PlaneGeometry(14, 3.1),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: .96, depthWrite: false, side: THREE.DoubleSide }));
     plane.rotation.x = -Math.PI / 2;
-    plane.position.set(0, -4.05, 0);
+    plane.position.set(0, -4.05, 6);
     scene.add(plane);
     R.disposables.push(plane.geometry, plane.material, tex); }
 
