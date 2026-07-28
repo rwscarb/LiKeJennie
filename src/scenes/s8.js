@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────
-//  SCENE 8 — Ternary precision vs Clock (her page)
+//  SCENE 8 — Ternary precision vs Clock
 // ─────────────────────────────────────────────────────
 import {
   THREE, CSS2DObject, R, mkCamera, mkControls,
@@ -13,7 +13,9 @@ export function buildS8() {
   const controls = R.controls = mkControls(camera);
   controls.autoRotate = true; controls.autoRotateSpeed = .5;
 
-  const CLK = new THREE.Group(); CLK.position.set(-4.6, 1.0, 0); scene.add(CLK);
+  const CLK = new THREE.Group(); CLK.position.set(-4.6, 1.0, 0);
+  CLK.rotation.x = Math.PI * 0.12;  // permanent tilt — not facing camera dead-on
+  scene.add(CLK);
   const DIM = new THREE.Group(); DIM.position.set(4.6, 0, 0); scene.add(DIM);
 
   // divider
@@ -188,7 +190,7 @@ export function buildS8() {
     const plane = new THREE.Mesh(
       new THREE.PlaneGeometry(14, 3.1),
       new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: .96, depthWrite: false, side: THREE.DoubleSide }));
-    plane.rotation.x = -Math.PI / 2;
+    plane.rotation.x = -Math.PI / 2 + 22 * Math.PI / 180;
     plane.position.set(0, -4.05, 3);
     scene.add(plane);
     R.disposables.push(plane.geometry, plane.material, tex); }
@@ -200,7 +202,7 @@ export function buildS8() {
   const pl2 = new THREE.PointLight(0xff9800, .8, 26); pl2.position.set(6, 4, 5); scene.add(pl2);
 
   ov.innerHTML = `<div style="color:#2a9060;letter-spacing:.1em">09 · TERNARY vs CLOCK</div>` +
-    `<div style="color:#2a6048;margin-top:4px">ryan's page · 'ternary precision vs clock'</div>` +
+    `<div style="color:#2a6048;margin-top:4px">'ternary precision vs clock'</div>` +
     `<div style="color:#00e5ff;font-size:8.5px;margin-top:2px">clock: modular · bounded · wraps mod 12</div>` +
     `<div style="color:#c9d2df;font-size:8.5px;margin-top:2px">trits: positional · balanced · unbounded</div>` +
     `<div style="color:#ff9800;font-size:8.5px;margin-top:3px">0 = 6 &nbsp;·&nbsp; faces 6,7,8 = &minus;1,0,+1</div>` +
@@ -208,7 +210,12 @@ export function buildS8() {
     `<div style="color:#ffd700;font-size:8px;margin-top:3px">757 = ∞ &nbsp;·&nbsp; 1001001 = 3⁶+3³+3⁰</div>` +
     `<div style="color:#c060ff;font-size:7.5px;margin-top:1px">axis 4.5 = 9/2 · each echo pair sums to 9</div>`;
 
-  document.getElementById('p9rot').onclick = () => { R.controls.autoRotate = !R.controls.autoRotate; document.getElementById('p9rot').classList.toggle('lit', R.controls.autoRotate); };
+  document.getElementById('p9rot').onclick  = () => { R.controls.autoRotate = !R.controls.autoRotate; document.getElementById('p9rot').classList.toggle('lit', R.controls.autoRotate); };
+  let ringSpeed = 0;
+  document.getElementById('p9ring').onclick = () => {
+    ringSpeed = ringSpeed === 0 ? 0.28 : 0;
+    document.getElementById('p9ring').classList.toggle('lit', ringSpeed !== 0);
+  };
 
   const ray = new THREE.Raycaster(); const mouse = new THREE.Vector2(); let lastHl = -1;
   const stat = document.getElementById('p9stat');
@@ -244,6 +251,7 @@ export function buildS8() {
   R.animFn = () => {
     const t = Date.now() * .001;
     hand.rotation.z = -t * .55;
+    if (ringSpeed !== 0) CLK.rotation.y = t * ringSpeed;
     cube3.rotation.y = t * .4; cube3.rotation.x = Math.sin(t * .3) * .25;
     cmeshes.forEach((m, i) => { if (m.userData.hot && i !== lastHl) m.material.emissiveIntensity = m.userData.baseEI + .18 * Math.sin(t * 1.4 + i); });
     R.labelRenderer.render(scene, camera);
