@@ -169,9 +169,29 @@ export function buildS8() {
     scene.add(l); R.css2dObjects.push(l);
   };
   mkBLbl('757 = ∞', 5.4, '#ffd700', '14px');
-  mkBLbl('the interpreter · palindrome in BT and binary', 4.85, '#c060ff', '8.5px');
-  mkBLbl('1001001 = 3⁶+3³+3⁰  ·  (3⁹−1)/(3³−1)', 4.4, '#8860c0', '8px');
-  mkBLbl('757 prime  ·  7 ones in binary  ·  axis 4.5 = 9/2', 4.0, '#5a4080', '7.5px');
+
+  // ── floor inscription — the interpreter ──────────────────────────────────
+  { const fc = document.createElement('canvas');
+    fc.width = 1024; fc.height = 220;
+    const ctx = fc.getContext('2d');
+    ctx.clearRect(0, 0, 1024, 220);
+    const line = (txt, y, color, size) => {
+      ctx.font = `${size}px "Courier New", monospace`;
+      ctx.fillStyle = color; ctx.textAlign = 'center';
+      ctx.fillText(txt, 512, y);
+    };
+    line('the interpreter  ·  palindrome in BT and binary', 52, '#c060ff', 28);
+    line('1001001 = 3⁶+3³+3⁰  ·  (3⁹−1)/(3³−1)', 100, '#8860c0', 24);
+    line('757 prime  ·  7 ones in binary  ·  axis 4.5 = 9/2', 146, '#5a4080', 22);
+    line('dr(757) = 1  ·  the return  ·  640 × 3/2 = 960', 186, '#3a2a60', 19);
+    const tex = new THREE.CanvasTexture(fc);
+    const plane = new THREE.Mesh(
+      new THREE.PlaneGeometry(12, 2.6),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: .78, depthWrite: false, side: THREE.DoubleSide }));
+    plane.rotation.x = -Math.PI / 2;
+    plane.position.set(0, -4.05, 0);
+    scene.add(plane);
+    R.disposables.push(plane.geometry, plane.material, tex); }
 
   const grid = new THREE.GridHelper(18, 18, 0x071007, 0x040a04);
   grid.position.y = -4.1; scene.add(grid);

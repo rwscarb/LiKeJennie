@@ -1,5 +1,5 @@
 <script>
-import { onMount } from 'svelte';
+import { onMount, afterUpdate } from 'svelte';
 import { get } from 'svelte/store';
 import { scenes } from './scenes/index.js';
 import { cur, goTo } from './lib/state.js';
@@ -176,6 +176,57 @@ onMount(async () => {
 
 // react to scene switches
 $: if (renderer && active !== R.cur) show(active);
+
+function hlCode(raw) {
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const w = (s, c) => `<span class="${c}">${esc(s)}</span>`;
+  const KW = new Set(['const','let','var','function','return','class','import','from','new',
+                      'if','else','while','for','of','in','not','and','or',
+                      'def','True','False','None','pass']);
+  const FN = new Set(['Math','parseInt','parseFloat','Array','set','range','reversed',
+                      'append','join','sorted','len','print','Date','THREE','document']);
+  let r = '', i = 0;
+  while (i < raw.length) {
+    // line comments
+    if (raw[i] === '#' || (raw[i] === '/' && raw[i+1] === '/')) {
+      const end = raw.indexOf('\n', i);
+      const seg = end < 0 ? raw.slice(i) : raw.slice(i, end);
+      r += w(seg, 'c-cm'); i += seg.length; continue;
+    }
+    // strings
+    if (raw[i] === "'" || raw[i] === '"') {
+      const q = raw[i]; let j = i + 1;
+      while (j < raw.length && raw[j] !== q) { if (raw[j] === '\\') j++; j++; }
+      if (j < raw.length) j++;
+      r += w(raw.slice(i, j), 'c-st'); i = j; continue;
+    }
+    // numbers
+    if (/\d/.test(raw[i]) && (i === 0 || !/[a-zA-Z0-9_]/.test(raw[i-1]))) {
+      let j = i;
+      while (j < raw.length && /\d/.test(raw[j])) j++;
+      if (j < raw.length && raw[j] === '.' && j+1 < raw.length && /\d/.test(raw[j+1])) {
+        j++; while (j < raw.length && /\d/.test(raw[j])) j++;
+      }
+      r += w(raw.slice(i, j), 'c-nu'); i = j; continue;
+    }
+    // identifiers
+    if (/[a-zA-Z_]/.test(raw[i])) {
+      let j = i; while (j < raw.length && /\w/.test(raw[j])) j++;
+      const word = raw.slice(i, j);
+      r += KW.has(word) ? w(word, 'c-kw') : FN.has(word) ? w(word, 'c-fn') : esc(word);
+      i = j; continue;
+    }
+    r += esc(raw[i]); i++;
+  }
+  return r;
+}
+
+afterUpdate(() => {
+  document.querySelectorAll('.writeup pre code:not([data-hl])').forEach(el => {
+    el.innerHTML = hlCode(el.textContent);
+    el.setAttribute('data-hl', '1');
+  });
+});
 </script>
 
 <canvas id="rain" bind:this={rain}></canvas>

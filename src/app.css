@@ -107,7 +107,17 @@ input[type=range]::-moz-range-thumb{width:8px;height:8px;background:#00ff88;bord
 .ref-tag{font-size:.56rem;letter-spacing:.04em;font-family:'Courier New',monospace}
 .ref-src{font-size:.46rem;color:#1a3028;letter-spacing:.06em;text-transform:uppercase;border-left:1px solid #0a1a14;padding-left:6px}
 .ref:hover .ref-src{color:#2a5040}
+/* ── syntax highlight ─────────────────────────────── */
+.c-kw{color:#00e5ff}
+.c-cm{color:#2a5030;font-style:italic}
+.c-st{color:#ffe600}
+.c-nu{color:#ff9800}
+.c-fn{color:#c060ff}
 /* ── responsive ───────────────────────────────────── */
+@media(max-width:1000px){
+  .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap}
+  .tabs::-webkit-scrollbar{display:none}
+}
 @media(max-width:640px){
   h1{font-size:2.4rem;letter-spacing:.18em}
   .sub{font-size:.5rem;letter-spacing:.05em}
