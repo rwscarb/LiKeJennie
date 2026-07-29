@@ -14,10 +14,10 @@ export function buildS7() {
   const canvas = R.canvas, ov = R.ov;
   const scene  = R.scene  = new THREE.Scene();
   const camera = R.camera = mkCamera();
-  camera.position.set(14, 5, 5);
-  camera.lookAt(0, 7, 0);
+  camera.position.set(14, 3, 7);
+  camera.lookAt(0, 5, 0);
   const controls = R.controls = mkControls(camera);
-  controls.target.set(0, 7, 0);
+  controls.target.set(0, 5, 0);
   controls.update();
   controls.autoRotate = true;
   controls.autoRotateSpeed = 0.28;
@@ -329,12 +329,13 @@ export function buildS7() {
   const pl2 = new THREE.PointLight(0xFF6B35, 0.6, 24); pl2.position.set(-8,  5, -6); scene.add(pl2);
   const pl3 = new THREE.PointLight(0x5060FF, 0.55,24); pl3.position.set( 8,  2,  6); scene.add(pl3);
 
-  // ── 3D Tri-base Clock Face ────────────────────────────────────────────────
+  // ── 3D Tri-base Clock Face — base of the helix ───────────────────────────
+  // Lies flat as a horizontal pedestal; helix grows up from its center.
   // Outer ring = decimal (12-hour), middle ring = binary, inner ring = ternary.
-  // co-rotates with strand A (CLKG.rotation.y = rotA * 0.5 in animFn).
-  const CLK_R = 2.0;
+  const CLK_R = 2.6;
   const CLKG  = new THREE.Group();
-  CLKG.position.set(6.0, 7.0, 0); // right side, mid-helix height
+  CLKG.position.set(0, -2.0, 0);
+  CLKG.rotation.x = -Math.PI / 2; // tilt so ring faces upward like a base plate
   scene.add(CLKG);
 
   // Three concentric face rings
@@ -536,9 +537,9 @@ export function buildS7() {
   });
 
   const PRESETS = {
-    side: { pos: [14,  5,  5], tgt: [0, 7, 0] },
-    top:  { pos: [ 0, 24,  3], tgt: [0, 7, 0] },
-    hero: { pos: [ 8,  1, 10], tgt: [0, 7, 0] },
+    side: { pos: [14,  3,  7], tgt: [0, 5, 0] },
+    top:  { pos: [ 0, 26,  3], tgt: [0, 5, 0] },
+    hero: { pos: [ 8, -1, 11], tgt: [0, 5, 0] },
   };
   const applyPreset = key => {
     const { pos, tgt } = PRESETS[key];
@@ -766,7 +767,7 @@ export function buildS7() {
         h.attr.needsUpdate = true;
       };
       setHand(handH, aH); setHand(handM, aM); setHand(handS, aS); }
-    CLKG.rotation.y = rotA * 0.5; // co-rotate with strand A
+    CLKG.rotation.z = -rotA * 0.5; // co-rotate with strand A (turntable spin on base)
 
     // ── Tri-base clock HUD + dot updates (on second boundary) ─────────────
     const nowSec = Math.floor(Date.now() / 1000);

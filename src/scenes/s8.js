@@ -1,6 +1,5 @@
 // ─────────────────────────────────────────────────────
 //  SCENE 8 — Ternary precision vs Clock
-//  Clock ring is the base; dimension tower rises from its center.
 // ─────────────────────────────────────────────────────
 import {
   THREE, CSS2DObject, R, mkCamera, mkControls,
@@ -10,21 +9,23 @@ import {
 export function buildS8() {
   const canvas = R.canvas, ov = R.ov;
   const scene = R.scene = new THREE.Scene();
-  // Camera elevated to frame clock base + tower together
-  const camera = R.camera = mkCamera();
-  camera.position.set(2.5, 5.5, 17); camera.lookAt(0, 1.5, 0);
+  const camera = R.camera = mkCamera(); camera.position.set(0, 2.2, 15.5); camera.lookAt(0, .5, 0);
   const controls = R.controls = mkControls(camera);
-  controls.autoRotate = true; controls.autoRotateSpeed = .35;
+  controls.autoRotate = false; controls.autoRotateSpeed = .5;
 
-  // ── Clock ring — the base ─────────────────────────────
-  const CLK_Y = -4.0;
-  const CR = 2.5, cmeshes = [];
-  const CLK = new THREE.Group(); CLK.position.set(0, CLK_Y, 0); scene.add(CLK);
+  const CLK = new THREE.Group(); CLK.position.set(-4.6, 1.0, 0); scene.add(CLK);
+  const DIM = new THREE.Group(); DIM.position.set(4.6, 0, 0);  scene.add(DIM);
 
-  { const rg = new THREE.TorusGeometry(CR, .038, 8, 80);
+  // divider
+  { const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, -3.6, 0), new THREE.Vector3(0, 4.6, 0)]);
+    const m = new THREE.LineDashedMaterial({ color: 0x1a2a1a, dashSize: .22, gapSize: .18, transparent: true, opacity: .9 });
+    const l = new THREE.Line(g, m); l.computeLineDistances(); R.disposables.push(g, m); scene.add(l); }
+
+  // ── clock (modular: bounded, wraps) ──
+  const CR = 2.7, cmeshes = [];
+  { const rg = new THREE.TorusGeometry(CR, .035, 8, 72);
     const rm = new THREE.MeshBasicMaterial({ color: 0x0a5a70, transparent: true, opacity: .9 });
     R.disposables.push(rg, rm); CLK.add(new THREE.Mesh(rg, rm)); }
-
   const HOTC = { 6: 0xff9800, 7: 0xffe600, 8: 0x00ff88 };
   const HOTS = { 6: '#ff9800', 7: '#ffe600', 8: '#00ff88' };
   for (let h = 1; h <= 12; h++) {
@@ -43,11 +44,10 @@ export function buildS8() {
       div.className = 'node-lbl'; div.style.fontSize = '15px'; div.style.fontWeight = 'bold'; div.style.color = HOTS[h];
       div.textContent = h;
       const lbl = new CSS2DObject(div);
-      lbl.position.set((CR + .65) * Math.cos(a), (CR + .65) * Math.sin(a), 0);
+      lbl.position.set((CR + .6) * Math.cos(a), (CR + .6) * Math.sin(a), 0);
       CLK.add(lbl); R.css2dObjects.push(lbl);
     }
   }
-
   // center: 0 = 6
   { const geo = new THREE.SphereGeometry(.3, 20, 14);
     const mat = new THREE.MeshPhongMaterial({ color: 0xff9800, emissive: 0xff9800, emissiveIntensity: .35, transparent: true, opacity: .9 });
@@ -55,29 +55,24 @@ export function buildS8() {
     const div = document.createElement('div');
     div.className = 'angle-lbl'; div.style.fontSize = '11px'; div.style.color = '#ff9800'; div.style.opacity = '1';
     div.textContent = '0 = 6';
-    const lbl = new CSS2DObject(div); lbl.position.set(0, -.72, 0);
+    const lbl = new CSS2DObject(div); lbl.position.set(0, -.66, 0);
     CLK.add(lbl); R.css2dObjects.push(lbl); }
-
-  // clock hand
+  // hand
   const handG = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, CR * .8, 0)]);
   const handM = new THREE.LineBasicMaterial({ color: 0xffe08a, transparent: true, opacity: .9 });
   R.disposables.push(handG, handM);
   const hand = new THREE.Line(handG, handM); CLK.add(hand);
-
-  // caption ring labels
-  const cap = (txt, y, cc, fs) => {
-    const div = document.createElement('div');
+  // captions
+  const cap = (txt, y, cc, fs) => { const div = document.createElement('div');
     div.className = 'angle-lbl'; div.style.fontSize = fs || '10px'; div.style.color = cc; div.style.opacity = '1';
-    div.textContent = txt;
-    const lbl = new CSS2DObject(div); lbl.position.set(0, y, 0);
-    CLK.add(lbl); R.css2dObjects.push(lbl);
-  };
-  cap('MODULAR · bounded · wraps', CR + 1.05, '#00e5ff');
+    div.textContent = txt; const lbl = new CSS2DObject(div); lbl.position.set(0, y, 0);
+    CLK.add(lbl); R.css2dObjects.push(lbl); };
+  cap('MODULAR · bounded · wraps', CR + 1.0, '#00e5ff');
   cap("'ternary precision vs clock'", -(CR + 1.0), '#5a7a8a', '9px');
 
-  // ×3/2 arc (h=1 to h=6, inner radius)
-  { const a1 = Math.PI / 2 - 1 * Math.PI / 6;
-    const a6 = Math.PI / 2 - 6 * Math.PI / 6;
+  // ×3/2 arc — path from dr(640)=1 (h=1) to dr(960)=6 (h=6), crossing 4.5 (h=4.5)
+  { const a1 = Math.PI / 2 - 1 * Math.PI / 6;   // h=1 (60°)
+    const a6 = Math.PI / 2 - 6 * Math.PI / 6;   // h=6 (−90°)
     const R_ARC = CR * 0.62;
     const arcPts = [];
     for (let i = 0; i <= 36; i++) {
@@ -105,8 +100,8 @@ export function buildS8() {
     lSub.position.set((R_ARC - .5) * Math.cos(aMid), (R_ARC - .5) * Math.sin(aMid) - .36, 0);
     CLK.add(lSub); R.css2dObjects.push(lSub); }
 
-  // 4.5 balance axis
-  { const a45 = Math.PI / 2 - 4.5 * Math.PI / 6;
+  // 4.5 balance axis — the invisible pivot; complement pairs sum to 9, center = 9/2
+  { const a45 = Math.PI / 2 - 4.5 * Math.PI / 6; // −π/4, the 4:30 position
     const ax = Math.cos(a45), ay = Math.sin(a45);
     const axG = new THREE.BufferGeometry().setFromPoints([
       new THREE.Vector3( ax * CR * 1.18,  ay * CR * 1.18, 0),
@@ -117,121 +112,90 @@ export function buildS8() {
     R.disposables.push(axG, axM); CLK.add(axL);
     const d45 = document.createElement('div');
     d45.className = 'angle-lbl'; d45.style.cssText = 'font-size:9px;color:#ffd700;opacity:.65;';
-    d45.textContent = '4.5';
-    const l45 = new CSS2DObject(d45);
+    d45.textContent = '4.5'; const l45 = new CSS2DObject(d45);
     l45.position.set(ax * (CR + .5), ay * (CR + .5), 0);
     CLK.add(l45); R.css2dObjects.push(l45); }
 
-  // ── Spine — glowing axis from clock center through the tower ──
-  { const sg = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(0, CLK_Y + .1, 0), new THREE.Vector3(0, 8.2, 0)]);
-    const sm = new THREE.LineBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: .22 });
-    R.disposables.push(sg, sm); scene.add(new THREE.Line(sg, sm)); }
-
-  // ── Dimension tower — rises from clock center ──────────
-  // label helper: right side of each shape, in world space
-  const dcap = (txt, wx, wy, cc, strike) => {
-    const div = document.createElement('div');
+  // ── dimension stack (positional: balanced, unbounded) ──
+  const dcap = (txt, x, y, cc, strike) => { const div = document.createElement('div');
     div.className = 'angle-lbl'; div.style.fontSize = '10px'; div.style.color = cc; div.style.opacity = '1';
     if (strike) div.style.textDecoration = 'line-through';
-    div.textContent = txt;
-    const lbl = new CSS2DObject(div); lbl.position.set(wx, wy, 0);
-    scene.add(lbl); R.css2dObjects.push(lbl);
-  };
-  const eqcap = (txt, wx, wy, cc, strike) => {
-    const div = document.createElement('div');
-    div.className = 'angle-lbl'; div.style.fontSize = '10px'; div.style.color = cc; div.style.opacity = '1';
-    if (strike) div.style.textDecoration = 'line-through';
-    div.textContent = txt;
-    const lbl = new CSS2DObject(div); lbl.position.set(wx, wy, 0);
-    scene.add(lbl); R.css2dObjects.push(lbl);
-  };
-
-  const DIM_X = 0;   // all centered on x=0
-  const Y1 = -1.4;   // 1D
-  const Y2 =  0.8;   // 2D
-  const Y3 =  3.0;   // 3D
-  const Y4 =  5.5;   // 4D ghost
-
-  // 1D — line
-  { const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-1.4, Y1, 0), new THREE.Vector3(1.4, Y1, 0)]);
+    div.textContent = txt; const lbl = new CSS2DObject(div); lbl.position.set(x, y, 0);
+    DIM.add(lbl); R.css2dObjects.push(lbl); };
+  // 1 dim — line
+  { const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-1.3, -2.6, 0), new THREE.Vector3(1.3, -2.6, 0)]);
     const m = new THREE.LineBasicMaterial({ color: 0xc9d2df });
-    R.disposables.push(g, m); scene.add(new THREE.Line(g, m)); }
-  dcap('1 dim', 2.1, Y1, '#c9d2df');
-
-  // 2D — square outline
-  { const eg = new THREE.EdgesGeometry(new THREE.PlaneGeometry(1.7, 1.7));
+    R.disposables.push(g, m); DIM.add(new THREE.Line(g, m)); }
+  dcap('1 dim', 2.0, -2.6, '#c9d2df');
+  // 2 dim — square outline
+  { const eg = new THREE.EdgesGeometry(new THREE.PlaneGeometry(1.6, 1.6));
     const em = new THREE.LineBasicMaterial({ color: 0xc9d2df });
     R.disposables.push(eg, em);
-    const sq = new THREE.LineSegments(eg, em); sq.position.set(DIM_X, Y2, 0); scene.add(sq); }
-  dcap('2 dim', 2.1, Y2, '#c9d2df');
-
-  // 3D — rotating cube
+    const sq = new THREE.LineSegments(eg, em); sq.position.y = -.7; DIM.add(sq); }
+  dcap('2 dim', 2.0, -.7, '#c9d2df');
+  // 3 dim — cube wireframe (rotates)
   const cube3 = new THREE.LineSegments(
-    new THREE.EdgesGeometry(new THREE.BoxGeometry(1.6, 1.6, 1.6)),
+    new THREE.EdgesGeometry(new THREE.BoxGeometry(1.5, 1.5, 1.5)),
     new THREE.LineBasicMaterial({ color: 0xff9800 }));
   R.disposables.push(cube3.geometry, cube3.material);
-  cube3.position.set(DIM_X, Y3, 0); scene.add(cube3);
-  dcap('3 dim', 2.1, Y3, '#ff9800');
-
-  // 4D — ghost cube, crossed out
-  { const eg = new THREE.EdgesGeometry(new THREE.BoxGeometry(1.6, 1.6, 1.6));
+  cube3.position.y = 1.3; DIM.add(cube3);
+  dcap('3 dim', 2.0, 1.3, '#ff9800');
+  // 4th — ghost cube, crossed out
+  { const eg = new THREE.EdgesGeometry(new THREE.BoxGeometry(1.5, 1.5, 1.5));
     const em = new THREE.LineBasicMaterial({ color: 0x3a4a3a, transparent: true, opacity: .5 });
     R.disposables.push(eg, em);
-    const g4 = new THREE.LineSegments(eg, em); g4.position.set(DIM_X, Y4, 0); scene.add(g4);
+    const g4 = new THREE.LineSegments(eg, em); g4.position.y = 3.4; DIM.add(g4);
     const xg = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(-1.2, Y4 - 1.2, 0), new THREE.Vector3(1.2, Y4 + 1.2, 0),
-      new THREE.Vector3(1.2, Y4 - 1.2, 0), new THREE.Vector3(-1.2, Y4 + 1.2, 0)]);
+      new THREE.Vector3(-1.2, 3.4 - 1.2, 0), new THREE.Vector3(1.2, 3.4 + 1.2, 0),
+      new THREE.Vector3(1.2, 3.4 - 1.2, 0), new THREE.Vector3(-1.2, 3.4 + 1.2, 0)]);
     const xm = new THREE.LineBasicMaterial({ color: 0xff3355, transparent: true, opacity: .9 });
-    R.disposables.push(xg, xm); scene.add(new THREE.LineSegments(xg, xm)); }
-  dcap('4th', 2.1, Y4, '#ff3355', true);
+    R.disposables.push(xg, xm);
+    DIM.add(new THREE.LineSegments(xg, xm)); }
+  dcap('4th', 2.0, 3.4, '#ff3355', true);
+  // equations
+  dcap('1 + 2 = 3rd', -2.4, 1.3, '#ffe08a');
+  dcap('1 + 2 + 3 = 4th', -2.4, 3.4, '#5a7a5a', true);
+  dcap('POSITIONAL · balanced · unbounded', 0, -3.6, '#c9d2df');
 
-  // equations (left side)
-  eqcap('1 + 2 = 3rd', -2.4, Y3, '#ffe08a');
-  eqcap('1 + 2 + 3 = 4th', -2.4, Y4, '#5a7a5a', true);
-  // POSITIONAL label above tower
-  { const div = document.createElement('div');
-    div.className = 'angle-lbl'; div.style.fontSize = '10px'; div.style.color = '#c9d2df'; div.style.opacity = '1';
-    div.textContent = 'POSITIONAL · balanced · unbounded';
-    const lbl = new CSS2DObject(div); lbl.position.set(0, Y4 + 1.5, 0);
-    scene.add(lbl); R.css2dObjects.push(lbl); }
-
-  // ── 757 = ∞ label, floating above tower ──
-  { const d = document.createElement('div');
+  // ── 757 = ∞ · the interpreter — floats above both sides ──────────────────
+  const mkBLbl = (txt, y, col, fs) => {
+    const d = document.createElement('div');
     d.className = 'angle-lbl';
-    d.style.cssText = 'font-size:14px;color:#ffd700;opacity:1;text-align:center;letter-spacing:.04em;white-space:nowrap;';
-    d.textContent = '757 = ∞';
-    const l = new CSS2DObject(d); l.position.set(0, Y4 + 3.0, 0);
-    scene.add(l); R.css2dObjects.push(l); }
+    d.style.cssText = `font-size:${fs||'9px'};color:${col};opacity:1;text-align:center;letter-spacing:.04em;white-space:nowrap;`;
+    d.textContent = txt;
+    const l = new CSS2DObject(d); l.position.set(0, y, 0);
+    scene.add(l); R.css2dObjects.push(l);
+  };
+  mkBLbl('757 = ∞', 5.4, '#ffd700', '14px');
 
-  // ── Floor inscription ──────────────────────────────────
+  // ── floor inscription — the interpreter ──────────────────────────────────
   { const fc = document.createElement('canvas');
-    fc.width = 1280; fc.height = 240;
+    fc.width = 1280; fc.height = 280;
     const ctx = fc.getContext('2d');
-    ctx.clearRect(0, 0, 1280, 240);
+    ctx.clearRect(0, 0, 1280, 280);
     const line = (txt, y, color, size) => {
       ctx.font = `${size}px "Courier New", monospace`;
       ctx.fillStyle = color; ctx.textAlign = 'center';
       ctx.fillText(txt, 640, y);
     };
-    line('the interpreter  ·  palindrome in BT and binary', 55, '#ffffff', 38);
-    line('1001001 = 3⁶+3³+3⁰  ·  (3⁹−1)/(3³−1)', 110, '#ffffff', 32);
-    line('757 prime  ·  7 ones in binary  ·  axis 4.5 = 9/2', 160, '#ffffff', 28);
-    line('dr(757) = 1  ·  the return  ·  640 × 3/2 = 960', 206, '#ffffff', 24);
+    line('the interpreter  ·  palindrome in BT and binary', 60, '#ffffff', 38);
+    line('1001001 = 3⁶+3³+3⁰  ·  (3⁹−1)/(3³−1)', 120, '#ffffff', 32);
+    line('757 prime  ·  7 ones in binary  ·  axis 4.5 = 9/2', 176, '#ffffff', 28);
+    line('dr(757) = 1  ·  the return  ·  640 × 3/2 = 960', 228, '#ffffff', 24);
     const tex = new THREE.CanvasTexture(fc);
     const plane = new THREE.Mesh(
-      new THREE.PlaneGeometry(16, 3.0),
-      new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: .92, depthWrite: false, side: THREE.DoubleSide }));
+      new THREE.PlaneGeometry(14, 3.1),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: .96, depthWrite: false, side: THREE.DoubleSide }));
     plane.rotation.x = -Math.PI / 2 + 22 * Math.PI / 180;
-    plane.position.set(0, -5.9, 3.5);
+    plane.position.set(0, -4.05, 3);
     scene.add(plane);
     R.disposables.push(plane.geometry, plane.material, tex); }
 
-  const grid = new THREE.GridHelper(20, 20, 0x071007, 0x040a04);
-  grid.position.y = -5.95; scene.add(grid);
+  const grid = new THREE.GridHelper(18, 18, 0x071007, 0x040a04);
+  grid.position.y = -4.1; scene.add(grid);
   scene.add(new THREE.AmbientLight(0xffffff, .2));
-  const pl = new THREE.PointLight(0x00e5ff, .9, 30); pl.position.set(-4, 5, 6); scene.add(pl);
-  const pl2 = new THREE.PointLight(0xff9800, .8, 26); pl2.position.set(4, 3, 5); scene.add(pl2);
+  const pl = new THREE.PointLight(0x00e5ff, .9, 30); pl.position.set(-6, 6, 6); scene.add(pl);
+  const pl2 = new THREE.PointLight(0xff9800, .8, 26); pl2.position.set(6, 4, 5); scene.add(pl2);
 
   ov.innerHTML = `<div style="color:#2a9060;letter-spacing:.1em">09 · TERNARY vs CLOCK</div>` +
     `<div style="color:#2a6048;margin-top:4px">'ternary precision vs clock'</div>` +
@@ -242,10 +206,7 @@ export function buildS8() {
     `<div style="color:#ffd700;font-size:8px;margin-top:3px">757 = ∞ &nbsp;·&nbsp; 1001001 = 3⁶+3³+3⁰</div>` +
     `<div style="color:#c060ff;font-size:7.5px;margin-top:1px">axis 4.5 = 9/2 · each echo pair sums to 9</div>`;
 
-  const rotBtn = document.getElementById('p9rot');
-  rotBtn.classList.toggle('lit', controls.autoRotate);
-  rotBtn.onclick = () => { controls.autoRotate = !controls.autoRotate; rotBtn.classList.toggle('lit', controls.autoRotate); };
-
+  document.getElementById('p9rot').onclick  = () => { R.controls.autoRotate = !R.controls.autoRotate; document.getElementById('p9rot').classList.toggle('lit', R.controls.autoRotate); };
   let ringSpeed = 0;
   document.getElementById('p9ring').onclick = () => {
     ringSpeed = ringSpeed === 0 ? 0.28 : 0;
@@ -281,10 +242,7 @@ export function buildS8() {
       tip(e, hh); stat.textContent = `hour ${h}`; tmv(e);
     } else { htip(); stat.textContent = ''; }
   });
-  canvas.addEventListener('mouseleave', () => {
-    if (lastHl >= 0 && R.cur === 8) { cmeshes[lastHl].material.emissiveIntensity = cmeshes[lastHl].userData.baseEI; cmeshes[lastHl].scale.setScalar(1); }
-    lastHl = -1; htip();
-  });
+  canvas.addEventListener('mouseleave', () => { if (lastHl >= 0 && R.cur === 8) { cmeshes[lastHl].material.emissiveIntensity = cmeshes[lastHl].userData.baseEI; cmeshes[lastHl].scale.setScalar(1); } lastHl = -1; htip(); });
 
   R.animFn = () => {
     const t = Date.now() * .001;
