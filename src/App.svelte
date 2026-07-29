@@ -319,7 +319,7 @@ afterUpdate(() => {
       <button class="btn lit" id="p8rot">AUTO-ROTATE</button>
       <button class="btn lit" id="p8comp">COMPLEMENT</button>
       <button class="btn" style="opacity:.35;letter-spacing:.18em;padding:3px 7px" on:click={() => { p8adv = !p8adv; }} title="advanced controls">···</button>
-      {#if p8adv}
+      <div style="display:{p8adv ? 'contents' : 'none'}">
       <button class="btn" id="p8inv">INVERSION</button>
       <button class="btn" id="p8shade">SHADING</button>
       <span class="clbl">A</span>
@@ -340,7 +340,7 @@ afterUpdate(() => {
         <span class="clbl">rate</span><input type="range" id="p8_bfreq" min="0.05" max="2.00" step="0.05" value="0.50"><span class="sval" id="p8_bfreq_v">0.50</span>
         <span class="clbl">spin</span><input type="range" id="p8_spin" min="0.05" max="2.00" step="0.05" value="0.40"><span class="sval" id="p8_spin_v">0.40</span>
       </div>
-      {/if}
+      </div>
     </div>
     <div class="cset" class:on={active === 8}>
       <button class="btn" id="p9rot">AUTO-ROTATE</button>
