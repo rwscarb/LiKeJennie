@@ -344,11 +344,6 @@ afterUpdate(() => {
       <span class="stat">drag to rotate &nbsp;&middot;&nbsp; hover a clock digit</span>
       <span class="stat" id="p9stat"></span>
     </div>
-    <div class="cset" class:on={active === 9}>
-      <button class="btn lit" id="p10rot">AUTO-ROTATE</button>
-      <span class="stat">drag to rotate &nbsp;&middot;&nbsp; hover a period node</span>
-      <span class="stat" id="p10stat"></span>
-    </div>
   </div>
 </div>
 
