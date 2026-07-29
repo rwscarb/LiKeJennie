@@ -329,6 +329,107 @@ export function buildS7() {
   const pl2 = new THREE.PointLight(0xFF6B35, 0.6, 24); pl2.position.set(-8,  5, -6); scene.add(pl2);
   const pl3 = new THREE.PointLight(0x5060FF, 0.55,24); pl3.position.set( 8,  2,  6); scene.add(pl3);
 
+  // ── 3D Tri-base Clock Face ────────────────────────────────────────────────
+  // Outer ring = decimal (12-hour), middle ring = binary, inner ring = ternary.
+  // co-rotates with strand A (CLKG.rotation.y = rotA * 0.5 in animFn).
+  const CLK_R = 2.0;
+  const CLKG  = new THREE.Group();
+  CLKG.position.set(6.0, 7.0, 0); // right side, mid-helix height
+  scene.add(CLKG);
+
+  // Three concentric face rings
+  { const g = new THREE.TorusGeometry(CLK_R,         0.045, 8, 72);
+    const m = new THREE.MeshBasicMaterial({ color: 0x0a5a70, transparent: true, opacity: 0.85 });
+    R.disposables.push(g, m); CLKG.add(new THREE.Mesh(g, m)); }
+  { const g = new THREE.TorusGeometry(CLK_R * 0.72,  0.025, 8, 48);
+    const m = new THREE.MeshBasicMaterial({ color: 0x0a3a50, transparent: true, opacity: 0.55 });
+    R.disposables.push(g, m); CLKG.add(new THREE.Mesh(g, m)); }
+  { const g = new THREE.TorusGeometry(CLK_R * 0.44,  0.025, 8, 36);
+    const m = new THREE.MeshBasicMaterial({ color: 0x3a1a5a, transparent: true, opacity: 0.55 });
+    R.disposables.push(g, m); CLKG.add(new THREE.Mesh(g, m)); }
+
+  // 12 hour markers — orbit trit faces {6=−1, 7=0, 8=+1} highlighted
+  const clkHotC = { 6: 0xFF6B35, 7: 0x5060FF, 8: 0x00ff88 };
+  const clkHotS = { 6: '#FF6B35', 7: '#7080FF', 8: '#00ff88' };
+  for (let h = 1; h <= 12; h++) {
+    const ang = Math.PI / 2 - (h % 12) * (Math.PI / 6);
+    const hot = clkHotC[h] !== undefined;
+    const c   = hot ? clkHotC[h] : 0x0e3a4a;
+    const geo = new THREE.SphereGeometry(hot ? 0.18 : 0.09, 14, 9);
+    const mat = new THREE.MeshPhongMaterial({
+      color: c, emissive: c, emissiveIntensity: hot ? 0.5 : 0.15,
+      transparent: true, opacity: hot ? 0.95 : 0.6, shininess: 70,
+    });
+    R.disposables.push(geo, mat);
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(CLK_R * Math.cos(ang), CLK_R * Math.sin(ang), 0);
+    CLKG.add(mesh);
+    if (hot) {
+      const div = document.createElement('div');
+      div.className = 'node-lbl';
+      div.style.cssText = `font-size:9px;color:${clkHotS[h]};`;
+      div.textContent = `${h} [${toBT(h)}]`;
+      const lbl = new CSS2DObject(div);
+      lbl.position.set((CLK_R + 0.55) * Math.cos(ang), (CLK_R + 0.55) * Math.sin(ang), 0);
+      CLKG.add(lbl); R.css2dObjects.push(lbl);
+    }
+  }
+
+  // Center hub
+  { const g = new THREE.SphereGeometry(0.18, 16, 12);
+    const m = new THREE.MeshPhongMaterial({
+      color: 0xFFD700, emissive: 0xFFD700, emissiveIntensity: 0.45,
+      transparent: true, opacity: 0.9,
+    });
+    R.disposables.push(g, m); CLKG.add(new THREE.Mesh(g, m)); }
+
+  // Hands (hour=gold, minute=cyan, second=orange) — endpoints updated each frame
+  const mkHand = (color, len) => {
+    const arr  = new Float32Array(6);
+    const geo  = new THREE.BufferGeometry();
+    const attr = new THREE.BufferAttribute(arr, 3);
+    attr.setUsage(THREE.DynamicDrawUsage);
+    geo.setAttribute('position', attr);
+    const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.9 });
+    R.disposables.push(geo, mat);
+    const line = new THREE.Line(geo, mat);
+    CLKG.add(line);
+    return { attr, arr, len };
+  };
+  const handH = mkHand(0xFFD700, CLK_R * 0.52); // hour
+  const handM = mkHand(0x00E5FF, CLK_R * 0.76); // minute
+  const handS = mkHand(0xFF6B35, CLK_R * 0.90); // second
+
+  // Binary dots: 6 bits of current second, column right of center
+  const binDotMats = [];
+  for (let b = 5; b >= 0; b--) {
+    const geo = new THREE.SphereGeometry(0.10, 10, 7);
+    const mat = new THREE.MeshPhongMaterial({
+      color: 0x0a1a2a, emissive: 0x000000, emissiveIntensity: 0,
+      transparent: true, opacity: 0.8, shininess: 60,
+    });
+    R.disposables.push(geo, mat);
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(CLK_R * 0.87, (2.5 - b) * 0.31, 0.02);
+    CLKG.add(mesh);
+    binDotMats.push(mat);
+  }
+
+  // BT trit dots: up to 4 trits for current second in BT, column left of center
+  const tritDotMats = [];
+  for (let tt = 0; tt < 4; tt++) {
+    const geo = new THREE.SphereGeometry(0.12, 10, 7);
+    const mat = new THREE.MeshPhongMaterial({
+      color: 0x0a0a0a, emissive: 0x000000, emissiveIntensity: 0,
+      transparent: true, opacity: 0.7, shininess: 60,
+    });
+    R.disposables.push(geo, mat);
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(-CLK_R * 0.87, (1.5 - tt) * 0.38, 0.02);
+    CLKG.add(mesh);
+    tritDotMats.push(mat);
+  }
+
   // ── HUD ──────────────────────────────────────────────────────────────────
   ov.innerHTML =
     `<div style="color:#2a9060;letter-spacing:.1em">08 · JENNIE 21</div>` +
@@ -649,7 +750,25 @@ export function buildS7() {
       shadeMat.opacity = 0.07 + 0.12 * (gap / 0.20);
     }
 
-    // ── Tri-base clock (decimal / binary / balanced-ternary) ──────────────
+    // ── 3D clock: smooth hand sweep (every frame) ────────────────────────
+    { const nd  = new Date();
+      const chh = nd.getHours(), cmm = nd.getMinutes(), css2 = nd.getSeconds();
+      const cms = nd.getMilliseconds();
+      const sF  = css2 + cms / 1000;
+      const mF  = cmm + sF / 60;
+      const hF  = (chh % 12 || 12) + mF / 60;
+      const aH  = Math.PI / 2 - (hF / 12) * Math.PI * 2;
+      const aM  = Math.PI / 2 - (mF / 60) * Math.PI * 2;
+      const aS  = Math.PI / 2 - (sF  / 60) * Math.PI * 2;
+      const setHand = (h, ang) => {
+        h.arr[3] = h.len * Math.cos(ang);
+        h.arr[4] = h.len * Math.sin(ang);
+        h.attr.needsUpdate = true;
+      };
+      setHand(handH, aH); setHand(handM, aM); setHand(handS, aS); }
+    CLKG.rotation.y = rotA * 0.5; // co-rotate with strand A
+
+    // ── Tri-base clock HUD + dot updates (on second boundary) ─────────────
     const nowSec = Math.floor(Date.now() / 1000);
     if (nowSec !== lastClkSec) {
       lastClkSec = nowSec;
@@ -667,6 +786,22 @@ export function buildS7() {
           `₃ <span style="color:#FF6B35">${toBT(hh)}</span>` +
           `·<span style="color:#00E5FF">${toBT(mm)}</span>` +
           `·<span style="color:#FFD700">${toBT(ss)}</span></div>`;
+      // Binary dots: 6 bits of current second
+      for (let b = 0; b < 6; b++) {
+        const lit = (ss >> b) & 1;
+        binDotMats[b].color.setHex(lit ? 0x00e5ff : 0x0a1a2a);
+        binDotMats[b].emissive.setHex(lit ? 0x00e5ff : 0x000000);
+        binDotMats[b].emissiveIntensity = lit ? 0.85 : 0;
+      }
+      // BT trit dots: current second in balanced ternary, padded to 4 trits
+      const btSec = toBT(ss).padStart(4, '6');
+      for (let tt = 0; tt < 4; tt++) {
+        const ch  = btSec[tt];
+        const col = ch === '7' ? 0x00E5FF : ch === '5' ? 0xFF6B35 : 0x0a0a0a;
+        tritDotMats[tt].color.setHex(col);
+        tritDotMats[tt].emissive.setHex(ch === '6' ? 0x000000 : col);
+        tritDotMats[tt].emissiveIntensity = ch === '6' ? 0 : 0.85;
+      }
     }
 
     R.labelRenderer.render(scene, camera);
