@@ -156,9 +156,11 @@ input[type=range]::-moz-range-thumb{width:8px;height:8px;background:#00ff88;bord
   .tab{font-size:.42rem;padding:.2rem .45rem}
 }
 /* large viewports: drive canvas by viewport height instead of width so the
-   scene uses the available vertical space (2:1 aspect caps ~557px at max width) */
+   scene uses the available vertical space (2:1 aspect caps ~557px at max width).
+   Leaves ~120px below the fold so the writeup header ("The Number"…) peeks
+   into view and users know they can scroll. */
 @media(min-width:1200px) and (min-height:800px){
-  #glc{aspect-ratio:auto;height:calc(100vh - 300px);max-height:none}
+  #glc{aspect-ratio:auto;height:calc(100vh - 420px);max-height:none}
 }
 /* ── fullscreen ───────────────────────────────────── */
 #fsBtn2{align-self:flex-start}
