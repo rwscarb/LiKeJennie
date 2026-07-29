@@ -364,18 +364,21 @@ export function buildS7() {
     CLKG.add(new THREE.Line(tg, tm));
   }
 
-  // 12 hour markers — orbit trit faces {6=−1, 7=0, 8=+1} highlighted
+  // 12 hour markers — trit faces {6=−1, 7=0, 8=+1} + balance group {2,4} (h=7 already hot)
   const clkHotC = { 6: 0xFF6B35, 7: 0x5060FF, 8: 0x00E5FF };
   const clkHotS = { 6: '#FF6B35', 7: '#7080FF', 8: '#00E5FF' };
   const clkHotLabel = { 6: '6  −1', 7: '7   0', 8: '8  +1' };
+  const balC = { 2: 0xC08800, 4: 0xC08800 }; // {2,4,7} sum=13; h=7 already hot
   for (let h = 1; h <= 12; h++) {
     const ang = Math.PI / 2 - (h % 12) * (Math.PI / 6);
     const hot = clkHotC[h] !== undefined;
-    const c   = hot ? clkHotC[h] : 0x0e3a4a;
-    const geo = new THREE.SphereGeometry(hot ? 0.22 : 0.07, 16, 10);
+    const bal = balC[h] !== undefined;
+    const c   = hot ? clkHotC[h] : bal ? balC[h] : 0x0e3a4a;
+    const sz  = hot ? 0.22 : bal ? 0.14 : 0.07;
+    const geo = new THREE.SphereGeometry(sz, 16, 10);
     const mat = new THREE.MeshPhongMaterial({
-      color: c, emissive: c, emissiveIntensity: hot ? 0.6 : 0.1,
-      transparent: true, opacity: hot ? 0.95 : 0.5, shininess: 80,
+      color: c, emissive: c, emissiveIntensity: hot ? 0.6 : bal ? 0.45 : 0.1,
+      transparent: true, opacity: hot ? 0.95 : bal ? 0.85 : 0.5, shininess: 80,
     });
     R.disposables.push(geo, mat);
     const mesh = new THREE.Mesh(geo, mat);
@@ -388,6 +391,15 @@ export function buildS7() {
       div.textContent = clkHotLabel[h];
       const lbl = new CSS2DObject(div);
       lbl.position.set((CLK_R + 0.62) * Math.cos(ang), (CLK_R + 0.62) * Math.sin(ang), 0);
+      CLKG.add(lbl); R.css2dObjects.push(lbl);
+    }
+    if (bal) {
+      const div = document.createElement('div');
+      div.className = 'angle-lbl';
+      div.style.cssText = 'font-size:9px;color:#C08800;opacity:.85;';
+      div.textContent = String(h);
+      const lbl = new CSS2DObject(div);
+      lbl.position.set((CLK_R + 0.52) * Math.cos(ang), (CLK_R + 0.52) * Math.sin(ang), 0);
       CLKG.add(lbl); R.css2dObjects.push(lbl);
     }
   }
@@ -432,6 +444,37 @@ export function buildS7() {
     mesh.position.set(INNER_R * Math.cos(a), INNER_R * Math.sin(a), 0);
     CLKG.add(mesh);
   }
+
+  // "13" — the driver; sum of balance group {2,4,7}; external to orbit, defines it
+  { const d = document.createElement('div');
+    d.className = 'angle-lbl';
+    d.style.cssText = 'font-size:13px;color:#C08800;opacity:.92;letter-spacing:.08em;font-weight:bold;';
+    d.textContent = '13';
+    const l = new CSS2DObject(d);
+    l.position.set(0, 0.45, 0);
+    CLKG.add(l); R.css2dObjects.push(l); }
+
+  // Arc from h=6 to h=7 on mid-ring — nil + palindrome = driver; label "6+7"
+  { const a6 = Math.PI / 2 - 6 * Math.PI / 6;
+    const a7 = Math.PI / 2 - 7 * Math.PI / 6;
+    const R_ARC = CLK_R * 0.78;
+    const arcPts = [];
+    for (let i = 0; i <= 18; i++) {
+      const ang = a6 + (i / 18) * (a7 - a6);
+      arcPts.push(new THREE.Vector3(R_ARC * Math.cos(ang), R_ARC * Math.sin(ang), 0));
+    }
+    const arcG = new THREE.BufferGeometry().setFromPoints(arcPts);
+    const arcM = new THREE.LineDashedMaterial({ color: 0xC08800, dashSize: .10, gapSize: .07, transparent: true, opacity: .55 });
+    const arcL = new THREE.Line(arcG, arcM); arcL.computeLineDistances();
+    R.disposables.push(arcG, arcM); CLKG.add(arcL);
+    const aMid = a6 + 0.5 * (a7 - a6);
+    const d = document.createElement('div');
+    d.className = 'angle-lbl';
+    d.style.cssText = 'font-size:8px;color:#C08800;opacity:.75;white-space:nowrap;';
+    d.textContent = '6+7';
+    const l = new CSS2DObject(d);
+    l.position.set((R_ARC - .52) * Math.cos(aMid), (R_ARC - .52) * Math.sin(aMid), 0);
+    CLKG.add(l); R.css2dObjects.push(l); }
 
   // ── HUD ──────────────────────────────────────────────────────────────────
   ov.innerHTML =
