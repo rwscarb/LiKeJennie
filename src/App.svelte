@@ -24,7 +24,7 @@ function packState(scene, pos, tgt, sliders, flags) {
   [pos.x, pos.y, pos.z, tgt.x, tgt.y, tgt.z].forEach(f => { v.setFloat32(o, f, true); o += 4; });
   _SKEYS.forEach(k => { const [mn,mx]=_SRANGE[k]; v.setUint16(o, Math.round(Math.max(0,Math.min(1,(parseFloat(sliders[k]||mn)-mn)/(mx-mn)))*65535), true); o+=2; });
   v.setUint8(o, (flags.inv?1:0)|(flags.shade?2:0)|(flags.comp?4:0));
-  return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/+/g,'-').replace(/_/g,'_').replace(/=/g,'');
 }
 function unpackState(enc) {
   try {
@@ -385,9 +385,8 @@ afterUpdate(() => {
 
 <div class="hint">&larr; &rarr; arrow keys &nbsp;&middot;&nbsp; tabs or dots &nbsp;&middot;&nbsp; keys 1&ndash;9</div>
 
-{#if active === 7}
 <div class="writeup">
-  <div class="writeup-hdr">08 · JENNIE 21 — how it works</div>
+  <div class="writeup-hdr">{active + 1} · JENNIE {active + 1} — how it works</div>
   <article>
     <h1>The Number</h1>
     <p>896 equals 2<sup>7</sup> × 7. To get 896, double 1 seven times, then multiply by 7.</p>
@@ -419,8 +418,8 @@ while n not in seen:
     <hr>
 
     <h2>Balanced Ternary</h2>
-    <p>Balanced ternary (BT) is a number system that uses 3 digits: −1, 0, and +1.</p>
-    <p>This visualization maps those digits to the values 5, 6, and 7:</p>
+    <p>Balanced ternary (BT) is a number system that uses 3 digits: −1, 0, +1.</p>
+    <p>This visualization maps those digits to the values 5, 6, 7:</p>
     <ul>
       <li>5 = −1</li>
       <li>6 = 0 (nil)</li>
@@ -444,63 +443,47 @@ while n not in seen:
 
     <h2>The Shape: Golden Angle Cone</h2>
     <p>The golden angle (GA) is 137.508°. It equals 2π × (2 − φ), where φ = (1 + √5) / 2.</p>
-    <p>Each new node rotates exactly 137.508° from the previous node. Because this angle is irrational, no two nodes share the same angular position.</p>
-    <p>Each node also moves outward (larger radius) and upward as the step number increases. This produces a cone shape — a tornado.</p>
-    <p>From above, the nodes show the Fibonacci sunflower pattern. From the side, they show a double helix that expands as it rises.</p>
+    <p>Each new node rotates 137.508° from the previous one. Because GA is irrational, no two nodes share the same angle.</p>
+    <p>Nodes also move outward and upward, forming a cone — a vertical sunflower.</p>
+    <p>From above: Fibonacci sunflower pattern. From the side: expanding double helix.</p>
     <pre><code>const PHI = (1 + Math.sqrt(5)) / 2;
-const GA  = 2 * Math.PI * (2 - PHI);   // golden angle ≈ 137.508°
+const GA  = 2 * Math.PI * (2 - PHI);   // ≈ 137.508°
 
-const nodePos = (step, offset = 0) => (&lbrace;
+const nodePos = (step, offset = 0) => ({
   x: (0.28 + step * 0.13) * Math.cos(step * GA + offset),
   y:  step * 0.68,
   z: (0.28 + step * 0.13) * Math.sin(step * GA + offset),
-&rbrace;);
+});
 // Strand A: offset = 0
 // Strand B: offset = Math.PI  (180° apart)</code></pre>
 
     <hr>
 
     <h2>The 21 Arc</h2>
-    <p>After 21 steps, the total rotation is 21 × 137.508° = 2887.7°.</p>
-    <p>This equals 8 full rotations plus 7.7°. The spiral has almost returned to its starting direction.</p>
-    <p>21 is the 8th Fibonacci number (F₈). The current visualization runs all 21 steps. At step 21 the helix has completed 8 full turns plus 7.7° — almost but not exactly closed, which is what makes the near-return visible as a distinct structural event.</p>
+    <p>After 21 steps, total rotation is 21 × 137.508° = 2887.7° ≈ 8 full turns + 7.7°.</p>
+    <p>21 is F₈, the 8th Fibonacci number. At step 21 the helix completes 8 turns + 7.7° — nearly closed.</p>
 
     <hr>
 
     <h2>The Breath Animation</h2>
-    <p>All nodes, lines, and labels use one shared scale value called <em>breath</em>.</p>
-    <p>The breath value oscillates between 0.90 and 1.10. One full cycle takes approximately 12.6 seconds.</p>
+    <p>All nodes, lines, labels use one shared scale: <em>breath</em>.</p>
     <pre><code>const breath = 1 + 0.10 * Math.sin(t * 0.50);
-// range: 0.90 to 1.10  |  cycle: ~12.6 seconds
-
-node.y  = baseY(step) * breath;
-label.y = baseY(step) * breath;
-line.y  = baseY(step) * breath;  // applied to both line endpoints</code></pre>
-    <p>All parts of the structure use the same breath value. The structure expands and contracts as one unit.</p>
-    <p>Doubling (×2) is the exhale — expansion, the orbit's forward pass. Halving (÷2) is the inhale — contraction, the return current. The accordion breathes both ways.</p>
+// range: 0.90 to 1.10 | cycle: ~12.6 seconds</code></pre>
+    <p>Doubling (×2) is exhale, halving (÷2) is inhale. The accordion breathes both ways.</p>
 
     <hr>
 
     <h2>The Pulsating Inversion (F₈ = 21)</h2>
-    <p>The helix runs 21 steps — F₈, the 8th Fibonacci number. After 21 steps the total rotation is 21 × 137.508° ≈ 8 full turns plus 7.7°, nearly closing.</p>
-    <p>Press <strong>INVERSION</strong> to reveal a counter-phase ghost layer anchored at step 20 (count 21). The ghost nodes occupy the same orbital positions as Strand A but breathe in opposition:</p>
-    <pre><code>const breathInv = 1 - 0.10 * Math.sin(t * 0.50); // counter-phase
-
-ghost.y = baseY(step) * breathInv;
-// when breath = 1.10, breathInv = 0.90 — inversion contracts as main expands</code></pre>
-    <p>Phase-tension lines connect each primary node to its ghost counterpart, stretching and collapsing twice per cycle. The golden ring at step 20 is the anchor: the boundary inside which the inversion lives.</p>
-    <p>The structure has a 3×7 interpretation: 3 full orbit cycles of 7 values (6 active + the nil 6) = 21. It is also the triangular number T₆ = 21. Both readings converge on the same boundary.</p>
+    <p>21 steps = F₈. Press <strong>INVERSION</strong> to reveal a counter-phase ghost layer.</p>
+    <pre><code>const breathInv = 1 - 0.10 * Math.sin(t * 0.50); // counter-phase</code></pre>
+    <p>Phase-tension lines connect each node to its ghost. The golden ring at step 20 is the anchor.</p>
 
     <hr>
 
     <h2>757 = ∞</h2>
-    <p>757 is a prime number. Its balanced ternary representation is <code>1001001</code> — powers of 3 at positions 0, 3, and 6, evenly spaced, a lattice.</p>
-    <pre><code>757 = 3⁶ + 3³ + 3⁰ = 729 + 27 + 1
-    = (3⁹ − 1) / (3³ − 1)         # base-27 repunit
-BT(7)   = "757"   — palindrome in display
-BT(757) = 1001001 — palindrome in balanced ternary
-757 in binary: 1011110101 — contains exactly 7 ones</code></pre>
-    <p>In the orbit system, 7 encodes to the display string "757." The number 757 itself encodes to the balanced ternary palindrome "1001001." Palindrome on palindrome. 757 is prime — indivisible by any operation in the system. It is the internal infinity: not the wall at 896, not the threshold at 897, but the unreachable fixed point inside the structure. The thing that reflects without distortion.</p>
+    <p>757 is prime. BT(757) = 1001001 — powers of 3 at positions 0, 3, 6.</p>
+    <pre><code>757 = 3⁶ + 3³ + 3⁰ = 729 + 27 + 1</code></pre>
+    <p>7 encodes to "757" (display palindrome). 757 encodes to "1001001" (BT palindrome). Prime, indivisible, reflects without distortion.</p>
   </article>
 </div>
-{/if}
+</body>
