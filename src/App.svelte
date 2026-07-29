@@ -14,6 +14,32 @@ let active = 7;
 let p8adv = false;
 const unsub = cur.subscribe(v => { active = v; });
 
+// ── Compact URL state (base64url binary pack) ────────────────────────────────
+// Format: [u8 scene][f32×3 camPos][f32×3 camTgt][u16×6 sliders][u8 flags] = 38 bytes → ~50 chars
+const _SKEYS = ['rbase','rgrow','hstep','bamp','bfreq','spin'];
+const _SRANGE = { rbase:[0.05,0.80], rgrow:[0.00,0.40], hstep:[0.20,2.00], bamp:[0.00,0.30], bfreq:[0.05,2.00], spin:[0.05,2.00] };
+function packState(scene, pos, tgt, sliders, flags) {
+  const buf = new ArrayBuffer(38); const v = new DataView(buf); let o = 0;
+  v.setUint8(o++, scene);
+  [pos.x, pos.y, pos.z, tgt.x, tgt.y, tgt.z].forEach(f => { v.setFloat32(o, f, true); o += 4; });
+  _SKEYS.forEach(k => { const [mn,mx]=_SRANGE[k]; v.setUint16(o, Math.round(Math.max(0,Math.min(1,(parseFloat(sliders[k]||mn)-mn)/(mx-mn)))*65535), true); o+=2; });
+  v.setUint8(o, (flags.inv?1:0)|(flags.shade?2:0)|(flags.comp?4:0));
+  return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+}
+function unpackState(enc) {
+  try {
+    const b64 = enc.replace(/-/g,'+').replace(/_/g,'/'); const pad = (4-b64.length%4)%4;
+    const bytes = Uint8Array.from(atob(b64+'='.repeat(pad)), c=>c.charCodeAt(0));
+    const v = new DataView(bytes.buffer); let o = 0;
+    const scene = v.getUint8(o++);
+    const [cx,cy,cz] = [0,1,2].map(()=>{ const f=v.getFloat32(o,true); o+=4; return f; });
+    const [tx,ty,tz] = [0,1,2].map(()=>{ const f=v.getFloat32(o,true); o+=4; return f; });
+    const sliders = {}; _SKEYS.forEach(k=>{ const [mn,mx]=_SRANGE[k]; sliders[k]=(v.getUint16(o,true)/65535*(mx-mn)+mn).toFixed(2); o+=2; });
+    const fb = v.getUint8(o); const flags = { inv:!!(fb&1), shade:!!(fb&2), comp:!!(fb&4) };
+    return { scene, cam:{cx,cy,cz}, tgt:{tx,ty,tz}, sliders, flags };
+  } catch { return null; }
+}
+
 function resize() {
   if (!glc || !renderer) return;
   const w = glc.clientWidth || 960;
@@ -107,56 +133,61 @@ onMount(async () => {
   labelHost.appendChild(labelRenderer.domElement);
   R.renderer = renderer; R.labelRenderer = labelRenderer;
 
-  // ── URL param restore ────────────────────────────────────────────────────
+  // ── URL param restore ─────────────────────────────────────────────────────
   const urlP = new URLSearchParams(location.search);
-  const initScene = Math.min(Math.max(parseInt(urlP.get('s') ?? '7', 10), 0), scenes.length - 1);
-  if (initScene !== 7) cur.set(initScene);   // sync store if needed
+  const packed = urlP.get('v');
+  let _restored = null;
+  if (packed) _restored = unpackState(packed);
+
+  const initScene = _restored
+    ? Math.min(Math.max(_restored.scene, 0), scenes.length - 1)
+    : Math.min(Math.max(parseInt(urlP.get('s') ?? '7', 10), 0), scenes.length - 1);
+  if (initScene !== 7) cur.set(initScene);
   show(initScene);
-  // apply saved camera
-  if (urlP.has('cx') && R.camera) {
-    const [cx, cy, cz] = ['cx','cy','cz'].map(k => parseFloat(urlP.get(k) ?? '0'));
-    const [tx, ty, tz] = ['tx','ty','tz'].map(k => parseFloat(urlP.get(k) ?? '0'));
-    R.camera.position.set(cx, cy, cz);
-    R.camera.lookAt(tx, ty, tz);
-    if (R.controls) { R.controls.target.set(tx, ty, tz); R.controls.update(); }
-  }
-  // apply scene-7 slider/toggle params
-  if (initScene === 7) {
-    for (const key of ['rbase','rgrow','hstep','bamp','bfreq','spin']) {
-      if (!urlP.has(key)) continue;
-      const el = document.getElementById(`p8_${key}`);
-      if (el) { el.value = urlP.get(key); el.dispatchEvent(new Event('input')); }
-    }
-    for (const id of ['inv','shade','comp']) {
-      if (urlP.get(id) === '1') {
+
+  if (_restored) {
+    const { cam, tgt, sliders, flags } = _restored;
+    if (R.camera) { R.camera.position.set(cam.cx, cam.cy, cam.cz); R.camera.lookAt(tgt.tx, tgt.ty, tgt.tz); }
+    if (R.controls) { R.controls.target.set(tgt.tx, tgt.ty, tgt.tz); R.controls.update(); }
+    if (initScene === 7) {
+      for (const key of _SKEYS) {
+        const el = document.getElementById(`p8_${key}`);
+        if (el) { el.value = sliders[key]; el.dispatchEvent(new Event('input')); }
+      }
+      for (const [id, on] of [['inv', flags.inv], ['shade', flags.shade], ['comp', flags.comp]]) {
         const btn = document.getElementById(`p8${id}`);
-        if (btn && !btn.classList.contains('lit')) btn.click();
+        if (btn && btn.classList.contains('lit') !== on) btn.click();
+      }
+    }
+  } else {
+    // legacy ?cx= format fallback
+    if (urlP.has('cx') && R.camera) {
+      const [cx,cy,cz] = ['cx','cy','cz'].map(k=>parseFloat(urlP.get(k)??'0'));
+      const [tx,ty,tz] = ['tx','ty','tz'].map(k=>parseFloat(urlP.get(k)??'0'));
+      R.camera.position.set(cx,cy,cz); R.camera.lookAt(tx,ty,tz);
+      if (R.controls) { R.controls.target.set(tx,ty,tz); R.controls.update(); }
+    }
+    if (initScene === 7) {
+      for (const key of _SKEYS) {
+        if (!urlP.has(key)) continue;
+        const el = document.getElementById(`p8_${key}`);
+        if (el) { el.value = urlP.get(key); el.dispatchEvent(new Event('input')); }
+      }
+      for (const id of ['inv','shade','comp']) {
+        if (urlP.get(id) === '1') { const btn = document.getElementById(`p8${id}`); if (btn && !btn.classList.contains('lit')) btn.click(); }
       }
     }
   }
 
   // ── SHARE button ──────────────────────────────────────────────────────────
   document.getElementById('shareBtn').addEventListener('click', () => {
-    const p = new URLSearchParams();
-    p.set('s', R.cur);
-    if (R.camera) {
-      const pos = R.camera.position;
-      p.set('cx', pos.x.toFixed(2)); p.set('cy', pos.y.toFixed(2)); p.set('cz', pos.z.toFixed(2));
-    }
-    if (R.controls) {
-      const tgt = R.controls.target;
-      p.set('tx', tgt.x.toFixed(2)); p.set('ty', tgt.y.toFixed(2)); p.set('tz', tgt.z.toFixed(2));
-    }
-    if (R.cur === 7) {
-      for (const key of ['rbase','rgrow','hstep','bamp','bfreq','spin']) {
-        const el = document.getElementById(`p8_${key}`); if (el) p.set(key, el.value);
-      }
-      for (const id of ['inv','shade','comp']) {
-        const btn = document.getElementById(`p8${id}`);
-        if (btn) p.set(id, btn.classList.contains('lit') ? '1' : '0');
-      }
-    }
-    const url = `${location.origin}${location.pathname}?${p}`;
+    const pos = R.camera?.position ?? {x:0,y:0,z:0};
+    const tgt = R.controls?.target   ?? {x:0,y:0,z:0};
+    const sliders = {}; _SKEYS.forEach(k => { const el = document.getElementById(`p8_${k}`); sliders[k] = el?.value ?? _SRANGE[k][0]; });
+    const flags = {};
+    for (const id of ['inv','shade','comp']) { const btn = document.getElementById(`p8${id}`); flags[id] = btn?.classList.contains('lit') ?? false; }
+    const v = packState(R.cur, pos, tgt, sliders, flags);
+    const url = `${location.origin}${location.pathname}?v=${v}`;
     navigator.clipboard.writeText(url).then(() => {
       const btn = document.getElementById('shareBtn');
       const orig = btn.textContent; btn.textContent = 'COPIED!';
