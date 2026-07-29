@@ -43,7 +43,8 @@ h1{font-size:3.5rem;color:#ff9800;letter-spacing:.35em;line-height:1;margin-bott
 .canvaswrap::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.55) 100%);pointer-events:none;z-index:11}
 #glc{display:block;width:100%;aspect-ratio:2/1;height:auto;cursor:grab;max-height:80vh}
 #glc:active{cursor:grabbing}
-.ov{position:absolute;top:12px;right:14px;pointer-events:none;font-size:8.5px;line-height:1.7;text-align:right;z-index:5;transform:scale(1.25);transform-origin:top right;}
+.ov{position:absolute;bottom:12px;right:14px;pointer-events:none;font-size:8.5px;line-height:1.7;text-align:right;z-index:5;transform:scale(1.25);transform-origin:bottom right;}
+#camCoords{position:absolute;top:10px;left:12px;pointer-events:none;font-family:'Courier New',monospace;font-size:8px;color:#2a6a4a;line-height:1.7;z-index:5;letter-spacing:.03em;white-space:pre;}
 /* ── controls ─────────────────────────────────────── */
 .ctrls{display:flex;align-items:center;gap:6px;margin-top:7px;flex-wrap:wrap;min-height:20px;position:relative;z-index:2}
 .cset{display:none;align-items:center;gap:6px;flex-wrap:wrap}
@@ -135,7 +136,7 @@ input[type=range]::-moz-range-thumb{width:8px;height:8px;background:#00ff88;bord
   #tt{font-size:.62rem;max-width:200px}
   /* portrait: let the canvas use vertical space */
   #glc{aspect-ratio:3/4;max-height:60vh}
-  .ov{transform:scale(.9);transform-origin:top right;font-size:7px}
+  .ov{transform:scale(.9);transform-origin:bottom right;font-size:7px}
   .node-lbl{font-size:10px}
   .cset.on{gap:4px}
   .btn{font-size:.48rem;padding:2px 6px}
@@ -167,4 +168,4 @@ input[type=range]::-moz-range-thumb{width:8px;height:8px;background:#00ff88;bord
 #panelwrap:fullscreen select,#panelwrap:-webkit-full-screen select{font-size:.76rem}
 #panelwrap:fullscreen .node-lbl,#panelwrap:-webkit-full-screen .node-lbl{font-size:15px}
 #panelwrap:fullscreen .angle-lbl,#panelwrap:-webkit-full-screen .angle-lbl{font-size:13px}
-#panelwrap:fullscreen .ov,#panelwrap:-webkit-full-screen .ov{transform:scale(2);transform-origin:top right}
+#panelwrap:fullscreen .ov,#panelwrap:-webkit-full-screen .ov{transform:scale(2);transform-origin:bottom right}

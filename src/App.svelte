@@ -8,7 +8,7 @@ import {
   R, disposeScene, resetTip,
 } from './scenes/shared.js';
 
-let glc, ov, tt, rain, labelHost, panelwrap;
+let glc, ov, tt, rain, labelHost, panelwrap, camCoords;
 let renderer, labelRenderer, rafId = 0;
 let active = 7;
 const unsub = cur.subscribe(v => { active = v; });
@@ -35,6 +35,7 @@ function show(idx) {
   resize();
 }
 
+let _loopFrame = 0;
 function loop(t) {
   rafId = requestAnimationFrame(loop);
   if (R.controls) R.controls.update();
@@ -42,6 +43,10 @@ function loop(t) {
   if (R.scene && R.camera) {
     renderer.render(R.scene, R.camera);
     labelRenderer.render(R.scene, R.camera);
+    if (camCoords && ++_loopFrame % 4 === 0) {
+      const p = R.camera.position;
+      camCoords.textContent = `x ${p.x.toFixed(1)}\ny ${p.y.toFixed(1)}\nz ${p.z.toFixed(1)}`;
+    }
   }
 }
 
@@ -265,6 +270,7 @@ afterUpdate(() => {
   <div id="tt" bind:this={tt}></div>
   <div class="canvaswrap" bind:this={labelHost}>
     <canvas id="glc" bind:this={glc}></canvas>
+    <div id="camCoords" bind:this={camCoords}></div>
     <div class="ov" bind:this={ov}></div>
     <button id="fsBtn2" on:click={fullscreen}>&#x26F6; FULL</button>
   </div>
