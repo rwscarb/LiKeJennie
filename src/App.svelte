@@ -349,6 +349,7 @@ afterUpdate(() => {
     <div class="cset" class:on={active === 7}>
       <button class="btn lit" id="p8rot">AUTO-ROTATE</button>
       <button class="btn lit" id="p8comp">COMPLEMENT</button>
+      <button class="btn" id="p8center" title="recenter view on the helix axis">⊙ CENTER</button>
       <button class="btn" style="opacity:.35;letter-spacing:.18em;padding:3px 7px" on:click={() => { p8adv = !p8adv; }} title="advanced controls">···</button>
       <div style="display:{p8adv ? 'contents' : 'none'}">
       <button class="btn" id="p8inv">INVERSION</button>

@@ -689,6 +689,10 @@ export function buildS7() {
   ['side', 'top', 'hero'].forEach(k => {
     document.getElementById(`p8v_${k}`).onclick = () => applyPreset(k);
   });
+  // Always-visible recenter: restores the default view with the orbit target back
+  // on the helix axis (0,7,0). Needed because shared links / panning can leave the
+  // pivot off-axis, which makes the helix swing around instead of spinning in place.
+  document.getElementById('p8center').onclick = () => applyPreset('side');
 
   // ── Hover / raycasting ───────────────────────────────────────────────────
   const raycaster = new THREE.Raycaster();
