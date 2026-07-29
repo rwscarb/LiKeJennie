@@ -45,7 +45,7 @@ h1{font-size:3.5rem;color:#ff9800;letter-spacing:.35em;line-height:1;margin-bott
 #glc:active{cursor:grabbing}
 .ov{position:absolute;top:12px;right:14px;pointer-events:none;font-size:8.5px;line-height:1.7;text-align:right;z-index:5;transform:scale(1.25);transform-origin:top right;}
 #camCoords{position:absolute;top:10px;left:12px;pointer-events:none;font-family:'Courier New',monospace;font-size:8.5px;color:#2a6a4a;line-height:1.7;z-index:5;letter-spacing:.03em;white-space:pre;transform:scale(1.25);transform-origin:top left;}
-#clkDisplay{position:absolute;bottom:10px;right:14px;pointer-events:none;font-family:'Courier New',monospace;font-size:8.5px;line-height:1.75;text-align:right;z-index:5;transform:scale(1.25);transform-origin:bottom right;}
+#clkDisplay{position:absolute;bottom:18px;right:14px;pointer-events:none;font-family:'Courier New',monospace;font-size:8.5px;line-height:1.75;text-align:right;z-index:5;transform:scale(1.25);transform-origin:bottom right;}
 /* ── controls ─────────────────────────────────────── */
 .ctrls{display:flex;align-items:center;gap:6px;margin-top:7px;flex-wrap:wrap;min-height:20px;position:relative;z-index:2}
 .cset{display:none;align-items:center;gap:6px;flex-wrap:wrap}
@@ -156,6 +156,7 @@ input[type=range]::-moz-range-thumb{width:8px;height:8px;background:#00ff88;bord
   .tab{font-size:.42rem;padding:.2rem .45rem}
 }
 /* ── fullscreen ───────────────────────────────────── */
+#fsBtn2{align-self:flex-start}
 #fsBtn2:hover{border-color:#00e5ff!important;color:#00e5ff!important;box-shadow:0 0 10px #00e5ff20}
 #panelwrap:fullscreen,#panelwrap:-webkit-full-screen{
   background:#000;max-width:none;border-radius:0;
