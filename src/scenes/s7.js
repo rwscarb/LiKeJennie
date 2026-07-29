@@ -340,8 +340,17 @@ export function buildS7() {
       `<span style="color:#FFD700">1</span></div>` +
     `<div style="color:#2a4a3a;font-size:7px;margin-top:2px">trits: 5=−1&nbsp;<b style="color:#aaf">6=0</b>&nbsp;7=+1</div>` +
     `<div style="color:#2a3a4a;font-size:7px;margin-top:1px">golden angle ≈137.5° · F₈=21 anchor</div>` +
-    `<div style="color:#ffd700;font-size:7px;margin-top:1px">axis 4.5=9/2 · ×3/2 → 640→960</div>` +
     `<div style="color:#c060ff;font-size:7px;margin-top:1px">757=∞ · 1001001=3⁶+3³+3⁰ · prime</div>`;
+
+  // ── Live tri-base clock ───────────────────────────────────────────────────
+  // Decimal | Binary | Balanced-ternary (orbit digit convention: 5=−1  6=0  7=+1)
+  // Updates inside animFn on second boundary — no interval, no cleanup needed.
+  const clkEl = document.createElement('div');
+  clkEl.style.cssText = 'margin-top:7px;padding-top:5px;border-top:1px solid #102010;' +
+    'font-family:monospace;font-size:8px;line-height:1.75;';
+  ov.appendChild(clkEl);
+  const toBin = (n, w) => n.toString(2).padStart(w, '0');
+  let lastClkSec = -1;
 
   // ── Controls ──────────────────────────────────────────────────────────────
   document.getElementById('p8rot').onclick = () => {
@@ -638,6 +647,26 @@ export function buildS7() {
       shadePosAttr.needsUpdate = true;
       const gap = Math.abs(breath - breathInv);
       shadeMat.opacity = 0.07 + 0.12 * (gap / 0.20);
+    }
+
+    // ── Tri-base clock (decimal / binary / balanced-ternary) ──────────────
+    const nowSec = Math.floor(Date.now() / 1000);
+    if (nowSec !== lastClkSec) {
+      lastClkSec = nowSec;
+      const nd  = new Date();
+      const hh  = nd.getHours(), mm = nd.getMinutes(), ss = nd.getSeconds();
+      const h12 = hh % 12 || 12;
+      const deg = ((h12 + mm / 60 + ss / 3600) * 30).toFixed(1);
+      clkEl.innerHTML =
+        `<div style="color:#2a6048">` +
+          `⊙ ${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}` +
+          ` &nbsp;<span style="color:#1a3a2a">${deg}°</span></div>` +
+        `<div style="color:#0a3a50">` +
+          `₂ ${toBin(hh,5)}·${toBin(mm,6)}·${toBin(ss,6)}</div>` +
+        `<div>` +
+          `₃ <span style="color:#FF6B35">${toBT(hh)}</span>` +
+          `·<span style="color:#00E5FF">${toBT(mm)}</span>` +
+          `·<span style="color:#FFD700">${toBT(ss)}</span></div>`;
     }
 
     R.labelRenderer.render(scene, camera);
