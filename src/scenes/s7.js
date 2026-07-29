@@ -96,7 +96,7 @@ export function buildS7() {
 
   let showInversion = false;
   let showShading   = false;
-  let showDecimal   = false;
+  let showDecimal   = true;
 
   const invMeshes    = []; // { mesh, s } — strand A positions, counter-phase Y
   const invLabelData = []; // { lbl, val, bt, cs, s }
@@ -147,6 +147,8 @@ export function buildS7() {
 
   buildStrand(0,       false);
   buildStrand(Math.PI, true);
+  // apply default showDecimal=true (labels build as BT text, flip to decimal)
+  allLabels.forEach(l => { l.lbl.element.textContent = l.val; });
 
   // ── Strand backbone lines ────────────────────────────────────────────────
   const makeStrandLine = (φ, color) => {
