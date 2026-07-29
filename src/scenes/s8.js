@@ -70,52 +70,6 @@ export function buildS8() {
   cap('MODULAR · bounded · wraps', CR + 1.0, '#00e5ff');
   cap("'ternary precision vs clock'", -(CR + 1.0), '#5a7a8a', '9px');
 
-  // ×3/2 arc — path from dr(640)=1 (h=1) to dr(960)=6 (h=6), crossing 4.5 (h=4.5)
-  { const a1 = Math.PI / 2 - 1 * Math.PI / 6;   // h=1 (60°)
-    const a6 = Math.PI / 2 - 6 * Math.PI / 6;   // h=6 (−90°)
-    const R_ARC = CR * 0.62;
-    const arcPts = [];
-    for (let i = 0; i <= 36; i++) {
-      const frac = i / 36;
-      const ang  = a1 + frac * (a6 - a1);
-      arcPts.push(new THREE.Vector3(R_ARC * Math.cos(ang), R_ARC * Math.sin(ang), 0));
-    }
-    const arcG = new THREE.BufferGeometry().setFromPoints(arcPts);
-    const arcM = new THREE.LineDashedMaterial({ color: 0xffd700, dashSize: .14, gapSize: .09, transparent: true, opacity: .5 });
-    const arcL = new THREE.Line(arcG, arcM); arcL.computeLineDistances();
-    R.disposables.push(arcG, arcM); CLK.add(arcL);
-    const aMid = a1 + 0.5 * (a6 - a1);
-    const dArc = document.createElement('div');
-    dArc.className = 'angle-lbl';
-    dArc.style.cssText = 'font-size:8px;color:#ffd700;opacity:.8;text-align:center;white-space:nowrap;';
-    dArc.textContent = '×3/2';
-    const lArc = new CSS2DObject(dArc);
-    lArc.position.set((R_ARC - .5) * Math.cos(aMid), (R_ARC - .5) * Math.sin(aMid), 0);
-    CLK.add(lArc); R.css2dObjects.push(lArc);
-    const dSub = document.createElement('div');
-    dSub.className = 'angle-lbl';
-    dSub.style.cssText = 'font-size:7px;color:#8a7030;opacity:.75;white-space:nowrap;';
-    dSub.textContent = '640→960';
-    const lSub = new CSS2DObject(dSub);
-    lSub.position.set((R_ARC - .5) * Math.cos(aMid), (R_ARC - .5) * Math.sin(aMid) - .36, 0);
-    CLK.add(lSub); R.css2dObjects.push(lSub); }
-
-  // 4.5 balance axis — the invisible pivot; complement pairs sum to 9, center = 9/2
-  { const a45 = Math.PI / 2 - 4.5 * Math.PI / 6; // −π/4, the 4:30 position
-    const ax = Math.cos(a45), ay = Math.sin(a45);
-    const axG = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3( ax * CR * 1.18,  ay * CR * 1.18, 0),
-      new THREE.Vector3(-ax * CR * 1.18, -ay * CR * 1.18, 0),
-    ]);
-    const axM = new THREE.LineDashedMaterial({ color: 0xffd700, dashSize: .12, gapSize: .10, transparent: true, opacity: .32 });
-    const axL = new THREE.Line(axG, axM); axL.computeLineDistances();
-    R.disposables.push(axG, axM); CLK.add(axL);
-    const d45 = document.createElement('div');
-    d45.className = 'angle-lbl'; d45.style.cssText = 'font-size:9px;color:#ffd700;opacity:.65;';
-    d45.textContent = '4.5'; const l45 = new CSS2DObject(d45);
-    l45.position.set(ax * (CR + .5), ay * (CR + .5), 0);
-    CLK.add(l45); R.css2dObjects.push(l45); }
-
   // ── dimension stack (positional: balanced, unbounded) ──
   const dcap = (txt, x, y, cc, strike) => { const div = document.createElement('div');
     div.className = 'angle-lbl'; div.style.fontSize = '10px'; div.style.color = cc; div.style.opacity = '1';
@@ -180,8 +134,8 @@ export function buildS8() {
     };
     line('the interpreter  ·  palindrome in BT and binary', 60, '#ffffff', 38);
     line('1001001 = 3⁶+3³+3⁰  ·  (3⁹−1)/(3³−1)', 120, '#ffffff', 32);
-    line('757 prime  ·  7 ones in binary  ·  axis 4.5 = 9/2', 176, '#ffffff', 28);
-    line('dr(757) = 1  ·  the return  ·  640 × 3/2 = 960', 228, '#ffffff', 24);
+    line('757 prime  ·  7 ones in binary  ·  dr(757) = 1', 176, '#ffffff', 28);
+    line('the return  ·  echo pairs sum to 9  ·  orbit period 6', 228, '#ffffff', 24);
     const tex = new THREE.CanvasTexture(fc);
     const plane = new THREE.Mesh(
       new THREE.PlaneGeometry(14, 3.1),
@@ -204,7 +158,7 @@ export function buildS8() {
     `<div style="color:#ff9800;font-size:8.5px;margin-top:3px">0 = 6 &nbsp;·&nbsp; faces 6,7,8 = &minus;1,0,+1</div>` +
     `<div style="color:#c9d2df;font-size:8.5px;margin-top:3px">1+2 = 3rd &nbsp;·&nbsp; <span style="text-decoration:line-through;color:#ff3355">1+2+3 = 4th</span></div>` +
     `<div style="color:#ffd700;font-size:8px;margin-top:3px">757 = ∞ &nbsp;·&nbsp; 1001001 = 3⁶+3³+3⁰</div>` +
-    `<div style="color:#c060ff;font-size:7.5px;margin-top:1px">axis 4.5 = 9/2 · each echo pair sums to 9</div>`;
+    `<div style="color:#c060ff;font-size:7.5px;margin-top:1px">echo pairs sum to 9 · orbit period 6</div>`;
 
   document.getElementById('p9rot').onclick  = () => { R.controls.autoRotate = !R.controls.autoRotate; document.getElementById('p9rot').classList.toggle('lit', R.controls.autoRotate); };
   let ringSpeed = 0;

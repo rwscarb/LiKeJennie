@@ -8,7 +8,7 @@ import {
   R, disposeScene, resetTip,
 } from './scenes/shared.js';
 
-let glc, ov, tt, rain, labelHost, panelwrap, camCoords;
+let glc, ov, tt, rain, labelHost, panelwrap, camCoords, clkDisplay;
 let renderer, labelRenderer, rafId = 0;
 let active = 7;
 const unsub = cur.subscribe(v => { active = v; });
@@ -31,6 +31,7 @@ function show(idx) {
   R.animFn = null;
   R.cur = idx;
   ov.innerHTML = '';
+  if (clkDisplay) clkDisplay.innerHTML = '';
   scenes[idx].build();
   resize();
 }
@@ -94,7 +95,7 @@ function startRain() {
 }
 
 onMount(async () => {
-  R.canvas = glc; R.ov = ov; R.tt = tt;
+  R.canvas = glc; R.ov = ov; R.tt = tt; R.clkDisplay = clkDisplay;
   renderer = new THREE.WebGLRenderer({ canvas: glc, antialias: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   labelRenderer = new CSS2DRenderer();
@@ -272,6 +273,7 @@ afterUpdate(() => {
     <canvas id="glc" bind:this={glc}></canvas>
     <div id="camCoords" bind:this={camCoords}></div>
     <div class="ov" bind:this={ov}></div>
+    <div id="clkDisplay" bind:this={clkDisplay}></div>
     <button id="fsBtn2" on:click={fullscreen}>&#x26F6; FULL</button>
   </div>
   <div class="ctrls">
@@ -379,7 +381,6 @@ while n not in seen:
     <h2>Echo Pairs</h2>
     <p>Each orbit value has one echo value. Add an orbit value to its echo value to get 9.</p>
     <p>1↔8 &nbsp;·&nbsp; 2↔7 &nbsp;·&nbsp; 4↔5</p>
-    <p>Every echo pair is symmetric about <strong>4.5 = 9/2</strong>. This is the axis of the complement structure — not a node in the orbit, but the invisible center every pair balances on.</p>
     <p>This visualization uses two helix strands. Strand A carries the orbit values. Strand B carries the echo values. Strand B is offset by π radians (180°) from Strand A.</p>
     <p>Each rung connects a node on Strand A to its echo node on Strand B.</p>
     <p>The orbit values form two groups: {2, 4, 7} with sum 13, and {5, 8} with sum 13. Both groups have the same sum.</p>
@@ -445,7 +446,7 @@ node.y  = baseY(step) * breath;
 label.y = baseY(step) * breath;
 line.y  = baseY(step) * breath;  // applied to both line endpoints</code></pre>
     <p>All parts of the structure use the same breath value. The structure expands and contracts as one unit.</p>
-    <p>Doubling (×2) is the exhale — expansion, the orbit's forward pass. Halving (÷2) is the inhale — contraction, the return current. The accordion breathes both ways. The ×3/2 operation that tunnels 640 to 960 uses the inhale as its second step.</p>
+    <p>Doubling (×2) is the exhale — expansion, the orbit's forward pass. Halving (÷2) is the inhale — contraction, the return current. The accordion breathes both ways.</p>
 
     <hr>
 
@@ -458,22 +459,6 @@ ghost.y = baseY(step) * breathInv;
 // when breath = 1.10, breathInv = 0.90 — inversion contracts as main expands</code></pre>
     <p>Phase-tension lines connect each primary node to its ghost counterpart, stretching and collapsing twice per cycle. The golden ring at step 20 is the anchor: the boundary inside which the inversion lives.</p>
     <p>The structure has a 3×7 interpretation: 3 full orbit cycles of 7 values (6 active + the nil 6) = 21. It is also the triangular number T₆ = 21. Both readings converge on the same boundary.</p>
-
-    <hr>
-
-    <h2>The 4.5 Operator</h2>
-    <p>Every echo pair sums to 9: 1+8=9, 2+7=9, 4+5=9. The midpoint of each pair is <strong>4.5 = 9/2</strong>. This is the axis of symmetry of the entire complement structure — not a node in the orbit, but the invisible pivot every pair balances on.</p>
-    <p>4.5 does three things simultaneously:</p>
-    <ul>
-      <li><strong>Neutralizes 9.</strong> Because 4.5 = 9/2, the value 9 is fully described by its center. 9 no longer needs to appear as a structural element — it is implicit in the axis.</li>
-      <li><strong>Restores 3.</strong> Because 4.5 = 3²/2 = 3 × (3/2), the value 3 re-enters the system — not as a node, but as the arithmetic generator of the pivot. "Not 3 is fluid" was always true; 3 was never fully excluded, it was load-bearing as the base of the axis.</li>
-      <li><strong>Tunnels from 640 to 960.</strong> 640 × 3/2 = 960 exactly. The ×3/2 operation uses both components of 4.5: multiply by 3 (restore the three), divide by 2 (the inhale). The axis and the path are the same operation.</li>
-    </ul>
-    <pre><code>640 × (3/2) = 960       # the tunnel
-4.5 = 9/2 = 3²/2       # the axis
-dr(640) = 1  (orbit)   # tunnel entrance
-dr(960) = 6  (nil)     # tunnel exit — the neutral</code></pre>
-    <p>4.5 is not a label for the gap between 4 and 5. It is the shape of the move from 640 to 960. The 640 model will treat it as an operator, not a position.</p>
 
     <hr>
 
