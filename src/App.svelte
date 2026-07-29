@@ -320,8 +320,6 @@ afterUpdate(() => {
       <button class="btn" id="p8v_side">SIDE</button>
       <button class="btn" id="p8v_top">TOP</button>
       <button class="btn" id="p8v_hero">HERO</button>
-      <button class="btn" id="p8v_galaxy">GALAXY</button>
-      <button class="btn" id="p8v_dodeca">DODECA</button>
       <span class="stat" id="p8stat"></span>
       <div class="srow">
         <span class="clbl">base-r</span><input type="range" id="p8_rbase" min="0.05" max="0.80" step="0.01" value="0.28"><span class="sval" id="p8_rbase_v">0.28</span>
