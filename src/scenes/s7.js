@@ -220,6 +220,7 @@ export function buildS7() {
   // ── Driver helix (inverse) — grows downward from clock base (y=-2) ─────────
   // Colored amber to represent 13 / {2,4,7} as external driver (Wife's framing).
   const DRIV_C  = 0xC08800;
+  const CLK_R   = 2.6;  // hoisted — also used in clock section below
   const CLK_Y   = -2.0; // clock base world Y
   const INV_Y0  = CLK_Y - 2.0; // driver helix origin — same 2-unit gap below clock as main helix above
   for (let s = 0; s < STEPS; s++) {
@@ -383,8 +384,7 @@ export function buildS7() {
   // ── 3D Tri-base Clock Face — base of the helix ───────────────────────────
   // Lies flat as a horizontal pedestal; helix grows up from its center.
   // Outer ring = decimal (12-hour), middle ring = binary, inner ring = ternary.
-  const CLK_R = 2.6;
-  const CLKG  = new THREE.Group();
+  const CLKG  = new THREE.Group(); // CLK_R hoisted above
   CLKG.position.set(0, -2.0, 0);
   CLKG.rotation.x = -Math.PI / 2; // tilt so ring faces upward like a base plate
   scene.add(CLKG);
