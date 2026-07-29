@@ -155,6 +155,11 @@ input[type=range]::-moz-range-thumb{width:8px;height:8px;background:#00ff88;bord
   .node-lbl{font-size:9px}
   .tab{font-size:.42rem;padding:.2rem .45rem}
 }
+/* large viewports: drive canvas by viewport height instead of width so the
+   scene uses the available vertical space (2:1 aspect caps ~557px at max width) */
+@media(min-width:1200px) and (min-height:800px){
+  #glc{aspect-ratio:auto;height:calc(100vh - 300px);max-height:none}
+}
 /* ── fullscreen ───────────────────────────────────── */
 #fsBtn2{align-self:flex-start}
 #fsBtn2:hover{border-color:#00e5ff!important;color:#00e5ff!important;box-shadow:0 0 10px #00e5ff20}
