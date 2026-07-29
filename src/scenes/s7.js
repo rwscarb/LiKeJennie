@@ -293,6 +293,52 @@ export function buildS7() {
   anchorLine.visible = false;
   scene.add(anchorLine);
 
+  // ── Meniscus — curved surface at clock level, dipping toward driver ─────────
+  // Concave downward: center dips toward driver below, edges level with clock ring.
+  const MEN_RINGS  = 28;
+  const MEN_SEGS   = 64;
+  const MEN_R_MAX  = CLK_R + 0.65;
+  const MEN_DIP    = 0.50; // max center dip in world units
+  const menVerts   = 1 + MEN_RINGS * MEN_SEGS;
+  const menPosArr  = new Float32Array(menVerts * 3);
+  const menGeo     = new THREE.BufferGeometry();
+  const menPosAttr = new THREE.BufferAttribute(menPosArr, 3);
+  menPosAttr.setUsage(THREE.DynamicDrawUsage);
+  menGeo.setAttribute('position', menPosAttr);
+  const menIdx = [];
+  for (let i = 0; i < MEN_SEGS; i++) menIdx.push(0, i + 1, (i + 1) % MEN_SEGS + 1);
+  for (let ring = 0; ring < MEN_RINGS - 1; ring++) {
+    const base = 1 + ring * MEN_SEGS, nxt = base + MEN_SEGS;
+    for (let i = 0; i < MEN_SEGS; i++) {
+      const i1 = (i + 1) % MEN_SEGS;
+      menIdx.push(base + i, nxt + i, base + i1, base + i1, nxt + i, nxt + i1);
+    }
+  }
+  menGeo.setIndex(menIdx);
+  const menMat = new THREE.MeshBasicMaterial({
+    color: 0xC08800, transparent: true, opacity: 0.13,
+    side: THREE.DoubleSide, depthWrite: false,
+  });
+  R.disposables.push(menGeo, menMat);
+  const menMesh = new THREE.Mesh(menGeo, menMat);
+  menMesh.visible = false;
+  scene.add(menMesh);
+
+  const updateMeniscus = (dip) => {
+    menPosArr[0] = 0; menPosArr[1] = CLK_Y - dip; menPosArr[2] = 0;
+    for (let ring = 0; ring < MEN_RINGS; ring++) {
+      const r = MEN_R_MAX * (ring + 1) / MEN_RINGS;
+      const h = CLK_Y - dip * (1 - (r / MEN_R_MAX) ** 2);
+      for (let seg = 0; seg < MEN_SEGS; seg++) {
+        const θ = (seg / MEN_SEGS) * Math.PI * 2;
+        const vi = (1 + ring * MEN_SEGS + seg) * 3;
+        menPosArr[vi] = r * Math.cos(θ); menPosArr[vi + 1] = h; menPosArr[vi + 2] = r * Math.sin(θ);
+      }
+    }
+    menPosAttr.needsUpdate = true;
+  };
+  updateMeniscus(MEN_DIP);
+
   // ── Conceptual shading membrane ───────────────────────────────────────────
   const shadePairs  = STEPS - 1;
   const shadePosArr = new Float32Array(shadePairs * 4 * 3);
@@ -518,6 +564,7 @@ export function buildS7() {
     invLineData.forEach(({ line }) => { line.visible = v; });
     invBackbone.visible = v;
     anchorLine.visible  = v;
+    menMesh.visible     = v;
   };
 
   document.getElementById('p8inv').onclick = () => {
@@ -821,6 +868,9 @@ export function buildS7() {
       }
       ancAttr.needsUpdate = true;
       ancMat.opacity = 0.45 + 0.25 * Math.abs(Math.sin(t * 0.5 + Math.PI));
+
+      // Meniscus dips deeper as driver breathes out (breathInv at max)
+      updateMeniscus(MEN_DIP * breathInv);
     }
 
     // ── Shading membrane ──────────────────────────────────────────────────
