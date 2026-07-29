@@ -221,6 +221,7 @@ export function buildS7() {
   // Colored amber to represent 13 / {2,4,7} as external driver (Wife's framing).
   const DRIV_C  = 0xC08800;
   const CLK_Y   = -2.0; // clock base world Y
+  const INV_Y0  = CLK_Y - 2.0; // driver helix origin — same 2-unit gap below clock as main helix above
   for (let s = 0; s < STEPS; s++) {
     const val = ORBIT[s % M];
 
@@ -231,7 +232,7 @@ export function buildS7() {
     });
     R.disposables.push(geo, mat);
     const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(nodeX(s, 0, rotA), CLK_Y - baseY(s), nodeZ(s, 0, rotA));
+    mesh.position.set(nodeX(s, 0, rotA), INV_Y0 - baseY(s), nodeZ(s, 0, rotA));
     mesh.visible = false;
     mesh.userData = { s, baseEI: 0.28 };
     scene.add(mesh);
@@ -784,7 +785,7 @@ export function buildS7() {
       invMeshes.forEach(m => {
         const s = m.userData.s;
         m.position.x = nodeX(s, 0, rotA);
-        m.position.y = CLK_Y - baseY(s) * breathInv;
+        m.position.y = INV_Y0 - baseY(s) * breathInv;
         m.position.z = nodeZ(s, 0, rotA);
         m.material.emissiveIntensity = m.userData.baseEI
           + 0.12 * Math.abs(Math.sin(t * 1.1 + s * 0.42 + Math.PI));
@@ -792,20 +793,20 @@ export function buildS7() {
 
       invLabelData.forEach(l => {
         const { lx, lz } = labelEnd(l.s, 0, rotA, LEADER_INV);
-        l.lbl.position.set(lx, CLK_Y - baseY(l.s) * breathInv - 0.10, lz);
+        l.lbl.position.set(lx, INV_Y0 - baseY(l.s) * breathInv - 0.10, lz);
         l.lbl.element.textContent = showDecimal ? l.val : l.bt;
       });
 
       invLineData.forEach(({ attr, arr, s }) => {
         const x = nodeX(s, 0, rotA), z = nodeZ(s, 0, rotA);
         arr[0] = x; arr[1] = baseY(s) * breath;           arr[2] = z; // main (above)
-        arr[3] = x; arr[4] = CLK_Y - baseY(s) * breathInv; arr[5] = z; // driver (below)
+        arr[3] = x; arr[4] = INV_Y0 - baseY(s) * breathInv; arr[5] = z; // driver (below)
         attr.needsUpdate = true;
       });
 
       for (let s = 0; s < STEPS; s++) {
         invBBArr[s * 3]     = nodeX(s, 0, rotA);
-        invBBArr[s * 3 + 1] = CLK_Y - baseY(s) * breathInv;
+        invBBArr[s * 3 + 1] = INV_Y0 - baseY(s) * breathInv;
         invBBArr[s * 3 + 2] = nodeZ(s, 0, rotA);
       }
       invBBAttr.needsUpdate = true;
