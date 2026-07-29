@@ -416,10 +416,11 @@ export function buildS7() {
     CLKG.add(new THREE.Line(tg, tm));
   }
 
-  // 12 hour markers — trit faces {6=−1, 7=0, 8=+1} + balance group {2,4} (h=7 already hot)
-  const clkHotC = { 6: 0xFF6B35, 7: 0x5060FF, 8: 0x00E5FF };
-  const clkHotS = { 6: '#FF6B35', 7: '#7080FF', 8: '#00E5FF' };
-  const clkHotLabel = { 6: '6  −1', 7: '7   0', 8: '8  +1' };
+  // 12 hour markers — trit faces {5=−1, 6=0, 7=+1}, balanced on the 6
+  // + balance group {2,4} (h=7 already hot as the +1 trit)
+  const clkHotC = { 5: 0xFF6B35, 6: 0x5060FF, 7: 0x00E5FF };
+  const clkHotS = { 5: '#FF6B35', 6: '#7080FF', 7: '#00E5FF' };
+  const clkHotLabel = { 5: '5  −1', 6: '6   0', 7: '7  +1' };
   const balC = { 2: 0xC08800, 4: 0xC08800 }; // {2,4,7} sum=13; h=7 already hot
   for (let h = 1; h <= 12; h++) {
     const ang = Math.PI / 2 - (h % 12) * (Math.PI / 6);
