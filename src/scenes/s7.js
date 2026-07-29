@@ -217,41 +217,43 @@ export function buildS7() {
   R.disposables.push(envGeo, envMat);
   scene.add(new THREE.Line(envGeo, envMat));
 
-  // ── Pulsating inversion layer (strand A phase + counter-phase Y) ──────────
+  // ── Driver helix (inverse) — grows downward from clock base (y=-2) ─────────
+  // Colored amber to represent 13 / {2,4,7} as external driver (Wife's framing).
+  const DRIV_C  = 0xC08800;
+  const CLK_Y   = -2.0; // clock base world Y
   for (let s = 0; s < STEPS; s++) {
     const val = ORBIT[s % M];
-    const st  = STYLE[val];
 
     const geo = new THREE.SphereGeometry(0.11, 14, 9);
     const mat = new THREE.MeshPhongMaterial({
-      color: st.c, emissive: st.c, emissiveIntensity: 0.22,
-      transparent: true, opacity: 0.55, shininess: 80,
+      color: DRIV_C, emissive: DRIV_C, emissiveIntensity: 0.28,
+      transparent: true, opacity: 0.60, shininess: 80,
     });
     R.disposables.push(geo, mat);
     const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(nodeX(s, 0, rotA), baseY(s), nodeZ(s, 0, rotA));
+    mesh.position.set(nodeX(s, 0, rotA), CLK_Y - baseY(s), nodeZ(s, 0, rotA));
     mesh.visible = false;
-    mesh.userData = { s, baseEI: 0.22 };
+    mesh.userData = { s, baseEI: 0.28 };
     scene.add(mesh);
     invMeshes.push(mesh);
 
     const div = document.createElement('div');
     div.className = 'node-lbl';
-    div.textContent = BT[val];
-    div.style.cssText = `font-size:10px;color:${st.cs};opacity:0.72;letter-spacing:.02em;`;
+    div.textContent = String(val);
+    div.style.cssText = 'font-size:10px;color:#C08800;opacity:0.72;letter-spacing:.02em;';
     const lbl = new CSS2DObject(div);
     lbl.visible = false;
     scene.add(lbl);
     R.css2dObjects.push(lbl);
-    invLabelData.push({ lbl, val, bt: BT[val], cs: st.cs, s });
+    invLabelData.push({ lbl, val, bt: BT[val], cs: '#C08800', s });
 
-    // Phase-tension line (node Y → ghost Y, same XZ as strand A)
+    // Spine line: main node above → through clock → driver node below
     const pArr  = new Float32Array(6);
     const pGeo  = new THREE.BufferGeometry();
     const pAttr = new THREE.BufferAttribute(pArr, 3);
     pAttr.setUsage(THREE.DynamicDrawUsage);
     pGeo.setAttribute('position', pAttr);
-    const pMat  = new THREE.LineBasicMaterial({ color: st.c, transparent: true, opacity: 0.22 });
+    const pMat  = new THREE.LineBasicMaterial({ color: DRIV_C, transparent: true, opacity: 0.18 });
     R.disposables.push(pGeo, pMat);
     const pLine = new THREE.Line(pGeo, pMat);
     pLine.visible = false;
@@ -259,13 +261,13 @@ export function buildS7() {
     invLineData.push({ attr: pAttr, arr: pArr, s, line: pLine });
   }
 
-  // Inversion backbone
+  // Driver backbone
   const invBBArr  = new Float32Array(STEPS * 3);
   const invBBGeo  = new THREE.BufferGeometry();
   const invBBAttr = new THREE.BufferAttribute(invBBArr, 3);
   invBBAttr.setUsage(THREE.DynamicDrawUsage);
   invBBGeo.setAttribute('position', invBBAttr);
-  const invBBMat = new THREE.LineBasicMaterial({ color: 0xdd88ff, transparent: true, opacity: 0.30 });
+  const invBBMat = new THREE.LineBasicMaterial({ color: DRIV_C, transparent: true, opacity: 0.28 });
   R.disposables.push(invBBGeo, invBBMat);
   const invBackbone = new THREE.Line(invBBGeo, invBBMat);
   invBackbone.visible = false;
@@ -777,12 +779,12 @@ export function buildS7() {
     }
     envAttr.needsUpdate = true;
 
-    // ── Inversion updates ──────────────────────────────────────────────────
+    // ── Driver helix updates (inverse, below clock) ───────────────────────
     if (showInversion) {
       invMeshes.forEach(m => {
         const s = m.userData.s;
         m.position.x = nodeX(s, 0, rotA);
-        m.position.y = baseY(s) * breathInv;
+        m.position.y = CLK_Y - baseY(s) * breathInv;
         m.position.z = nodeZ(s, 0, rotA);
         m.material.emissiveIntensity = m.userData.baseEI
           + 0.12 * Math.abs(Math.sin(t * 1.1 + s * 0.42 + Math.PI));
@@ -790,26 +792,26 @@ export function buildS7() {
 
       invLabelData.forEach(l => {
         const { lx, lz } = labelEnd(l.s, 0, rotA, LEADER_INV);
-        l.lbl.position.set(lx, baseY(l.s) * breathInv + 0.10, lz);
+        l.lbl.position.set(lx, CLK_Y - baseY(l.s) * breathInv - 0.10, lz);
         l.lbl.element.textContent = showDecimal ? l.val : l.bt;
       });
 
       invLineData.forEach(({ attr, arr, s }) => {
         const x = nodeX(s, 0, rotA), z = nodeZ(s, 0, rotA);
-        arr[0] = x; arr[1] = baseY(s) * breath;    arr[2] = z;
-        arr[3] = x; arr[4] = baseY(s) * breathInv; arr[5] = z;
+        arr[0] = x; arr[1] = baseY(s) * breath;           arr[2] = z; // main (above)
+        arr[3] = x; arr[4] = CLK_Y - baseY(s) * breathInv; arr[5] = z; // driver (below)
         attr.needsUpdate = true;
       });
 
       for (let s = 0; s < STEPS; s++) {
         invBBArr[s * 3]     = nodeX(s, 0, rotA);
-        invBBArr[s * 3 + 1] = baseY(s) * breathInv;
+        invBBArr[s * 3 + 1] = CLK_Y - baseY(s) * breathInv;
         invBBArr[s * 3 + 2] = nodeZ(s, 0, rotA);
       }
       invBBAttr.needsUpdate = true;
 
       const ancRcur = helixR(ANCHOR_S) + 0.55;
-      const ancY    = baseY(ANCHOR_S) * breathInv;
+      const ancY    = CLK_Y; // gold ring sits at clock level — the dividing boundary
       for (let i = 0; i <= ancN; i++) {
         const θ = (i / ancN) * Math.PI * 2;
         ancArr[i * 3]     = ancRcur * Math.cos(θ);
