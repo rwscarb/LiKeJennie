@@ -70,13 +70,13 @@ input[type=range]::-moz-range-thumb{width:8px;height:8px;background:#00ff88;bord
 /* ── hint ─────────────────────────────────────────── */
 .hint{text-align:center;font-size:.54rem;color:#c1c1c1;letter-spacing:.09em;margin-top:.55rem;padding-bottom:.25rem;position:relative;z-index:2;text-transform:uppercase}
 /* ── tooltip ──────────────────────────────────────── */
-#tt{position:fixed;background:#020206;border:1px solid #0a2028;border-radius:3px;padding:8px 12px;font-family:'Courier New',monospace;font-size:.68rem;color:#00ff88;pointer-events:none;opacity:0;transition:opacity .08s;z-index:9999;max-width:230px;line-height:1.65;box-shadow:0 4px 24px #00000099,0 0 20px #00e5ff08}
+#tt{position:fixed;background:#030507;border:1px solid #0d2535;border-radius:4px;padding:9px 13px;font-family:'Courier New',monospace;font-size:.70rem;color:#5a8a6a;pointer-events:none;opacity:0;transition:opacity .10s;z-index:9999;max-width:255px;min-width:130px;line-height:1.60;box-shadow:0 6px 28px #000000bb,0 0 18px #00e5ff06;word-break:break-word}
 #tt.show{opacity:1}
-#tt.pinned{border-color:#ff9800;box-shadow:0 4px 24px #00000099,0 0 14px #ff980030}
+#tt.pinned{border-color:#ff9800;box-shadow:0 6px 28px #000000bb,0 0 14px #ff980030}
 #tt.pinned::after{content:'📌';position:absolute;top:4px;right:6px;font-size:.7rem}
-#tt .th{font-size:1.35rem;color:#ff9800;margin-bottom:4px}
-#tt .tr{color:#2a5040;margin:0;font-size:.85rem}
-#tt .tr b{color:#70e880}
+#tt .th{font-size:.95rem;color:#ff9800;margin:0 0 6px;padding-bottom:5px;border-bottom:1px solid #0d2535;letter-spacing:.03em;word-break:normal}
+#tt .tr{color:#6a9a7a;margin:2px 0;font-size:.70rem}
+#tt .tr b{color:#8ed88e}
 /* ── rain canvas ──────────────────────────────────── */
 #rain{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.28;mix-blend-mode:screen}
 /* ── writeup ──────────────────────────────────────── */
@@ -132,7 +132,7 @@ input[type=range]::-moz-range-thumb{width:8px;height:8px;background:#00ff88;bord
   .hint{display:none}
   .refs{padding:0 .4rem}
   .ref{padding:3px 7px}
-  #tt{font-size:.6rem;max-width:190px}
+  #tt{font-size:.62rem;max-width:200px}
   /* portrait: let the canvas use vertical space */
   #glc{aspect-ratio:3/4;max-height:60vh}
   .ov{transform:scale(.9);transform-origin:top right;font-size:7px}
