@@ -340,26 +340,42 @@ export function buildS7() {
 
   // Three concentric face rings
   { const g = new THREE.TorusGeometry(CLK_R,         0.045, 8, 72);
-    const m = new THREE.MeshBasicMaterial({ color: 0x0a5a70, transparent: true, opacity: 0.85 });
+    const m = new THREE.MeshBasicMaterial({ color: 0x0a6a80, transparent: true, opacity: 0.9 });
     R.disposables.push(g, m); CLKG.add(new THREE.Mesh(g, m)); }
-  { const g = new THREE.TorusGeometry(CLK_R * 0.72,  0.025, 8, 48);
-    const m = new THREE.MeshBasicMaterial({ color: 0x0a3a50, transparent: true, opacity: 0.55 });
+  { const g = new THREE.TorusGeometry(CLK_R * 0.68,  0.022, 8, 48);
+    const m = new THREE.MeshBasicMaterial({ color: 0x0a3a60, transparent: true, opacity: 0.5 });
     R.disposables.push(g, m); CLKG.add(new THREE.Mesh(g, m)); }
-  { const g = new THREE.TorusGeometry(CLK_R * 0.44,  0.025, 8, 36);
-    const m = new THREE.MeshBasicMaterial({ color: 0x3a1a5a, transparent: true, opacity: 0.55 });
+  { const g = new THREE.TorusGeometry(CLK_R * 0.36,  0.020, 8, 32);
+    const m = new THREE.MeshBasicMaterial({ color: 0x3a1060, transparent: true, opacity: 0.45 });
     R.disposables.push(g, m); CLKG.add(new THREE.Mesh(g, m)); }
 
+  // 60 second tick marks on outer ring; major ticks at hour positions
+  for (let i = 0; i < 60; i++) {
+    const a    = Math.PI / 2 - i * (2 * Math.PI / 60);
+    const isMaj = i % 5 === 0;
+    const r0   = CLK_R * (isMaj ? 0.86 : 0.92);
+    const r1   = CLK_R * 0.98;
+    const tg   = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(r0 * Math.cos(a), r0 * Math.sin(a), 0),
+      new THREE.Vector3(r1 * Math.cos(a), r1 * Math.sin(a), 0),
+    ]);
+    const tm   = new THREE.LineBasicMaterial({ color: isMaj ? 0x2a8aaa : 0x0a3050, transparent: true, opacity: isMaj ? 0.75 : 0.35 });
+    R.disposables.push(tg, tm);
+    CLKG.add(new THREE.Line(tg, tm));
+  }
+
   // 12 hour markers — orbit trit faces {6=−1, 7=0, 8=+1} highlighted
-  const clkHotC = { 6: 0xFF6B35, 7: 0x5060FF, 8: 0x00ff88 };
-  const clkHotS = { 6: '#FF6B35', 7: '#7080FF', 8: '#00ff88' };
+  const clkHotC = { 6: 0xFF6B35, 7: 0x5060FF, 8: 0x00E5FF };
+  const clkHotS = { 6: '#FF6B35', 7: '#7080FF', 8: '#00E5FF' };
+  const clkHotLabel = { 6: '6  −1', 7: '7   0', 8: '8  +1' };
   for (let h = 1; h <= 12; h++) {
     const ang = Math.PI / 2 - (h % 12) * (Math.PI / 6);
     const hot = clkHotC[h] !== undefined;
     const c   = hot ? clkHotC[h] : 0x0e3a4a;
-    const geo = new THREE.SphereGeometry(hot ? 0.18 : 0.09, 14, 9);
+    const geo = new THREE.SphereGeometry(hot ? 0.22 : 0.07, 16, 10);
     const mat = new THREE.MeshPhongMaterial({
-      color: c, emissive: c, emissiveIntensity: hot ? 0.5 : 0.15,
-      transparent: true, opacity: hot ? 0.95 : 0.6, shininess: 70,
+      color: c, emissive: c, emissiveIntensity: hot ? 0.6 : 0.1,
+      transparent: true, opacity: hot ? 0.95 : 0.5, shininess: 80,
     });
     R.disposables.push(geo, mat);
     const mesh = new THREE.Mesh(geo, mat);
@@ -368,10 +384,10 @@ export function buildS7() {
     if (hot) {
       const div = document.createElement('div');
       div.className = 'node-lbl';
-      div.style.cssText = `font-size:9px;color:${clkHotS[h]};`;
-      div.textContent = `${h} [${toBT(h)}]`;
+      div.style.cssText = `font-size:10px;font-weight:bold;color:${clkHotS[h]};letter-spacing:.04em;`;
+      div.textContent = clkHotLabel[h];
       const lbl = new CSS2DObject(div);
-      lbl.position.set((CLK_R + 0.55) * Math.cos(ang), (CLK_R + 0.55) * Math.sin(ang), 0);
+      lbl.position.set((CLK_R + 0.62) * Math.cos(ang), (CLK_R + 0.62) * Math.sin(ang), 0);
       CLKG.add(lbl); R.css2dObjects.push(lbl);
     }
   }
@@ -401,34 +417,20 @@ export function buildS7() {
   const handM = mkHand(0x00E5FF, CLK_R * 0.76); // minute
   const handS = mkHand(0xFF6B35, CLK_R * 0.90); // second
 
-  // Binary dots: 6 bits of current second, column right of center
-  const binDotMats = [];
-  for (let b = 5; b >= 0; b--) {
-    const geo = new THREE.SphereGeometry(0.10, 10, 7);
-    const mat = new THREE.MeshPhongMaterial({
-      color: 0x0a1a2a, emissive: 0x000000, emissiveIntensity: 0,
-      transparent: true, opacity: 0.8, shininess: 60,
-    });
+  // Orbit-index dot at the 6 inner positions (mod-9 orbit on inner ring)
+  // Orbit: {1,2,4,5,7,8} — trit faces 5=−1, 6=0, 7=+1 at 12-clock hours 5,6,7
+  const INNER_R = CLK_R * 0.36;
+  const orbitInner = [1, 2, 4, 8, 7, 5]; // ×2 mod 9 cycle
+  for (let i = 0; i < 6; i++) {
+    const a   = Math.PI / 2 - i * (Math.PI / 3);
+    const val = orbitInner[i];
+    const col = val === 7 ? 0x5060FF : val === 5 ? 0xFF6B35 : val === 1 ? 0xFFD700 : 0x00E5FF;
+    const geo = new THREE.SphereGeometry(0.10, 12, 8);
+    const mat = new THREE.MeshPhongMaterial({ color: col, emissive: col, emissiveIntensity: 0.4, transparent: true, opacity: 0.75, shininess: 70 });
     R.disposables.push(geo, mat);
     const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(CLK_R * 0.87, (2.5 - b) * 0.31, 0.02);
+    mesh.position.set(INNER_R * Math.cos(a), INNER_R * Math.sin(a), 0);
     CLKG.add(mesh);
-    binDotMats.push(mat);
-  }
-
-  // BT trit dots: up to 4 trits for current second in BT, column left of center
-  const tritDotMats = [];
-  for (let tt = 0; tt < 4; tt++) {
-    const geo = new THREE.SphereGeometry(0.12, 10, 7);
-    const mat = new THREE.MeshPhongMaterial({
-      color: 0x0a0a0a, emissive: 0x000000, emissiveIntensity: 0,
-      transparent: true, opacity: 0.7, shininess: 60,
-    });
-    R.disposables.push(geo, mat);
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(-CLK_R * 0.87, (1.5 - tt) * 0.38, 0.02);
-    CLKG.add(mesh);
-    tritDotMats.push(mat);
   }
 
   // ── HUD ──────────────────────────────────────────────────────────────────
@@ -787,22 +789,6 @@ export function buildS7() {
           `₃ <span style="color:#FF6B35">${toBT(hh)}</span>` +
           `·<span style="color:#00E5FF">${toBT(mm)}</span>` +
           `·<span style="color:#FFD700">${toBT(ss)}</span></div>`;
-      // Binary dots: 6 bits of current second
-      for (let b = 0; b < 6; b++) {
-        const lit = (ss >> b) & 1;
-        binDotMats[b].color.setHex(lit ? 0x00e5ff : 0x0a1a2a);
-        binDotMats[b].emissive.setHex(lit ? 0x00e5ff : 0x000000);
-        binDotMats[b].emissiveIntensity = lit ? 0.85 : 0;
-      }
-      // BT trit dots: current second in balanced ternary, padded to 4 trits
-      const btSec = toBT(ss).padStart(4, '6');
-      for (let tt = 0; tt < 4; tt++) {
-        const ch  = btSec[tt];
-        const col = ch === '7' ? 0x00E5FF : ch === '5' ? 0xFF6B35 : 0x0a0a0a;
-        tritDotMats[tt].color.setHex(col);
-        tritDotMats[tt].emissive.setHex(ch === '6' ? 0x000000 : col);
-        tritDotMats[tt].emissiveIntensity = ch === '6' ? 0 : 0.85;
-      }
     }
 
     R.labelRenderer.render(scene, camera);
