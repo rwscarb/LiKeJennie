@@ -680,24 +680,24 @@ export function buildS7() {
 
   const updateDecoder = () => {
     if (!decodePanel) return;
-    let html = '';
+    let cols = ''; let decoded = '';
     for (let s = 0; s < STEPS; s++) {
       const idx = Math.round(s * (N_ENV - 1) / (STEPS - 1));
       const wx = envArr[idx * 3], wz = envArr[idx * 3 + 2];
       const r = Math.sqrt(wx * wx + wz * wz);
-      // find closest orbit value
-      const ov = ORBIT.reduce((best, v) => {
-        return Math.abs(R_BASE + v * 0.11 - r) < Math.abs(R_BASE + best * 0.11 - r) ? v : best;
-      }, ORBIT[0]);
+      const ov = ORBIT.reduce((best, v) =>
+        Math.abs(R_BASE + v * 0.11 - r) < Math.abs(R_BASE + best * 0.11 - r) ? v : best
+      , ORBIT[0]);
       const orbitIdx = ORBIT.indexOf(ov);
       const cands = ORBIT_CANDS[orbitIdx];
       const known = msgChars[s] ? msgChars[s].toLowerCase() : null;
+      decoded += known || '·';
       const candsHtml = cands.map(ch =>
         ch === known ? `<span class="hit">${ch}</span>` : `<span class="cands">${ch}</span>`
       ).join('');
-      html += `<div class="dr"><div class="ov">${ov}</div><div>${candsHtml}</div></div>`;
+      cols += `<div class="dr"><div class="orv">${ov}</div><div>${candsHtml}</div></div>`;
     }
-    decodePanel.innerHTML = html;
+    decodePanel.innerHTML = `<div class="decode-msg">${decoded}</div><div class="decode-cols">${cols}</div>`;
   };
 
   // ── Spectrograph canvas ──────────────────────────────────────────────────

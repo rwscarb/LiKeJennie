@@ -50,9 +50,11 @@ h1{font-size:3.5rem;color:#ff9800;letter-spacing:.35em;line-height:1;margin-bott
 #spec-panel.vis{display:flex}
 #spec-panel canvas{border:1px solid rgba(0,255,200,0.18);background:rgba(0,8,6,0.75);border-radius:3px;display:block}
 #spec-panel .spec-lbl{font-family:'Courier New',monospace;font-size:8px;color:#00ffcc99;letter-spacing:.06em;text-transform:uppercase}
-#decode-panel{font-family:'Courier New',monospace;font-size:7px;line-height:1;color:#00ffcc55;width:240px;display:flex;flex-direction:row;justify-content:space-between;padding:2px 6px;gap:0}
+#decode-panel{font-family:'Courier New',monospace;font-size:7px;line-height:1;color:#00ffcc55;width:240px;display:flex;flex-direction:column;gap:3px;padding:2px 6px}
+#decode-panel .decode-msg{font-size:11px;font-weight:bold;color:#fff;letter-spacing:.12em;text-shadow:0 0 8px #00ffcc;white-space:pre;width:228px}
+#decode-panel .decode-cols{display:flex;flex-direction:row;justify-content:space-between;width:228px}
 #decode-panel .dr{display:flex;flex-direction:column;align-items:center;width:10px}
-#decode-panel .dr .ov{color:#ff9800;font-size:6px}
+#decode-panel .dr .orv{color:#ff9800;font-size:6px}
 #decode-panel .dr .cands{color:#00ffcc33;font-size:5.5px;display:none}
 #decode-panel .dr .hit{color:#fff;font-weight:bold;font-size:9px;text-shadow:0 0 5px #00ffcc;display:block}
 /* ── controls ─────────────────────────────────────── */
