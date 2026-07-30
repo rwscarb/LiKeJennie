@@ -680,24 +680,30 @@ export function buildS7() {
 
   const updateDecoder = () => {
     if (!decodePanel) return;
-    let cols = ''; let decoded = '';
-    for (let s = 0; s < STEPS; s++) {
-      const idx = Math.round(s * (N_ENV - 1) / (STEPS - 1));
-      const wx = envArr[idx * 3], wz = envArr[idx * 3 + 2];
-      const r = Math.sqrt(wx * wx + wz * wz);
-      const ov = ORBIT.reduce((best, v) =>
-        Math.abs(R_BASE + v * 0.11 - r) < Math.abs(R_BASE + best * 0.11 - r) ? v : best
-      , ORBIT[0]);
-      const orbitIdx = ORBIT.indexOf(ov);
-      const cands = ORBIT_CANDS[orbitIdx];
-      const known = msgChars[s] ? msgChars[s].toLowerCase() : null;
-      decoded += known || '·';
-      const candsHtml = cands.map(ch =>
-        ch === known ? `<span class="hit">${ch}</span>` : `<span class="cands">${ch}</span>`
-      ).join('');
-      cols += `<div class="dr"><div class="orv">${ov}</div><div>${candsHtml}</div></div>`;
+    const decoded = msgChars.length
+      ? msgChars.map(c => c || '·').join('')
+      : '·'.repeat(STEPS);
+    let colsHtml = '';
+    if (fibVariant === 'orbit') {
+      let cols = '';
+      for (let s = 0; s < STEPS; s++) {
+        const idx = Math.round(s * (N_ENV - 1) / (STEPS - 1));
+        const wx = envArr[idx * 3], wz = envArr[idx * 3 + 2];
+        const r = Math.sqrt(wx * wx + wz * wz);
+        const ov = ORBIT.reduce((best, v) =>
+          Math.abs(R_BASE + v * 0.11 - r) < Math.abs(R_BASE + best * 0.11 - r) ? v : best
+        , ORBIT[0]);
+        const orbitIdx = ORBIT.indexOf(ov);
+        const cands = ORBIT_CANDS[orbitIdx];
+        const known = msgChars[s] ? msgChars[s].toLowerCase() : null;
+        const candsHtml = cands.map(ch =>
+          ch === known ? `<span class="hit">${ch}</span>` : `<span class="cands">${ch}</span>`
+        ).join('');
+        cols += `<div class="dr"><div class="orv">${ov}</div><div>${candsHtml}</div></div>`;
+      }
+      colsHtml = `<div class="decode-cols">${cols}</div>`;
     }
-    decodePanel.innerHTML = `<div class="decode-msg">${decoded}</div><div class="decode-cols">${cols}</div>`;
+    decodePanel.innerHTML = `<div class="decode-msg">${decoded}</div>${colsHtml}`;
   };
 
   // ── Spectrograph canvas ──────────────────────────────────────────────────
@@ -943,7 +949,7 @@ export function buildS7() {
       envArr[i * 3 + 2] = radius * Math.sin(angle);
     }
     envAttr.needsUpdate = true;
-    if (showSpec) { drawSpec(t); if (fibVariant === 'orbit') updateDecoder(); }
+    if (showSpec) { drawSpec(t); updateDecoder(); }
 
     // ── Driver helix updates (inverse, below clock) ───────────────────────
     if (showInversion) {
