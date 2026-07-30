@@ -141,7 +141,7 @@ export function buildS10() {
     const isDriver = DRIVER.has(v);
     div.style.cssText = [
       `font-family:'Courier New',monospace`,
-      `font-size:${isDriver ? 16 : 14}px`,
+      `font-size:${isDriver ? 32 : 28}px`,
       `font-weight:bold`,
       `color:${colorHex(v)}`,
       `text-shadow:0 0 10px currentColor`,
@@ -170,7 +170,7 @@ export function buildS10() {
     div.textContent = String(v);
     div.style.cssText = [
       `font-family:'Courier New',monospace`,
-      `font-size:10px`,
+      `font-size:20px`,
       `color:${v === 6 ? '#253545' : '#1e2e1e'}`,
       `pointer-events:none;user-select:none`,
     ].join(';');
@@ -184,7 +184,7 @@ export function buildS10() {
   const stepDiv = document.createElement('div');
   stepDiv.style.cssText = [
     `font-family:'Courier New',monospace`,
-    `font-size:11px`,
+    `font-size:22px`,
     `text-align:center`,
     `line-height:1.8`,
     `pointer-events:none`,
@@ -200,9 +200,9 @@ export function buildS10() {
   const sumDiv = document.createElement('div');
   sumDiv.style.cssText = 'font-family:\'Courier New\',monospace;text-align:center;pointer-events:none;user-select:none;line-height:1.85';
   sumDiv.innerHTML =
-    `<div style="color:#2a5a3a;font-size:8px">orbit sums to 27 = 3³</div>` +
-    `<div style="color:#ff9800;font-size:7px">{2,4,7} driver → 13</div>` +
-    `<div style="color:#00ff88;font-size:7px">{1,5,8} echo → 14</div>`;
+    `<div style="color:#2a5a3a;font-size:16px">orbit sums to 27 = 3³</div>` +
+    `<div style="color:#ff9800;font-size:14px">{2,4,7} driver → 13</div>` +
+    `<div style="color:#00ff88;font-size:14px">{1,5,8} echo → 14</div>`;
   const sumLbl = new CSS2DObject(sumDiv);
   sumLbl.position.set(0, 0.15, R_ABS + 0.9);
   scene.add(sumLbl);
@@ -211,7 +211,7 @@ export function buildS10() {
   // 9 = absorbing fixed point label
   const ninePos = absentPos(2);
   const nineDiv = document.createElement('div');
-  nineDiv.innerHTML = `<div style="font-family:'Courier New',monospace;font-size:7px;color:#1e1e2e;text-align:center;pointer-events:none;line-height:1.5">9→0<br><span style="color:#12121e">fixed</span></div>`;
+  nineDiv.innerHTML = `<div style="font-family:'Courier New',monospace;font-size:14px;color:#1e1e2e;text-align:center;pointer-events:none;line-height:1.5">9→0<br><span style="color:#12121e">fixed</span></div>`;
   const nineLbl = new CSS2DObject(nineDiv);
   nineLbl.position.set(ninePos.x, ABS_R + 0.55, ninePos.z);
   scene.add(nineLbl);
@@ -219,7 +219,7 @@ export function buildS10() {
 
   // {3,6} sub-orbit label
   const subDiv = document.createElement('div');
-  subDiv.innerHTML = `<div style="font-family:'Courier New',monospace;font-size:7px;color:#1e2e1e;text-align:center;pointer-events:none;line-height:1.5">3↔6<br>sub-orbit</div>`;
+  subDiv.innerHTML = `<div style="font-family:'Courier New',monospace;font-size:14px;color:#1e2e1e;text-align:center;pointer-events:none;line-height:1.5">3↔6<br>sub-orbit</div>`;
   const subLbl = new CSS2DObject(subDiv);
   // position between the 3 and 6 absent nodes
   const p3 = absentPos(0), p6 = absentPos(1);
@@ -245,13 +245,13 @@ export function buildS10() {
   // OV
   R.ov.innerHTML =
     `<div style="color:#4ac880;letter-spacing:.1em">10 · ORBIT CYCLE</div>` +
-    `<div style="color:#ff9800;font-size:8px;margin-top:2px">×2 mod 9 · period 6</div>` +
-    `<div style="color:#5a8a6a;font-size:7.5px;margin-top:2px">1→2→4→8→7→5→1</div>` +
-    `<div style="font-size:7px;margin-top:2px">` +
+    `<div style="color:#ff9800;font-size:16px;margin-top:2px">×2 mod 9 · period 6</div>` +
+    `<div style="color:#5a8a6a;font-size:15px;margin-top:2px">1→2→4→8→7→5→1</div>` +
+    `<div style="font-size:14px;margin-top:2px">` +
       `<span style="color:#ff9800">driver {2,4,7}</span>&nbsp;` +
       `<span style="color:#00ff88">echo {1,5,8}</span></div>` +
-    `<div style="color:#5a7a8a;font-size:7px;margin-top:2px">1↔8 · 2↔7 · 4↔5 (sum 9)</div>` +
-    `<div style="color:#1e2e1e;font-size:7px;margin-top:1px">absent: 3, 6, 9</div>`;
+    `<div style="color:#5a7a8a;font-size:14px;margin-top:2px">1↔8 · 2↔7 · 4↔5 (sum 9)</div>` +
+    `<div style="color:#1e2e1e;font-size:14px;margin-top:1px">absent: 3, 6, 9</div>`;
 
   // ── Animation ─────────────────────────────────────────────────────────
   let lastStepI = -1;
@@ -327,18 +327,18 @@ export function buildS10() {
       const raw2 = cur * 2;
       const col  = colorHex(next);
       stepDiv.innerHTML =
-        `<span style="color:#3a5a3a;font-size:9px">start</span><br>` +
-        `<span style="color:${colorHex(cur)};font-size:15px;font-weight:bold">${cur}</span><br>` +
-        `<span style="color:#2a4a2a;font-size:9px">× 2 = ${raw2}</span><br>` +
-        `<span style="color:#2a4a2a;font-size:9px">${raw2} mod 9 =</span><br>` +
-        `<span style="color:${col};font-size:15px;font-weight:bold">${next}</span>`;
+        `<span style="color:#3a5a3a;font-size:18px">start</span><br>` +
+        `<span style="color:${colorHex(cur)};font-size:30px;font-weight:bold">${cur}</span><br>` +
+        `<span style="color:#2a4a2a;font-size:18px">× 2 = ${raw2}</span><br>` +
+        `<span style="color:#2a4a2a;font-size:18px">${raw2} mod 9 =</span><br>` +
+        `<span style="color:${col};font-size:30px;font-weight:bold">${next}</span>`;
     }
     if (!isDwelling && stepI !== lastStepI - 1 && lastStepI !== stepI) {
       // clear mid-travel
       const cur = ORBIT[stepI];
       stepDiv.innerHTML =
-        `<span style="color:#2a4a2a;font-size:9px">× 2 mod 9</span><br>` +
-        `<span style="color:${colorHex(cur)};font-size:13px;font-weight:bold">${cur} →</span>`;
+        `<span style="color:#2a4a2a;font-size:18px">× 2 mod 9</span><br>` +
+        `<span style="color:${colorHex(cur)};font-size:26px;font-weight:bold">${cur} →</span>`;
     }
   };
 }
