@@ -639,12 +639,15 @@ export function buildS7() {
     if (spinB !== 0) spinB = spinB < 0 ? -v : v;
   });
 
-  let fibMode = false;
+  let fibVariant = ''; // '' | 'ga' | 'rational' | 'sine' | 'orbit'
+  const RATIONAL_A = (2 * Math.PI) / 7; // 7-fold symmetry — closes after 7 steps
+  const FIB_IDS = { ga: 'p8v_fib', rational: 'p8v_fibr', sine: 'p8v_fibs', orbit: 'p8v_fibo' };
 
-  const setFib = on => {
-    fibMode = on;
-    envMat.opacity = on ? 0.72 : 0;
-    document.getElementById('p8v_fib').classList.toggle('lit', on);
+  const setFibVariant = v => {
+    fibVariant = v;
+    envMat.opacity = v ? 0.72 : 0;
+    Object.values(FIB_IDS).forEach(id => document.getElementById(id).classList.remove('lit'));
+    if (v) document.getElementById(FIB_IDS[v]).classList.add('lit');
   };
 
   const PRESETS = {
@@ -666,8 +669,10 @@ export function buildS7() {
   // on the helix axis (0,7,0). Needed because shared links / panning can leave the
   // pivot off-axis, which makes the helix swing around instead of spinning in place.
   document.getElementById('p8center').onclick = () => applyPreset('side');
-  document.getElementById('p8v_fib').onclick = () => setFib(!fibMode);
-  document.getElementById('p8men').onclick    = () => setMeniscus(!showMeniscus);
+  Object.entries(FIB_IDS).forEach(([v, id]) => {
+    document.getElementById(id).onclick = () => setFibVariant(fibVariant === v ? '' : v);
+  });
+  document.getElementById('p8men').onclick = () => setMeniscus(!showMeniscus);
 
   // ── Hover / raycasting ───────────────────────────────────────────────────
   const raycaster = new THREE.Raycaster();
@@ -801,9 +806,22 @@ export function buildS7() {
 
     for (let i = 0; i < N_ENV; i++) {
       const s = (i / (N_ENV - 1)) * (STEPS - 1);
-      envArr[i * 3]     = helixR(s) * Math.cos(s * GA + rotA);
+      let angle = s * GA + rotA;
+      let radius = helixR(s);
+      if (fibVariant === 'rational') {
+        angle = s * RATIONAL_A + rotA;
+      } else if (fibVariant === 'sine') {
+        radius = helixR(s) + 0.38 * Math.sin(s * Math.PI / 3);
+      } else if (fibVariant === 'orbit') {
+        const si = Math.floor(s);
+        const sf = s - si;
+        const v0 = ORBIT[si % M];
+        const v1 = ORBIT[(si + 1) % M];
+        radius = R_BASE + (v0 + (v1 - v0) * sf) * 0.11;
+      }
+      envArr[i * 3]     = radius * Math.cos(angle);
       envArr[i * 3 + 1] = baseY(s) * breath;
-      envArr[i * 3 + 2] = helixR(s) * Math.sin(s * GA + rotA);
+      envArr[i * 3 + 2] = radius * Math.sin(angle);
     }
     envAttr.needsUpdate = true;
 

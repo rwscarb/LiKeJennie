@@ -355,6 +355,9 @@ afterUpdate(() => {
       <button class="btn" style="opacity:.35;letter-spacing:.18em;padding:3px 7px" on:click={() => { p8adv = !p8adv; }} title="advanced controls">···</button>
       <div style="display:{p8adv ? 'contents' : 'none'}">
       <button class="btn" id="p8v_fib">FIB</button>
+      <button class="btn" id="p8v_fibr">RATIONAL</button>
+      <button class="btn" id="p8v_fibs">SINE</button>
+      <button class="btn" id="p8v_fibo">ORBIT</button>
       <button class="btn" id="p8men">MENISCUS</button>
       <button class="btn" id="p8inv">INVERSION</button>
       <button class="btn" id="p8shade">SHADING</button>
