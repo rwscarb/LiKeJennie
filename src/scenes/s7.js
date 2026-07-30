@@ -671,7 +671,7 @@ export function buildS7() {
   };
 
   const syncOrbitLabels = () => {
-    if (fibVariant !== 'orbit' || !msgChars.length) {
+    if (fibVariant !== 'orbit' || !msgChars.length || !showSpec) {
       allLabels.forEach(l => {
         l.lbl.element.textContent = showDecimal ? l.val : l.bt;
         l.lbl.element.style.fontSize = '';
@@ -826,6 +826,7 @@ export function buildS7() {
     showSpec = !showSpec;
     document.getElementById('p8spec_btn').classList.toggle('lit', showSpec);
     specPanel.classList.toggle('vis', showSpec);
+    syncOrbitLabels();
   };
 
   // defaults: FIB active, decoder visible + Jennie message pre-loaded
@@ -833,9 +834,7 @@ export function buildS7() {
   const DEFAULT_MSG = 'kill this love always';
   document.getElementById('p8msg').value = DEFAULT_MSG;
   encodeMsg(DEFAULT_MSG);
-  showSpec = true;
-  specPanel.classList.add('vis');
-  document.getElementById('p8spec_btn').classList.add('lit');
+  showSpec = false;
 
   // ── Hover / raycasting ───────────────────────────────────────────────────
   const raycaster = new THREE.Raycaster();
