@@ -768,9 +768,11 @@ export function buildS7() {
   });
   document.getElementById('p8men').onclick = () => setMeniscus(!showMeniscus);
   document.getElementById('p8msg').addEventListener('input', e => encodeMsg(e.target.value));
+  const sliderToHz = v => Math.pow(10, v / 100 - 1);
+  const fmtHz = hz => hz >= 1e6 ? (hz/1e6).toFixed(2)+'M' : hz >= 1e3 ? (hz/1e3).toFixed(hz>=1e4?1:2)+'k' : hz >= 10 ? hz.toFixed(1) : hz.toFixed(2);
   document.getElementById('p8dec_rot').addEventListener('input', e => {
-    decoderSpeed = parseFloat(e.target.value);
-    document.getElementById('p8dec_hz_val').textContent = decoderSpeed.toFixed(1);
+    decoderSpeed = sliderToHz(parseFloat(e.target.value));
+    document.getElementById('p8dec_hz_val').textContent = fmtHz(decoderSpeed);
   });
   document.getElementById('p8spec_btn').onclick = () => {
     showSpec = !showSpec;
