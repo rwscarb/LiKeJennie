@@ -155,7 +155,7 @@ export function buildS8() {
     `<div style="color:#2a6048;margin-top:4px">'ternary precision vs clock'</div>` +
     `<div style="color:#00e5ff;font-size:8.5px;margin-top:2px">clock: modular · bounded · wraps mod 12</div>` +
     `<div style="color:#c9d2df;font-size:8.5px;margin-top:2px">trits: positional · balanced · unbounded</div>` +
-    `<div style="color:#ff9800;font-size:8.5px;margin-top:3px">0 = 6 &nbsp;·&nbsp; faces 6,7,8 = &minus;1,0,+1</div>` +
+    `<div style="color:#ff9800;font-size:8.5px;margin-top:3px">0 = 6 &nbsp;·&nbsp; faces 5,6,7 = &minus;1,0,+1</div>` +
     `<div style="color:#c9d2df;font-size:8.5px;margin-top:3px">1+2 = 3rd &nbsp;·&nbsp; <span style="text-decoration:line-through;color:#ff3355">1+2+3 = 4th</span></div>` +
     `<div style="color:#ffd700;font-size:8px;margin-top:3px">757 = ∞ &nbsp;·&nbsp; 1001001 = 3⁶+3³+3⁰</div>` +
     `<div style="color:#c060ff;font-size:7.5px;margin-top:1px">echo pairs sum to 9 · orbit period 6</div>`;
