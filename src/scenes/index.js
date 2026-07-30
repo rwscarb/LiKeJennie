@@ -18,5 +18,5 @@ export const scenes = [
   { id: 'sunflower',         num: '06', label: 'SUNFLOWER',         build: buildS5 },
   { id: 'trit-matrix',       num: '07', label: 'TRIT MATRIX',       build: buildS6 },
   { id: 'mod9-orbit',        num: '08', label: 'HELIX',             build: buildS7 },
-  { id: 'ternary-vs-clock',  num: '09', label: 'TERNARY vs CLOCK',  build: buildS8 },
+  { id: 'clock',  num: '09', label: 'CLOCK',  build: buildS8 },
 ];

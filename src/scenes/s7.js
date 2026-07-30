@@ -794,7 +794,7 @@ export function buildS7() {
   };
 
   // defaults: FIB active, decoder visible + Jennie message pre-loaded
-  setFibVariant('ga');
+  setFibVariant('orbit');
   const DEFAULT_MSG = 'kill this love always';
   document.getElementById('p8msg').value = DEFAULT_MSG;
   encodeMsg(DEFAULT_MSG);

@@ -68,7 +68,7 @@ export function buildS8() {
     div.textContent = txt; const lbl = new CSS2DObject(div); lbl.position.set(0, y, 0);
     CLK.add(lbl); R.css2dObjects.push(lbl); };
   cap('MODULAR · bounded · wraps', CR + 1.0, '#00e5ff');
-  cap("'ternary precision vs clock'", -(CR + 1.0), '#5a7a8a', '9px');
+  cap("'clock'", -(CR + 1.0), '#5a7a8a', '9px');
 
   // ── dimension stack (positional: balanced, unbounded) ──
   const dcap = (txt, x, y, cc, strike) => { const div = document.createElement('div');
@@ -151,8 +151,8 @@ export function buildS8() {
   const pl = new THREE.PointLight(0x00e5ff, .9, 30); pl.position.set(-6, 6, 6); scene.add(pl);
   const pl2 = new THREE.PointLight(0xff9800, .8, 26); pl2.position.set(6, 4, 5); scene.add(pl2);
 
-  ov.innerHTML = `<div style="color:#2a9060;letter-spacing:.1em">09 · TERNARY vs CLOCK</div>` +
-    `<div style="color:#2a6048;margin-top:4px">'ternary precision vs clock'</div>` +
+  ov.innerHTML = `<div style="color:#2a9060;letter-spacing:.1em">09 · CLOCK</div>` +
+    `<div style="color:#2a6048;margin-top:4px">'clock'</div>` +
     `<div style="color:#00e5ff;font-size:8.5px;margin-top:2px">clock: modular · bounded · wraps mod 12</div>` +
     `<div style="color:#c9d2df;font-size:8.5px;margin-top:2px">trits: positional · balanced · unbounded</div>` +
     `<div style="color:#ff9800;font-size:8.5px;margin-top:3px">0 = 6 &nbsp;·&nbsp; faces 5,6,7 = &minus;1,0,+1</div>` +
