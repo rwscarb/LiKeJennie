@@ -708,7 +708,7 @@ export function buildS7() {
   const Y_WORLD_MAX = baseY(STEPS - 1) * 1.15;
   const X_WORLD_MAX = 3.6;
 
-  let decoderSpeed = 0.5; // rev/sec (loops automatically in animation loop)
+  let decoderSpeed = 1.4; // rev/sec (loops automatically in animation loop)
 
   const drawSpec = (t) => {
     if (!specCtx) return;
@@ -782,6 +782,14 @@ export function buildS7() {
     document.getElementById('p8spec_btn').classList.toggle('lit', showSpec);
     specPanel.classList.toggle('vis', showSpec);
   };
+
+  // defaults: decoder visible + Jennie message pre-loaded
+  const DEFAULT_MSG = 'kill this love always';
+  document.getElementById('p8msg').value = DEFAULT_MSG;
+  encodeMsg(DEFAULT_MSG);
+  showSpec = true;
+  specPanel.classList.add('vis');
+  document.getElementById('p8spec_btn').classList.add('lit');
 
   // ── Hover / raycasting ───────────────────────────────────────────────────
   const raycaster = new THREE.Raycaster();
