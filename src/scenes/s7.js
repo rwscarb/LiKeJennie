@@ -649,16 +649,19 @@ export function buildS7() {
   let msgChars = [];   // decoded characters for spectrograph labels
 
   const encodeMsg = raw => {
-    if (!raw) { msgOrbit = null; msgChars = []; return; }
-    const arr = new Float32Array(STEPS + 1);
-    const chars = [];
-    for (let i = 0; i <= STEPS; i++) {
-      const ch = raw[i % raw.length];
-      arr[i] = ORBIT[ch.charCodeAt(0) % M];
-      if (i < STEPS) chars.push(ch);
+    if (!raw) { msgOrbit = null; msgChars = []; }
+    else {
+      const arr = new Float32Array(STEPS + 1);
+      const chars = [];
+      for (let i = 0; i <= STEPS; i++) {
+        const ch = raw[i % raw.length];
+        arr[i] = ORBIT[ch.charCodeAt(0) % M];
+        if (i < STEPS) chars.push(ch);
+      }
+      msgOrbit = arr;
+      msgChars = chars;
     }
-    msgOrbit = arr;
-    msgChars = chars;
+    if (showSpec) updateDecoder();
   };
 
   const setFibVariant = v => {
@@ -666,6 +669,7 @@ export function buildS7() {
     envMat.opacity = v ? 0.72 : 0;
     Object.values(FIB_IDS).forEach(id => document.getElementById(id).classList.remove('lit'));
     if (v) document.getElementById(FIB_IDS[v]).classList.add('lit');
+    if (showSpec) updateDecoder();
   };
 
   // ── Orbit class → candidate letters ─────────────────────────────────────
