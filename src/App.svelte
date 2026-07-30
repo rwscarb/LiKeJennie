@@ -356,8 +356,6 @@ afterUpdate(() => {
       <div style="display:{p8adv ? 'contents' : 'none'}">
       <button class="btn" id="p8v_fib">FIB</button>
       <button class="btn" id="p8men">MENISCUS</button>
-      <button class="btn" id="p8v_galaxy">GALAXY</button>
-      <button class="btn" id="p8v_dodeca">DODECA</button>
       <button class="btn" id="p8inv">INVERSION</button>
       <button class="btn" id="p8shade">SHADING</button>
       <span class="clbl">A</span>

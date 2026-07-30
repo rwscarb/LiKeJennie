@@ -299,7 +299,7 @@ export function buildS7() {
   // Concave downward: center dips toward driver below, edges level with clock ring.
   const MEN_RINGS  = 28;
   const MEN_SEGS   = 64;
-  const MEN_R_MAX  = CLK_R + 0.65;
+  const MEN_R_MAX  = CLK_R;
   const MEN_DIP    = 0.50; // max center dip in world units
   const menVerts   = 1 + MEN_RINGS * MEN_SEGS;
   const menPosArr  = new Float32Array(menVerts * 3);
@@ -639,50 +639,8 @@ export function buildS7() {
     if (spinB !== 0) spinB = spinB < 0 ? -v : v;
   });
 
-  // ── Galaxy overlay: two golden logarithmic spirals in the galactic plane ──
-  const MID_Y = baseY(Math.floor(STEPS / 2));
-  const mkSpiral = (phase, col) => {
-    const pts = [];
-    for (let i = 0; i <= 500; i++) {
-      const t = (i / 500) * Math.PI * 8;
-      const r = 0.14 * Math.pow(PHI, t / (Math.PI / 2));
-      if (r > helixR(STEPS - 1) * 1.5) break;
-      pts.push(new THREE.Vector3(r * Math.cos(t + phase), MID_Y, r * Math.sin(t + phase)));
-    }
-    const g = new THREE.BufferGeometry().setFromPoints(pts);
-    const m = new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0 });
-    R.disposables.push(g, m);
-    const l = new THREE.Line(g, m); scene.add(l);
-    return m;
-  };
-  const spiralMatA = mkSpiral(0,       0xffd700);  // gold arm
-  const spiralMatB = mkSpiral(Math.PI, 0xff4060);  // red arm
+  let fibMode = false;
 
-  // ── Dodecahedron ghost overlay ────────────────────────────────────────────
-  const DODE_R = helixR(Math.floor(STEPS / 2)) * 2.4;
-  const dodeBase = new THREE.DodecahedronGeometry(DODE_R, 0);
-  const dodeEdgeGeo = new THREE.EdgesGeometry(dodeBase);
-  const dodeMat = new THREE.LineBasicMaterial({ color: 0xc060ff, transparent: true, opacity: 0 });
-  R.disposables.push(dodeBase, dodeEdgeGeo, dodeMat);
-  const dodeWire = new THREE.LineSegments(dodeEdgeGeo, dodeMat);
-  dodeWire.position.set(0, MID_Y, 0);
-  scene.add(dodeWire);
-
-  let galaxyMode = false, dodecaMode = false, fibMode = false;
-
-  const setGalaxy = on => {
-    galaxyMode = on;
-    spiralMatA.opacity = on ? 0.38 : 0;
-    spiralMatB.opacity = on ? 0.28 : 0;
-    document.getElementById('p8v_galaxy').classList.toggle('lit', on);
-    if (on && dodecaMode) setDodeca(false);
-  };
-  const setDodeca = on => {
-    dodecaMode = on;
-    dodeMat.opacity = on ? 0.22 : 0;
-    document.getElementById('p8v_dodeca').classList.toggle('lit', on);
-    if (on && galaxyMode) setGalaxy(false);
-  };
   const setFib = on => {
     fibMode = on;
     envMat.opacity = on ? 0.72 : 0;
@@ -708,10 +666,8 @@ export function buildS7() {
   // on the helix axis (0,7,0). Needed because shared links / panning can leave the
   // pivot off-axis, which makes the helix swing around instead of spinning in place.
   document.getElementById('p8center').onclick = () => applyPreset('side');
-  document.getElementById('p8v_fib').onclick    = () => setFib(!fibMode);
-  document.getElementById('p8v_galaxy').onclick = () => setGalaxy(!galaxyMode);
-  document.getElementById('p8v_dodeca').onclick = () => setDodeca(!dodecaMode);
-  document.getElementById('p8men').onclick       = () => setMeniscus(!showMeniscus);
+  document.getElementById('p8v_fib').onclick = () => setFib(!fibMode);
+  document.getElementById('p8men').onclick    = () => setMeniscus(!showMeniscus);
 
   // ── Hover / raycasting ───────────────────────────────────────────────────
   const raycaster = new THREE.Raycaster();
@@ -932,7 +888,6 @@ export function buildS7() {
       };
       setHand(handH, aH); setHand(handM, aM); setHand(handS, aS); }
     CLKG.rotation.z = -rotA * 0.5; // co-rotate with strand A (turntable spin on base)
-    if (dodecaMode) dodeWire.rotation.y = t * 0.08;
 
     // ── Tri-base clock HUD + dot updates (on second boundary) ─────────────
     const nowSec = Math.floor(Date.now() / 1000);
