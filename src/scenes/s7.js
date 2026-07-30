@@ -644,6 +644,23 @@ export function buildS7() {
   const FIB_IDS = { ga: 'p8v_fib', rational: 'p8v_fibr', sine: 'p8v_fibs', orbit: 'p8v_fibo' };
   const SPEC_COL = { ga: '#00ffcc', rational: '#ffd700', sine: '#cc88ff', orbit: '#ff9800' };
 
+  // ── Message encoding (ORBIT mode) ────────────────────────────────────────
+  let msgOrbit = null; // null = default orbit pattern; Float32Array = encoded message
+  let msgChars = [];   // decoded characters for spectrograph labels
+
+  const encodeMsg = raw => {
+    if (!raw) { msgOrbit = null; msgChars = []; return; }
+    const arr = new Float32Array(STEPS + 1);
+    const chars = [];
+    for (let i = 0; i <= STEPS; i++) {
+      const ch = raw[i % raw.length];
+      arr[i] = ORBIT[ch.charCodeAt(0) % M];
+      if (i < STEPS) chars.push(ch);
+    }
+    msgOrbit = arr;
+    msgChars = chars;
+  };
+
   const setFibVariant = v => {
     fibVariant = v;
     envMat.opacity = v ? 0.72 : 0;
@@ -667,14 +684,19 @@ export function buildS7() {
     specCtx.strokeStyle = 'rgba(0,255,200,0.10)';
     specCtx.lineWidth = 0.5;
     specCtx.beginPath(); specCtx.moveTo(W / 2, 0); specCtx.lineTo(W / 2, H); specCtx.stroke();
-    // orbit node tick marks
+    // orbit node tick marks + optional character labels
     specCtx.strokeStyle = 'rgba(0,255,200,0.18)';
+    specCtx.fillStyle = 'rgba(0,255,200,0.55)';
+    specCtx.font = '5.5px monospace';
+    specCtx.textAlign = 'right';
     for (let s = 0; s < STEPS; s++) {
       const idx = Math.round(s * (N_ENV - 1) / (STEPS - 1));
       const wy = envArr[idx * 3 + 1];
       const cy = H - 4 - ((wy - 0) / Y_WORLD_MAX) * (H - 8);
       specCtx.beginPath(); specCtx.moveTo(W / 2 - 3, cy); specCtx.lineTo(W / 2 + 3, cy); specCtx.stroke();
+      if (msgChars[s]) specCtx.fillText(msgChars[s], W / 2 - 5, cy + 2);
     }
+    specCtx.textAlign = 'left';
     // waveform
     const col = SPEC_COL[fibVariant] || '#00ffcc';
     specCtx.strokeStyle = col;
@@ -721,6 +743,7 @@ export function buildS7() {
     document.getElementById(id).onclick = () => setFibVariant(fibVariant === v ? '' : v);
   });
   document.getElementById('p8men').onclick = () => setMeniscus(!showMeniscus);
+  document.getElementById('p8msg').addEventListener('input', e => encodeMsg(e.target.value));
   document.getElementById('p8spec_btn').onclick = () => {
     showSpec = !showSpec;
     document.getElementById('p8spec_btn').classList.toggle('lit', showSpec);
@@ -868,8 +891,9 @@ export function buildS7() {
       } else if (fibVariant === 'orbit') {
         const si = Math.floor(s);
         const sf = s - si;
-        const v0 = ORBIT[si % M];
-        const v1 = ORBIT[(si + 1) % M];
+        const src = msgOrbit || ORBIT;
+        const v0 = msgOrbit ? msgOrbit[si] : ORBIT[si % M];
+        const v1 = msgOrbit ? msgOrbit[si + 1] : ORBIT[(si + 1) % M];
         radius = R_BASE + (v0 + (v1 - v0) * sf) * 0.11;
       }
       envArr[i * 3]     = radius * Math.cos(angle);

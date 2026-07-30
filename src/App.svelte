@@ -363,6 +363,7 @@ afterUpdate(() => {
       <button class="btn" id="p8v_fibr">RATIONAL</button>
       <button class="btn" id="p8v_fibs">SINE</button>
       <button class="btn" id="p8v_fibo">ORBIT</button>
+      <input type="text" id="p8msg" maxlength="21" placeholder="encode · 21 chars" style="font-family:monospace;font-size:.52rem;background:#020c08;border:1px solid #1a3a2a;color:#00ffcc;padding:2px 5px;border-radius:2px;width:108px;letter-spacing:.06em" spellcheck="false">
       <button class="btn" id="p8men">MENISCUS</button>
       <button class="btn" id="p8inv">INVERSION</button>
       <button class="btn" id="p8shade">SHADING</button>
