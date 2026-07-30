@@ -209,16 +209,7 @@ export function buildS10() {
   const pGlow = new THREE.Mesh(pgg, pgm);
   scene.add(pGlow);
 
-  // Speed control
-  let stepSpeed = 1.0; // multiplier: higher = faster
-  const speedEl = document.getElementById('p10speed');
-  const speedValEl = document.getElementById('p10speed_v');
-  if (speedEl) {
-    speedEl.addEventListener('input', e => {
-      stepSpeed = parseFloat(e.target.value);
-      speedValEl.textContent = stepSpeed + '×';
-    });
-  }
+  const stepSpeed = 0.25;
 
   // OV
   R.ov.innerHTML =
