@@ -26,8 +26,8 @@ export function buildS8() {
   { const rg = new THREE.TorusGeometry(CR, .035, 8, 72);
     const rm = new THREE.MeshBasicMaterial({ color: 0x0a5a70, transparent: true, opacity: .9 });
     R.disposables.push(rg, rm); CLK.add(new THREE.Mesh(rg, rm)); }
-  const HOTC = { 6: 0xff9800, 7: 0xffe600, 8: 0x00ff88 };
-  const HOTS = { 6: '#ff9800', 7: '#ffe600', 8: '#00ff88' };
+  const HOTC = { 5: 0xff9800, 6: 0xffe600, 7: 0x00ff88 }; // 5=−1  6=0(nil)  7=+1
+  const HOTS = { 5: '#ff9800', 6: '#ffe600', 7: '#00ff88' };
   for (let h = 1; h <= 12; h++) {
     const a = Math.PI / 2 - (h % 12) * Math.PI / 6;
     const hot = HOTC[h] !== undefined;
@@ -185,14 +185,15 @@ export function buildS8() {
       const h = cmeshes[idx].userData.h;
       let hh = `<div class="th" style="color:${cmeshes[idx].userData.hot ? HOTS[h] : '#0e6a8a'}">${h} o'clock</div>`;
       hh += `<p class="tr">${h} &equiv; ${h} (mod 12) — the line folds into a circle</p>`;
-      if (h === 6) hh += `<p class="tr" style="color:#ff9800">trit face &minus;1 &nbsp;·&nbsp; "0 = 6" — root of the dimension tree</p>` +
-        `<p class="tr" style="color:#ff9800">echo of 3 (axis); 6+3=9 · 6 is nil, 3 is assumed</p>`;
-      if (h === 7) hh += `<p class="tr" style="color:#ffe600">trit face 0 — the neutral position</p>` +
-        `<p class="tr" style="color:#ffd700">BT(7) = "757" — palindrome in display</p>` +
+      if (h === 5) hh += `<p class="tr" style="color:#ff9800">trit digit &minus;1 · the contraction</p>` +
+        `<p class="tr" style="color:#ff9800">dr(896)=5 · 5+4=9 · echo of 4</p>`;
+      if (h === 6) hh += `<p class="tr" style="color:#ffe600">trit digit 0 — nil · the absent center</p>` +
+        `<p class="tr" style="color:#ffe600">"0 = 6" — root of the dimension tree · echo of 3</p>` +
+        `<p class="tr" style="color:#ffe600">6+3=9 · 6 is nil, 3 is assumed</p>`;
+      if (h === 7) hh += `<p class="tr" style="color:#00ff88">trit digit +1 — the palindrome position</p>` +
+        `<p class="tr" style="color:#00ff88">BT(7) = "757" — palindrome in display</p>` +
         `<p class="tr" style="color:#c060ff">BT(757) = 1001001 = 3⁶+3³+3⁰</p>` +
         `<p class="tr" style="color:#c060ff">757 prime · 7 ones in binary · 757 = ∞</p>`;
-      if (h === 8) hh += `<p class="tr" style="color:#00ff88">trit face +1 — the barrier digit</p>` +
-        `<p class="tr" style="color:#00ff88">dr(896)=5 · dr(897)=6 · 8 is the wall before nil</p>`;
       tip(e, hh); stat.textContent = `hour ${h}`; tmv(e);
     } else { htip(); stat.textContent = ''; }
   });
