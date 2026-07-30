@@ -472,6 +472,18 @@ const nodePos = (step, offset = 0) => (&#123;
 
     <hr>
 
+    <h2>The Helix Is in the Field, Not the Path</h2>
+    <p>Photons do not travel in spirals. They travel in straight lines at <em>c</em>. The wave behavior is in the electromagnetic field oscillating perpendicular to that line — the path itself is always straight.</p>
+    <p>But photons can carry <strong>orbital angular momentum (OAM)</strong>. This gives the wavefront a helical phase structure: corkscrew-shaped phase fronts that rotate as the photon moves forward. The photon goes straight; its field rotates. This is called <em>twisted light</em>.</p>
+    <p>The helix here is closer to that geometry than to a literal trajectory. The spiral is in the <em>structure</em> — the arrangement of phase, value, and position — not in the motion of any single thing through it.</p>
+    <pre><code># OAM mode number ℓ describes the helical phase front:
+# ℓ = 0  → flat wavefront (ordinary light)
+# ℓ = 1  → one full twist per wavelength
+# ℓ = 7  → seven twists — seven-fold symmetry</code></pre>
+    <p>21 nodes. 8 turns. 7-fold OAM. The numbers recur.</p>
+
+    <hr>
+
     <h2>The 21 Arc</h2>
     <p>After 21 steps, total rotation is 21 × 137.508° = 2887.7° ≈ 8 full turns + 7.7°.</p>
     <p>21 is F₈, the 8th Fibonacci number. At step 21 the helix completes 8 turns + 7.7° — nearly closed.</p>
