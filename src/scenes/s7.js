@@ -556,8 +556,8 @@ export function buildS7() {
   document.getElementById('p8comp').onclick = () => {
     showDecimal = !showDecimal;
     document.getElementById('p8comp').classList.toggle('lit', showDecimal);
-    allLabels.forEach(l => { l.lbl.element.textContent = showDecimal ? l.val : l.bt; });
     invLabelData.forEach(l => { l.lbl.element.textContent = showDecimal ? l.val : l.bt; });
+    syncOrbitLabels(); // handles allLabels, respecting ORBIT mode
   };
 
   let showMeniscus = false;
@@ -648,6 +648,11 @@ export function buildS7() {
   let msgOrbit = null; // null = default orbit pattern; Float32Array = encoded message
   let msgChars = [];   // decoded characters for spectrograph labels
 
+  // Position-shifted encoding: orbit slot = (charCode % M + nodeIdx) % M
+  // Same letter at different positions → different orbit values → unique waveform
+  const slotForChar = (ch, i) => (ch.charCodeAt(0) % M + i) % M;
+  const orbitValForChar = (ch, i) => ORBIT[slotForChar(ch, i)];
+
   const encodeMsg = raw => {
     if (!raw) { msgOrbit = null; msgChars = []; }
     else {
@@ -655,13 +660,34 @@ export function buildS7() {
       const chars = [];
       for (let i = 0; i <= STEPS; i++) {
         const ch = raw[i % raw.length];
-        arr[i] = ORBIT[ch.charCodeAt(0) % M];
+        arr[i] = orbitValForChar(ch, i);
         if (i < STEPS) chars.push(ch);
       }
       msgOrbit = arr;
       msgChars = chars;
     }
     if (showSpec) updateDecoder();
+    syncOrbitLabels();
+  };
+
+  const syncOrbitLabels = () => {
+    if (fibVariant !== 'orbit' || !msgChars.length) {
+      allLabels.forEach(l => { l.lbl.element.textContent = showDecimal ? l.val : l.bt; });
+    } else {
+      allLabels.forEach(l => {
+        if (l.φ === 0) {
+          // strand A: show encoded character
+          const ch = msgChars[l.s] || '·';
+          l.lbl.element.textContent = ch;
+          l.lbl.element.style.color = '#00ffcc';
+          l.lbl.element.style.textShadow = '0 0 8px #00ffcc';
+        } else {
+          l.lbl.element.textContent = showDecimal ? l.val : l.bt;
+          l.lbl.element.style.color = '';
+          l.lbl.element.style.textShadow = '';
+        }
+      });
+    }
   };
 
   const setFibVariant = v => {
@@ -669,16 +695,19 @@ export function buildS7() {
     envMat.opacity = v ? 0.72 : 0;
     Object.values(FIB_IDS).forEach(id => document.getElementById(id).classList.remove('lit'));
     if (v) document.getElementById(FIB_IDS[v]).classList.add('lit');
+    syncOrbitLabels();
     if (showSpec) updateDecoder();
   };
 
-  // ── Orbit class → candidate letters ─────────────────────────────────────
-  // For each orbit index (0-5) list lowercase letters where charCode % 6 === index
-  const ORBIT_CANDS = (() => {
-    const map = Array.from({ length: M }, () => []);
-    for (let c = 97; c <= 122; c++) map[c % M].push(String.fromCharCode(c));
-    return map; // index matches ORBIT array position
-  })();
+  // ── Position-aware candidate lookup ──────────────────────────────────────
+  // At node i with detected orbit value ov, candidates are letters where
+  // (charCode % M + i) % M === ORBIT.indexOf(ov)
+  const candsAt = (nodeIdx, ov) => {
+    const targetSlot = ((ORBIT.indexOf(ov) - nodeIdx) % M + M) % M;
+    const out = [];
+    for (let c = 97; c <= 122; c++) if (c % M === targetSlot) out.push(String.fromCharCode(c));
+    return out;
+  };
 
   const decodePanel = document.getElementById('decode-panel');
 
@@ -697,8 +726,7 @@ export function buildS7() {
         const ov = ORBIT.reduce((best, v) =>
           Math.abs(R_BASE + v * 0.11 - r) < Math.abs(R_BASE + best * 0.11 - r) ? v : best
         , ORBIT[0]);
-        const orbitIdx = ORBIT.indexOf(ov);
-        const cands = ORBIT_CANDS[orbitIdx];
+        const cands = candsAt(s, ov);
         const known = msgChars[s] ? msgChars[s].toLowerCase() : null;
         const candsHtml = cands.map(ch =>
           ch === known ? `<span class="hit">${ch}</span>` : `<span class="cands">${ch}</span>`
