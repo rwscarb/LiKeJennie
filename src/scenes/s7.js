@@ -32,7 +32,7 @@ export function buildS7() {
   const PHI = (1 + Math.sqrt(5)) / 2;
   const GA  = 2 * Math.PI * (2 - PHI);
 
-  let R_BASE = 0.28;
+  let R_BASE = 3.00;
   let R_GROW = 0.00;
   let H_STEP = 0.68;
   let breathAmp  = 0.10;
@@ -720,15 +720,18 @@ export function buildS7() {
     // project (X, Z) onto decoder viewing angle — auto-loops at decoderSpeed rev/sec
     const decoderRot = t * decoderSpeed * Math.PI * 2;
     const projX = i => envArr[i * 3] * Math.cos(decoderRot) + envArr[i * 3 + 2] * Math.sin(decoderRot);
-    // center baseline
+    // background grid — vertical lines at each node, horizontal amplitude lines
     specCtx.strokeStyle = 'rgba(0,255,200,0.10)';
-    specCtx.lineWidth = 0.75;
-    specCtx.beginPath(); specCtx.moveTo(0, H / 2); specCtx.lineTo(W, H / 2); specCtx.stroke();
-    // node tick marks
-    specCtx.strokeStyle = 'rgba(0,255,200,0.22)';
+    specCtx.lineWidth = 0.5;
+    // vertical columns at each node
     for (let s = 0; s < STEPS; s++) {
       const x = xAt(s);
-      specCtx.beginPath(); specCtx.moveTo(x, H / 2 - 4); specCtx.lineTo(x, H / 2 + 4); specCtx.stroke();
+      specCtx.beginPath(); specCtx.moveTo(x, 0); specCtx.lineTo(x, H); specCtx.stroke();
+    }
+    // horizontal rows: center + ±half amplitude
+    for (const frac of [0, 0.5, -0.5, 1, -1]) {
+      const y = yAmp(frac * X_WORLD_MAX);
+      specCtx.beginPath(); specCtx.moveTo(0, y); specCtx.lineTo(W, y); specCtx.stroke();
     }
     // waveform
     const col = SPEC_COL[fibVariant] || '#00ffcc';
@@ -780,7 +783,8 @@ export function buildS7() {
     specPanel.classList.toggle('vis', showSpec);
   };
 
-  // defaults: decoder visible + Jennie message pre-loaded
+  // defaults: FIB active, decoder visible + Jennie message pre-loaded
+  setFibVariant('ga');
   const DEFAULT_MSG = 'kill this love always';
   document.getElementById('p8msg').value = DEFAULT_MSG;
   encodeMsg(DEFAULT_MSG);
