@@ -540,5 +540,56 @@ const h = CLK_Y - dip * (1 - (r / R_MAX) ** 2);
     <p>757 is prime. BT(757) = 1001001 — powers of 3 at positions 0, 3, 6.</p>
     <pre><code>757 = 3⁶ + 3³ + 3⁰ = 729 + 27 + 1</code></pre>
     <p>7 encodes to "757" (display palindrome). 757 encodes to "1001001" (BT palindrome). Prime, indivisible, reflects without distortion.</p>
+
+    <hr>
+
+    <h2>The Orbit Cycle: Why These Six Values?</h2>
+    <p>Start with 1. Multiply by 2. Take the remainder when you divide by 9. The result is always one of six values: 1, 2, 4, 8, 7, 5. These six values form a closed loop.</p>
+    <pre><code>1 × 2 = 2        → 2 mod 9 = 2
+2 × 2 = 4        → 4 mod 9 = 4
+4 × 2 = 8        → 8 mod 9 = 8
+8 × 2 = 16       → 16 mod 9 = 7
+7 × 2 = 14       → 14 mod 9 = 5
+5 × 2 = 10       → 10 mod 9 = 1  ← back to start</code></pre>
+    <p>The cycle has length 6. After 6 doublings, you return to where you started. This is the orbit of 2 under multiplication modulo 9.</p>
+
+    <hr>
+
+    <h2>Why Not 3, 6, or 9?</h2>
+    <p>Three values never enter the main orbit: 3, 6, and 9.</p>
+    <ul>
+      <li><strong>3 and 6</strong> form their own 2-cycle: 3 × 2 = 6, and 6 × 2 = 12 → 3. They loop between each other and cannot reach 1.</li>
+      <li><strong>9 ≡ 0 mod 9</strong>: once you hit 9, doubling gives 18 mod 9 = 0, and 0 stays at 0. It is a fixed point — an absorbing state.</li>
+    </ul>
+    <p>So 9 divides the integers into three separate worlds: the main orbit {1,2,4,8,7,5}, the sub-orbit {3,6}, and the collapsed fixed point {9/0}.</p>
+
+    <hr>
+
+    <h2>Echo Pairs and the Number 9</h2>
+    <p>Each value in the orbit has exactly one partner that sums to 9:</p>
+    <ul>
+      <li>1 + 8 = 9</li>
+      <li>2 + 7 = 9</li>
+      <li>4 + 5 = 9</li>
+    </ul>
+    <p>These are called echo pairs. In the cycle diagram, each pair sits directly opposite each other across the circle. The symmetry is exact: if you travel halfway around the orbit from any value, you reach its echo.</p>
+    <p>Adding the full orbit: 1 + 2 + 4 + 8 + 7 + 5 = 27 = 3³. The orbit sums to a power of 3.</p>
+
+    <hr>
+
+    <h2>The Driver Group</h2>
+    <p>The six orbit values split into two groups of three, each summing to 13:</p>
+    <ul>
+      <li>&#123;2, 4, 7&#125;: sum = 13 — the <em>driver</em></li>
+      <li>&#123;1, 5, 8&#125;: sum = 14 — wait, 1+5+8 = 14</li>
+    </ul>
+    <p>The driver group {2, 4, 7} is special for a different reason: these are the three values whose echo partners {7, 5, 2} are also in the driver group. The driver is self-echoing — its echoes stay within the group.</p>
+    <p>13 is not in the orbit. It is the sum of the driver group, sitting just outside — the number that the driver points toward but never reaches.</p>
+
+    <hr>
+
+    <h2>Connection to the Helix</h2>
+    <p>The orbit cycle is the hidden rhythm inside the helix. The 21 nodes of the helix repeat the sequence 1→2→4→8→7→5 three and a half times (21 ÷ 6 = 3.5). Each node inherits the properties of its orbit value: color, echo relationship, driver status.</p>
+    <p>The clock at the helix midpoint sits at step 10-11 of the 21-node sequence — at the transition between orbit values 7 and 5. The driver group is below the clock. The echo group is above it.</p>
   </article>
 </div>
