@@ -213,7 +213,7 @@ export function buildS7() {
     envArr[i * 3 + 1] = s * H_STEP;
     envArr[i * 3 + 2] = helixR(s) * Math.sin(s * GA);
   }
-  const envMat = new THREE.LineBasicMaterial({ color: 0x0a1a0a, transparent: true, opacity: 0.15 });
+  const envMat = new THREE.LineBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0 });
   R.disposables.push(envGeo, envMat);
   scene.add(new THREE.Line(envGeo, envMat));
 
@@ -659,7 +659,7 @@ export function buildS7() {
   dodeWire.position.set(0, MID_Y, 0);
   scene.add(dodeWire);
 
-  let galaxyMode = false, dodecaMode = false;
+  let galaxyMode = false, dodecaMode = false, fibMode = false;
 
   const setGalaxy = on => {
     galaxyMode = on;
@@ -673,6 +673,11 @@ export function buildS7() {
     dodeMat.opacity = on ? 0.22 : 0;
     document.getElementById('p8v_dodeca').classList.toggle('lit', on);
     if (on && galaxyMode) setGalaxy(false);
+  };
+  const setFib = on => {
+    fibMode = on;
+    envMat.opacity = on ? 0.72 : 0;
+    document.getElementById('p8v_fib').classList.toggle('lit', on);
   };
 
   const PRESETS = {
@@ -695,6 +700,7 @@ export function buildS7() {
   // on the helix axis (0,7,0). Needed because shared links / panning can leave the
   // pivot off-axis, which makes the helix swing around instead of spinning in place.
   document.getElementById('p8center').onclick = () => applyPreset('side');
+  document.getElementById('p8v_fib').onclick = () => setFib(!fibMode);
 
   // ── Hover / raycasting ───────────────────────────────────────────────────
   const raycaster = new THREE.Raycaster();
