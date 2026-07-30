@@ -233,15 +233,19 @@ export function buildS10() {
 
   // ── Animation ─────────────────────────────────────────────────────────
   let lastStepI = -1;
+  let phase = 0;       // accumulated orbit phase (0..M, wraps)
+  let lastT = null;    // previous timestamp for delta
 
   R.animFn = (t) => {
     controls.update();
 
+    // Delta-time accumulator — immune to slider changes
+    const dt = lastT === null ? 0 : Math.min(t - lastT, 0.1);
+    lastT = t;
+    phase = (phase + dt * stepSpeed / STEP_T) % M;
+
     // Step timing: where are we in the orbit cycle?
-    const effectiveStepT = STEP_T / stepSpeed;
-    const effectiveOrbitT = M * effectiveStepT;
-    const cycleT  = t % effectiveOrbitT;
-    const stepRaw = cycleT / effectiveStepT;
+    const stepRaw = phase;
     const stepI   = Math.floor(stepRaw) % M;
     const stepF   = stepRaw - Math.floor(stepRaw); // 0..1 within this step
 
