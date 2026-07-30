@@ -28,7 +28,7 @@ h1{font-size:3.5rem;color:#ff9800;letter-spacing:.35em;line-height:1;margin-bott
 .dot{width:6px;height:6px;border-radius:50%;background:#1e301e;cursor:pointer;transition:all .18s}
 .dot.on{background:#00e5ff;transform:scale(1.45);box-shadow:0 0 8px #00e5ff}
 /* ── tabs ─────────────────────────────────────────── */
-.tabs{display:flex;flex-wrap:nowrap;border-bottom:1px solid #0a1a1a;position:relative;z-index:2;max-width:1147px;margin:0 auto;width:100%}
+.tabs{display:flex;flex-wrap:wrap;border-bottom:1px solid #0a1a1a;position:relative;z-index:2;max-width:1147px;margin:0 auto;width:100%}
 .tab{flex:1;display:flex;align-items:center;justify-content:center;padding:.42rem .4rem;font-size:.54rem;letter-spacing:.11em;color:#c1c1c1;cursor:pointer;border:1px solid transparent;border-bottom:none;border-radius:2px 2px 0 0;user-select:none;transition:color .14s,border-color .14s,background .14s;white-space:nowrap;text-transform:uppercase;text-align:center}
 .tab:hover{color:#00e5ff;border-color:#0a2028;background:#020506}
 .tab.on{color:#00e5ff;border-color:#0a2028;background:#040408;border-bottom-color:#040408;text-shadow:0 0 10px #00e5ff50}
