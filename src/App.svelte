@@ -24,7 +24,7 @@ function packState(scene, pos, tgt, sliders, flags) {
   [pos.x, pos.y, pos.z, tgt.x, tgt.y, tgt.z].forEach(f => { v.setFloat32(o, f, true); o += 4; });
   _SKEYS.forEach(k => { const [mn,mx]=_SRANGE[k]; v.setUint16(o, Math.round(Math.max(0,Math.min(1,(parseFloat(sliders[k]||mn)-mn)/(mx-mn)))*65535), true); o+=2; });
   v.setUint8(o, (flags.inv?1:0)|(flags.shade?2:0)|(flags.comp?4:0));
-  return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/+/g,'-').replace(/_/g,'_').replace(/=/g,'');
+  return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/_/g,'_').replace(/=/g,'');
 }
 function unpackState(enc) {
   try {
