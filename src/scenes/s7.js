@@ -540,7 +540,9 @@ export function buildS7() {
       `<span style="color:#FFD700">1</span></div>` +
     `<div style="color:#5a8a6a;font-size:7px;margin-top:2px">trits: 5=−1&nbsp;<b style="color:#aab8ff">6=0</b>&nbsp;7=+1</div>` +
     `<div style="color:#5a7a8a;font-size:7px;margin-top:1px">golden angle ≈137.5° · F₈=21 anchor</div>` +
-    `<div style="color:#c060ff;font-size:7px;margin-top:1px">757=∞ · 1001001=3⁶+3³+3⁰ · prime</div>`;
+    `<div style="color:#c060ff;font-size:7px;margin-top:1px">757=∞ · 1001001=3⁶+3³+3⁰ · prime</div>` +
+    `<div style="color:#00bfff;font-size:7px;margin-top:2px;border-top:1px solid #1a2a3a;padding-top:2px">photons travel straight — the helix is in the <em>field</em>, not the path</div>` +
+    `<div style="color:#5090aa;font-size:6.5px;margin-top:1px">OAM · twisted light · helical phase fronts</div>`;
 
   // ── Live tri-base clock — rendered in bottom-right clkDisplay ─────────────
   const clkEl = R.clkDisplay;
