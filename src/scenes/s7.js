@@ -708,7 +708,7 @@ export function buildS7() {
   const Y_WORLD_MAX = baseY(STEPS - 1) * 1.15;
   const X_WORLD_MAX = 3.6;
 
-  let decoderRot = 0; // independent view angle for the decoder (radians)
+  let decoderSpeed = 0.5; // rev/sec (loops automatically in animation loop)
 
   const drawSpec = () => {
     if (!specCtx) return;
@@ -720,7 +720,8 @@ export function buildS7() {
     specCtx.beginPath(); specCtx.moveTo(W / 2, 0); specCtx.lineTo(W / 2, H); specCtx.stroke();
     // use unscaled Y so the waveform tracks rotation (not breath)
     const cyAt = s => H - 4 - (baseY(s) / Y_WORLD_MAX) * (H - 8);
-    // project (X, Z) onto decoder viewing angle — same as looking from that angle
+    // project (X, Z) onto decoder viewing angle — auto-loops at decoderSpeed rev/sec
+    const decoderRot = t * decoderSpeed * Math.PI * 2;
     const projX = i => envArr[i * 3] * Math.cos(decoderRot) + envArr[i * 3 + 2] * Math.sin(decoderRot);
     // orbit node tick marks + optional character labels
     specCtx.strokeStyle = 'rgba(0,255,200,0.22)';
@@ -780,7 +781,7 @@ export function buildS7() {
   document.getElementById('p8men').onclick = () => setMeniscus(!showMeniscus);
   document.getElementById('p8msg').addEventListener('input', e => encodeMsg(e.target.value));
   document.getElementById('p8dec_rot').addEventListener('input', e => {
-    decoderRot = (parseFloat(e.target.value) / 360) * Math.PI * 2;
+    decoderSpeed = parseFloat(e.target.value);
   });
   document.getElementById('p8spec_btn').onclick = () => {
     showSpec = !showSpec;
