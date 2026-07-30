@@ -714,30 +714,31 @@ export function buildS7() {
     specCtx.clearRect(0, 0, W, H);
     // center guide
     specCtx.strokeStyle = 'rgba(0,255,200,0.10)';
-    specCtx.lineWidth = 0.5;
+    specCtx.lineWidth = 0.75;
     specCtx.beginPath(); specCtx.moveTo(W / 2, 0); specCtx.lineTo(W / 2, H); specCtx.stroke();
+    // use unscaled Y so the waveform tracks rotation (not breath)
+    const cyAt = s => H - 4 - (baseY(s) / Y_WORLD_MAX) * (H - 8);
     // orbit node tick marks + optional character labels
-    specCtx.strokeStyle = 'rgba(0,255,200,0.18)';
-    specCtx.fillStyle = 'rgba(0,255,200,0.55)';
-    specCtx.font = '5.5px monospace';
+    specCtx.strokeStyle = 'rgba(0,255,200,0.22)';
+    specCtx.fillStyle = 'rgba(0,255,200,0.60)';
+    specCtx.font = '8px monospace';
     specCtx.textAlign = 'right';
     for (let s = 0; s < STEPS; s++) {
-      const idx = Math.round(s * (N_ENV - 1) / (STEPS - 1));
-      const wy = envArr[idx * 3 + 1];
-      const cy = H - 4 - ((wy - 0) / Y_WORLD_MAX) * (H - 8);
-      specCtx.beginPath(); specCtx.moveTo(W / 2 - 3, cy); specCtx.lineTo(W / 2 + 3, cy); specCtx.stroke();
-      if (msgChars[s]) specCtx.fillText(msgChars[s], W / 2 - 5, cy + 2);
+      const cy = cyAt(s);
+      specCtx.beginPath(); specCtx.moveTo(W / 2 - 5, cy); specCtx.lineTo(W / 2 + 5, cy); specCtx.stroke();
+      if (msgChars[s]) specCtx.fillText(msgChars[s], W / 2 - 7, cy + 3);
     }
     specCtx.textAlign = 'left';
     // waveform
     const col = SPEC_COL[fibVariant] || '#00ffcc';
     specCtx.strokeStyle = col;
-    specCtx.lineWidth = 1.5;
+    specCtx.lineWidth = 2;
     specCtx.beginPath();
     for (let i = 0; i < N_ENV; i++) {
-      const wx = envArr[i * 3], wy = envArr[i * 3 + 1];
-      const cx = W / 2 + (wx / X_WORLD_MAX) * (W / 2 - 5);
-      const cy = H - 4 - ((wy - 0) / Y_WORLD_MAX) * (H - 8);
+      const s = (i / (N_ENV - 1)) * (STEPS - 1);
+      const wx = envArr[i * 3];
+      const cx = W / 2 + (wx / X_WORLD_MAX) * (W / 2 - 7);
+      const cy = cyAt(s);
       i === 0 ? specCtx.moveTo(cx, cy) : specCtx.lineTo(cx, cy);
     }
     specCtx.stroke();
@@ -745,10 +746,10 @@ export function buildS7() {
     specCtx.fillStyle = col;
     for (let s = 0; s < STEPS; s++) {
       const idx = Math.round(s * (N_ENV - 1) / (STEPS - 1));
-      const wx = envArr[idx * 3], wy = envArr[idx * 3 + 1];
-      const cx = W / 2 + (wx / X_WORLD_MAX) * (W / 2 - 5);
-      const cy = H - 4 - ((wy - 0) / Y_WORLD_MAX) * (H - 8);
-      specCtx.beginPath(); specCtx.arc(cx, cy, 1.8, 0, Math.PI * 2); specCtx.fill();
+      const wx = envArr[idx * 3];
+      const cx = W / 2 + (wx / X_WORLD_MAX) * (W / 2 - 7);
+      const cy = cyAt(s);
+      specCtx.beginPath(); specCtx.arc(cx, cy, 2.8, 0, Math.PI * 2); specCtx.fill();
     }
   };
 

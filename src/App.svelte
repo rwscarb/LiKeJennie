@@ -307,9 +307,9 @@ afterUpdate(() => {
     <div class="ov" bind:this={ov}></div>
     <div id="clkDisplay" bind:this={clkDisplay}></div>
     <div id="spec-panel">
-      <span class="spec-lbl">spectrograph</span>
-      <div style="display:flex;gap:2px;align-items:flex-start">
-        <canvas id="p8spec" width="90" height="210"></canvas>
+      <span class="spec-lbl">decoder</span>
+      <div style="display:flex;gap:4px;align-items:flex-start">
+        <canvas id="p8spec" width="140" height="330"></canvas>
         <div id="decode-panel"></div>
       </div>
     </div>
@@ -359,7 +359,7 @@ afterUpdate(() => {
       <button class="btn" id="p8center" title="recenter view on the helix axis">⊙ CENTER</button>
       <button class="btn" id="p8v_top">TOP</button>
       <button class="btn" id="p8v_bottom">BOTTOM</button>
-      <button class="btn" id="p8spec_btn">SPEC</button>
+      <button class="btn" id="p8spec_btn">DECODER</button>
       <button class="btn" style="opacity:.35;letter-spacing:.18em;padding:3px 7px" on:click={() => { p8adv = !p8adv; }} title="advanced controls">···</button>
       <div style="display:{p8adv ? 'contents' : 'none'}">
       <button class="btn" id="p8v_fib">FIB</button>

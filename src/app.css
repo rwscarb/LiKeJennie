@@ -49,10 +49,10 @@ h1{font-size:3.5rem;color:#ff9800;letter-spacing:.35em;line-height:1;margin-bott
 #spec-panel{position:absolute;left:10px;top:50%;transform:translateY(-50%);z-index:5;display:none;flex-direction:column;align-items:center;gap:3px;pointer-events:none}
 #spec-panel.vis{display:flex}
 #spec-panel canvas{border:1px solid rgba(0,255,200,0.18);background:rgba(0,8,6,0.70);border-radius:3px;display:block}
-#spec-panel .spec-lbl{font-family:'Courier New',monospace;font-size:6.5px;color:#00ffcc99;letter-spacing:.06em;text-transform:uppercase}
-#decode-panel{font-family:'Courier New',monospace;font-size:5.5px;line-height:1;color:#00ffcc55;width:62px;height:210px;display:flex;flex-direction:column;justify-content:space-between;padding:4px 0}
-#decode-panel .dr{display:flex;gap:2px;align-items:baseline;white-space:nowrap}
-#decode-panel .dr .ov{color:#ff9800;min-width:8px;text-align:right}
+#spec-panel .spec-lbl{font-family:'Courier New',monospace;font-size:9px;color:#00ffcc99;letter-spacing:.06em;text-transform:uppercase}
+#decode-panel{font-family:'Courier New',monospace;font-size:8px;line-height:1;color:#00ffcc55;width:80px;height:330px;display:flex;flex-direction:column;justify-content:space-between;padding:4px 0}
+#decode-panel .dr{display:flex;gap:3px;align-items:baseline;white-space:nowrap}
+#decode-panel .dr .ov{color:#ff9800;min-width:10px;text-align:right}
 #decode-panel .dr .cands{color:#00ffcc33}
 #decode-panel .dr .hit{color:#00ffcc;font-weight:bold}
 /* ── controls ─────────────────────────────────────── */
