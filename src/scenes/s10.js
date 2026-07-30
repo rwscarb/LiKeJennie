@@ -196,37 +196,6 @@ export function buildS10() {
   scene.add(stepLbl);
   R.css2dObjects.push(stepLbl);
 
-  // Summary annotation: orbit totals + sub-orbit note
-  const sumDiv = document.createElement('div');
-  sumDiv.style.cssText = 'font-family:\'Courier New\',monospace;text-align:center;pointer-events:none;user-select:none;line-height:1.85';
-  sumDiv.innerHTML =
-    `<div style="color:#2a5a3a;font-size:16px">orbit sums to 27 = 3³</div>` +
-    `<div style="color:#ff9800;font-size:14px">{2,4,7} driver → 13</div>` +
-    `<div style="color:#00ff88;font-size:14px">{1,5,8} echo → 14</div>`;
-  const sumLbl = new CSS2DObject(sumDiv);
-  sumLbl.position.set(0, 0.15, R_ABS + 0.9);
-  scene.add(sumLbl);
-  R.css2dObjects.push(sumLbl);
-
-  // 9 = absorbing fixed point label
-  const ninePos = absentPos(2);
-  const nineDiv = document.createElement('div');
-  nineDiv.innerHTML = `<div style="font-family:'Courier New',monospace;font-size:14px;color:#1e1e2e;text-align:center;pointer-events:none;line-height:1.5">9→0<br><span style="color:#12121e">fixed</span></div>`;
-  const nineLbl = new CSS2DObject(nineDiv);
-  nineLbl.position.set(ninePos.x, ABS_R + 0.55, ninePos.z);
-  scene.add(nineLbl);
-  R.css2dObjects.push(nineLbl);
-
-  // {3,6} sub-orbit label
-  const subDiv = document.createElement('div');
-  subDiv.innerHTML = `<div style="font-family:'Courier New',monospace;font-size:14px;color:#1e2e1e;text-align:center;pointer-events:none;line-height:1.5">3↔6<br>sub-orbit</div>`;
-  const subLbl = new CSS2DObject(subDiv);
-  // position between the 3 and 6 absent nodes
-  const p3 = absentPos(0), p6 = absentPos(1);
-  subLbl.position.set((p3.x + p6.x) / 2, ABS_R + 0.55, (p3.z + p6.z) / 2 - 0.3);
-  scene.add(subLbl);
-  R.css2dObjects.push(subLbl);
-
   // Pulse sphere
   const pg = new THREE.SphereGeometry(0.17, 14, 10);
   const pm = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95 });
