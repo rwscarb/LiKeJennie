@@ -724,17 +724,12 @@ export function buildS7() {
     specCtx.strokeStyle = 'rgba(0,255,200,0.10)';
     specCtx.lineWidth = 0.75;
     specCtx.beginPath(); specCtx.moveTo(0, H / 2); specCtx.lineTo(W, H / 2); specCtx.stroke();
-    // node tick marks + char labels at integer steps
+    // node tick marks
     specCtx.strokeStyle = 'rgba(0,255,200,0.22)';
-    specCtx.fillStyle = 'rgba(0,255,200,0.90)';
-    specCtx.font = 'bold 8px monospace';
-    specCtx.textAlign = 'center';
     for (let s = 0; s < STEPS; s++) {
       const x = xAt(s);
       specCtx.beginPath(); specCtx.moveTo(x, H / 2 - 4); specCtx.lineTo(x, H / 2 + 4); specCtx.stroke();
-      if (msgChars[s]) specCtx.fillText(msgChars[s], x, H - 3);
     }
-    specCtx.textAlign = 'left';
     // waveform
     const col = SPEC_COL[fibVariant] || '#00ffcc';
     specCtx.strokeStyle = col;
