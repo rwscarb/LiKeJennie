@@ -710,7 +710,7 @@ export function buildS7() {
 
   let decoderSpeed = 0.5; // rev/sec (loops automatically in animation loop)
 
-  const drawSpec = () => {
+  const drawSpec = (t) => {
     if (!specCtx) return;
     const W = specCanvas.width, H = specCanvas.height;
     specCtx.clearRect(0, 0, W, H);
@@ -940,7 +940,7 @@ export function buildS7() {
       envArr[i * 3 + 2] = radius * Math.sin(angle);
     }
     envAttr.needsUpdate = true;
-    if (showSpec) { drawSpec(); if (fibVariant === 'orbit') updateDecoder(); }
+    if (showSpec) { drawSpec(t); if (fibVariant === 'orbit') updateDecoder(); }
 
     // ── Driver helix updates (inverse, below clock) ───────────────────────
     if (showInversion) {
