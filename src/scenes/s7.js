@@ -833,9 +833,9 @@ export function buildS7() {
 
     for (let i = 0; i < N_ENV; i++) {
       const s = (i / (N_ENV - 1)) * (STEPS - 1);
-      envArr[i * 3]     = helixR(s) * Math.cos(s * GA);
+      envArr[i * 3]     = helixR(s) * Math.cos(s * GA + rotA);
       envArr[i * 3 + 1] = baseY(s) * breath;
-      envArr[i * 3 + 2] = helixR(s) * Math.sin(s * GA);
+      envArr[i * 3 + 2] = helixR(s) * Math.sin(s * GA + rotA);
     }
     envAttr.needsUpdate = true;
 
