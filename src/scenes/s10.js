@@ -209,6 +209,17 @@ export function buildS10() {
   const pGlow = new THREE.Mesh(pgg, pgm);
   scene.add(pGlow);
 
+  // Speed control
+  let stepSpeed = 1.0; // multiplier: higher = faster
+  const speedEl = document.getElementById('p10speed');
+  const speedValEl = document.getElementById('p10speed_v');
+  if (speedEl) {
+    speedEl.addEventListener('input', e => {
+      stepSpeed = parseFloat(e.target.value);
+      speedValEl.textContent = stepSpeed + '×';
+    });
+  }
+
   // OV
   R.ov.innerHTML =
     `<div style="color:#4ac880;letter-spacing:.1em">10 · ORBIT CYCLE</div>` +
@@ -227,8 +238,10 @@ export function buildS10() {
     controls.update();
 
     // Step timing: where are we in the orbit cycle?
-    const cycleT  = t % ORBIT_T;
-    const stepRaw = cycleT / STEP_T;
+    const effectiveStepT = STEP_T / stepSpeed;
+    const effectiveOrbitT = M * effectiveStepT;
+    const cycleT  = t % effectiveOrbitT;
+    const stepRaw = cycleT / effectiveStepT;
     const stepI   = Math.floor(stepRaw) % M;
     const stepF   = stepRaw - Math.floor(stepRaw); // 0..1 within this step
 
