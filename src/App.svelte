@@ -214,6 +214,10 @@ onMount(async () => {
 
 // react to scene switches
 $: if (renderer && active !== R.cur) show(active);
+$: if (typeof document !== 'undefined' && active !== 7) {
+  const sp = document.getElementById('spec-panel');
+  if (sp) sp.classList.remove('vis');
+}
 
 function hlCode(raw) {
   const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
