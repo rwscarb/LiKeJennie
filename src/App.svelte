@@ -350,6 +350,9 @@ afterUpdate(() => {
       <button class="btn lit" id="p8rot">AUTO-ROTATE</button>
       <button class="btn lit" id="p8comp">COMPLEMENT</button>
       <button class="btn" id="p8center" title="recenter view on the helix axis">⊙ CENTER</button>
+      <button class="btn" id="p8v_top">TOP</button>
+      <button class="btn" id="p8v_bottom">BOTTOM</button>
+      <button class="btn" id="p8v_hero">HERO</button>
       <button class="btn" style="opacity:.35;letter-spacing:.18em;padding:3px 7px" on:click={() => { p8adv = !p8adv; }} title="advanced controls">···</button>
       <div style="display:{p8adv ? 'contents' : 'none'}">
       <button class="btn" id="p8inv">INVERSION</button>
@@ -361,9 +364,6 @@ afterUpdate(() => {
       <button class="btn" id="p8b_cw">CW</button>
       <button class="btn" id="p8b_ccw">CCW</button>
       <button class="btn" id="p8v_side">SIDE</button>
-      <button class="btn" id="p8v_top">TOP</button>
-      <button class="btn" id="p8v_bottom">BOTTOM</button>
-      <button class="btn" id="p8v_hero">HERO</button>
       <span class="stat" id="p8stat"></span>
       <div class="srow">
         <span class="clbl">base-r</span><input type="range" id="p8_rbase" min="0.05" max="0.80" step="0.01" value="0.28"><span class="sval" id="p8_rbase_v">0.28</span>
