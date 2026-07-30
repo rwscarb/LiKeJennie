@@ -89,9 +89,9 @@ input[type=range]::-moz-range-thumb{width:8px;height:8px;background:#00ff88;bord
 .writeup h2{font-size:.75rem;color:#00e5ff;letter-spacing:.14em;margin:1.4rem 0 .5rem;text-transform:uppercase;font-weight:normal}
 .writeup p{margin:.5rem 0;color:#8a9e8a}
 .writeup hr{border:none;border-top:1px solid #0c160c;margin:1.1rem 0}
-.writeup pre{background:#020804;border:1px solid #0a1a0a;border-radius:3px;padding:.65rem .9rem;margin:.6rem 0;overflow-x:auto}
-.writeup code{font-family:'Courier New',monospace;font-size:.68rem;color:#00ff88;background:#020804;padding:1px 5px;border-radius:2px}
-.writeup pre code{background:none;padding:0;color:#00c060}
+.writeup pre{background:#1e1e22;border:1px solid #2a2a30;border-radius:3px;padding:.65rem .9rem;margin:.6rem 0;overflow-x:auto}
+.writeup code{font-family:'Courier New',monospace;font-size:.68rem;color:#A9B7C6;background:#1e1e22;padding:1px 5px;border-radius:2px}
+.writeup pre code{background:none;padding:0;color:#A9B7C6}
 .writeup a{color:#00e5ff;text-decoration:none;border-bottom:1px solid #003a4a}
 .writeup a:hover{color:#80f8ff;border-bottom-color:#00e5ff}
 .writeup strong{color:#c1c1c1}
@@ -109,12 +109,12 @@ input[type=range]::-moz-range-thumb{width:8px;height:8px;background:#00ff88;bord
 .ref-tag{font-size:.56rem;letter-spacing:.04em;font-family:'Courier New',monospace}
 .ref-src{font-size:.46rem;color:#1a3028;letter-spacing:.06em;text-transform:uppercase;border-left:1px solid #0a1a14;padding-left:6px}
 .ref:hover .ref-src{color:#2a5040}
-/* ── syntax highlight ─────────────────────────────── */
-.c-kw{color:#00e5ff}
-.c-cm{color:#2a5030;font-style:italic}
-.c-st{color:#ffe600}
-.c-nu{color:#ff9800}
-.c-fn{color:#c060ff}
+/* ── syntax highlight — JetBrains Darcula ──────────── */
+.c-kw{color:#CC7832}
+.c-cm{color:#808080;font-style:italic}
+.c-st{color:#6A8759}
+.c-nu{color:#6897BB}
+.c-fn{color:#FFC66D}
 /* ── responsive ───────────────────────────────────── */
 @media(max-width:1000px){
   .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap}
