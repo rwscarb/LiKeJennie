@@ -672,17 +672,24 @@ export function buildS7() {
 
   const syncOrbitLabels = () => {
     if (fibVariant !== 'orbit' || !msgChars.length) {
-      allLabels.forEach(l => { l.lbl.element.textContent = showDecimal ? l.val : l.bt; });
+      allLabels.forEach(l => {
+        l.lbl.element.textContent = showDecimal ? l.val : l.bt;
+        l.lbl.element.style.fontSize = '';
+        l.lbl.element.style.color = '';
+        l.lbl.element.style.textShadow = '';
+      });
     } else {
       allLabels.forEach(l => {
         if (l.φ === 0) {
-          // strand A: show encoded character
+          // strand A: show encoded character — larger, vivid magenta
           const ch = msgChars[l.s] || '·';
           l.lbl.element.textContent = ch;
-          l.lbl.element.style.color = '#00ffcc';
-          l.lbl.element.style.textShadow = '0 0 8px #00ffcc';
+          l.lbl.element.style.fontSize = '20px';
+          l.lbl.element.style.color = '#ff55ff';
+          l.lbl.element.style.textShadow = '0 0 12px #ff55ff, 0 0 24px #aa00aa';
         } else {
           l.lbl.element.textContent = showDecimal ? l.val : l.bt;
+          l.lbl.element.style.fontSize = '';
           l.lbl.element.style.color = '';
           l.lbl.element.style.textShadow = '';
         }
