@@ -360,6 +360,7 @@ afterUpdate(() => {
       <button class="btn" id="p8v_top">TOP</button>
       <button class="btn" id="p8v_bottom">BOTTOM</button>
       <button class="btn" id="p8spec_btn">DECODER</button>
+      <span class="clbl">rot</span><input type="range" id="p8dec_rot" min="0" max="360" step="1" value="0" style="width:60px">
       <button class="btn" style="opacity:.35;letter-spacing:.18em;padding:3px 7px" on:click={() => { p8adv = !p8adv; }} title="advanced controls">···</button>
       <div style="display:{p8adv ? 'contents' : 'none'}">
       <button class="btn" id="p8v_fib">FIB</button>
