@@ -17,7 +17,7 @@ const unsub = cur.subscribe(v => { active = v; });
 // ── Compact URL state (base64url binary pack) ────────────────────────────────
 // Format: [u8 scene][f32×3 camPos][f32×3 camTgt][u16×6 sliders][u8 flags] = 38 bytes → ~50 chars
 const _SKEYS = ['rbase','rgrow','hstep','bamp','bfreq','spin'];
-const _SRANGE = { rbase:[0.05,0.80], rgrow:[0.00,0.40], hstep:[0.20,2.00], bamp:[0.00,0.30], bfreq:[0.05,2.00], spin:[0.05,2.00] };
+const _SRANGE = { rbase:[0.05,3.00], rgrow:[0.00,0.40], hstep:[0.20,2.00], bamp:[0.00,0.30], bfreq:[0.05,2.00], spin:[0.05,2.00] };
 function packState(scene, pos, tgt, sliders, flags) {
   const buf = new ArrayBuffer(38); const v = new DataView(buf); let o = 0;
   v.setUint8(o++, scene);
@@ -380,8 +380,8 @@ afterUpdate(() => {
       <button class="btn" id="p8v_side">SIDE</button>
       <span class="stat" id="p8stat"></span>
       <div class="srow">
-        <span class="clbl">base-r</span><input type="range" id="p8_rbase" min="0.05" max="0.80" step="0.01" value="0.28"><span class="sval" id="p8_rbase_v">0.28</span>
-        <span class="clbl">flare</span><input type="range" id="p8_rgrow" min="0.00" max="0.40" step="0.01" value="0.13"><span class="sval" id="p8_rgrow_v">0.13</span>
+        <span class="clbl">base-r</span><input type="range" id="p8_rbase" min="0.05" max="3.00" step="0.01" value="0.28"><span class="sval" id="p8_rbase_v">0.28</span>
+        <span class="clbl">flare</span><input type="range" id="p8_rgrow" min="0.00" max="0.40" step="0.01" value="0.00"><span class="sval" id="p8_rgrow_v">0.00</span>
         <span class="clbl">pitch</span><input type="range" id="p8_hstep" min="0.20" max="2.00" step="0.02" value="0.68"><span class="sval" id="p8_hstep_v">0.68</span>
         <span class="clbl">breath</span><input type="range" id="p8_bamp" min="0.00" max="0.30" step="0.01" value="0.10"><span class="sval" id="p8_bamp_v">0.10</span>
         <span class="clbl">rate</span><input type="range" id="p8_bfreq" min="0.05" max="2.00" step="0.05" value="0.50"><span class="sval" id="p8_bfreq_v">0.50</span>

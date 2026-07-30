@@ -33,7 +33,7 @@ export function buildS7() {
   const GA  = 2 * Math.PI * (2 - PHI);
 
   let R_BASE = 0.28;
-  let R_GROW = 0.13;
+  let R_GROW = 0.00;
   let H_STEP = 0.68;
   let breathAmp  = 0.10;
   let breathFreq = 0.50;
@@ -723,17 +723,12 @@ export function buildS7() {
     // project (X, Z) onto decoder viewing angle — auto-loops at decoderSpeed rev/sec
     const decoderRot = t * decoderSpeed * Math.PI * 2;
     const projX = i => envArr[i * 3] * Math.cos(decoderRot) + envArr[i * 3 + 2] * Math.sin(decoderRot);
-    // orbit node tick marks + character labels
+    // orbit node tick marks
     specCtx.strokeStyle = 'rgba(0,255,200,0.22)';
-    specCtx.fillStyle = 'rgba(0,255,200,0.92)';
-    specCtx.font = 'bold 11px monospace';
-    specCtx.textAlign = 'right';
     for (let s = 0; s < STEPS; s++) {
       const cy = cyAt(s);
       specCtx.beginPath(); specCtx.moveTo(W / 2 - 5, cy); specCtx.lineTo(W / 2 + 5, cy); specCtx.stroke();
-      if (msgChars[s]) specCtx.fillText(msgChars[s], W / 2 - 7, cy + 4);
     }
-    specCtx.textAlign = 'left';
     // waveform
     const col = SPEC_COL[fibVariant] || '#00ffcc';
     specCtx.strokeStyle = col;
