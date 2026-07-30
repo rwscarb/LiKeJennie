@@ -695,7 +695,7 @@ export function buildS7() {
       const candsHtml = cands.map(ch =>
         ch === known ? `<span class="hit">${ch}</span>` : `<span class="cands">${ch}</span>`
       ).join('');
-      html += `<div class="dr"><span class="ov">${ov}</span>${candsHtml}</div>`;
+      html += `<div class="dr"><div class="ov">${ov}</div><div>${candsHtml}</div></div>`;
     }
     decodePanel.innerHTML = html;
   };
@@ -714,30 +714,36 @@ export function buildS7() {
     if (!specCtx) return;
     const W = specCanvas.width, H = specCanvas.height;
     specCtx.clearRect(0, 0, W, H);
-    // center guide
-    specCtx.strokeStyle = 'rgba(0,255,200,0.10)';
-    specCtx.lineWidth = 0.75;
-    specCtx.beginPath(); specCtx.moveTo(W / 2, 0); specCtx.lineTo(W / 2, H); specCtx.stroke();
-    // s=0 (first char) at top; Y flipped so low step index → low cy value
-    const cyAt = s => 4 + (baseY(s) / Y_WORLD_MAX) * (H - 8);
+    // landscape: X = node index (0=left, STEPS-1=right), Y = amplitude
+    const xAt  = s   => 6 + (s / (STEPS - 1)) * (W - 12);
+    const yAmp = amp => H / 2 - (amp / X_WORLD_MAX) * (H / 2 - 6);
     // project (X, Z) onto decoder viewing angle — auto-loops at decoderSpeed rev/sec
     const decoderRot = t * decoderSpeed * Math.PI * 2;
     const projX = i => envArr[i * 3] * Math.cos(decoderRot) + envArr[i * 3 + 2] * Math.sin(decoderRot);
-    // orbit node tick marks
+    // center baseline
+    specCtx.strokeStyle = 'rgba(0,255,200,0.10)';
+    specCtx.lineWidth = 0.75;
+    specCtx.beginPath(); specCtx.moveTo(0, H / 2); specCtx.lineTo(W, H / 2); specCtx.stroke();
+    // node tick marks + char labels at integer steps
     specCtx.strokeStyle = 'rgba(0,255,200,0.22)';
+    specCtx.fillStyle = 'rgba(0,255,200,0.90)';
+    specCtx.font = 'bold 8px monospace';
+    specCtx.textAlign = 'center';
     for (let s = 0; s < STEPS; s++) {
-      const cy = cyAt(s);
-      specCtx.beginPath(); specCtx.moveTo(W / 2 - 5, cy); specCtx.lineTo(W / 2 + 5, cy); specCtx.stroke();
+      const x = xAt(s);
+      specCtx.beginPath(); specCtx.moveTo(x, H / 2 - 4); specCtx.lineTo(x, H / 2 + 4); specCtx.stroke();
+      if (msgChars[s]) specCtx.fillText(msgChars[s], x, H - 3);
     }
+    specCtx.textAlign = 'left';
     // waveform
     const col = SPEC_COL[fibVariant] || '#00ffcc';
     specCtx.strokeStyle = col;
     specCtx.lineWidth = 2;
     specCtx.beginPath();
     for (let i = 0; i < N_ENV; i++) {
-      const s = (i / (N_ENV - 1)) * (STEPS - 1);
-      const cx = W / 2 + (projX(i) / X_WORLD_MAX) * (W / 2 - 7);
-      const cy = cyAt(s);
+      const s  = (i / (N_ENV - 1)) * (STEPS - 1);
+      const cx = xAt(s);
+      const cy = yAmp(projX(i));
       i === 0 ? specCtx.moveTo(cx, cy) : specCtx.lineTo(cx, cy);
     }
     specCtx.stroke();
@@ -769,6 +775,7 @@ export function buildS7() {
   document.getElementById('p8msg').addEventListener('input', e => encodeMsg(e.target.value));
   document.getElementById('p8dec_rot').addEventListener('input', e => {
     decoderSpeed = parseFloat(e.target.value);
+    document.getElementById('p8dec_hz_val').textContent = decoderSpeed.toFixed(1);
   });
   document.getElementById('p8spec_btn').onclick = () => {
     showSpec = !showSpec;

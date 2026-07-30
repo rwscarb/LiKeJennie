@@ -308,10 +308,8 @@ afterUpdate(() => {
     <div id="clkDisplay" bind:this={clkDisplay}></div>
     <div id="spec-panel">
       <span class="spec-lbl">decoder</span>
-      <div style="display:flex;gap:4px;align-items:flex-start">
-        <canvas id="p8spec" width="140" height="330"></canvas>
-        <div id="decode-panel"></div>
-      </div>
+      <canvas id="p8spec" width="240" height="110"></canvas>
+      <div id="decode-panel"></div>
     </div>
     <button id="fsBtn2" on:click={fullscreen}>&#x26F6; FULL</button>
   </div>
@@ -360,7 +358,7 @@ afterUpdate(() => {
       <button class="btn" id="p8v_top">TOP</button>
       <button class="btn" id="p8v_bottom">BOTTOM</button>
       <button class="btn" id="p8spec_btn">DECODER</button>
-      <span class="clbl">Hz</span><input type="range" id="p8dec_rot" min="0.1" max="5" step="0.1" value="0.5" style="width:60px">
+      <span class="clbl">Hz</span><input type="range" id="p8dec_rot" min="0.1" max="5" step="0.1" value="0.5" style="width:60px"><span class="sval" id="p8dec_hz_val">0.5</span>
       <button class="btn" style="opacity:.35;letter-spacing:.18em;padding:3px 7px" on:click={() => { p8adv = !p8adv; }} title="advanced controls">···</button>
       <div style="display:{p8adv ? 'contents' : 'none'}">
       <button class="btn" id="p8v_fib">FIB</button>
