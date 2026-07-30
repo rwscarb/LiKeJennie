@@ -642,12 +642,60 @@ export function buildS7() {
   let fibVariant = ''; // '' | 'ga' | 'rational' | 'sine' | 'orbit'
   const RATIONAL_A = (2 * Math.PI) / 7; // 7-fold symmetry — closes after 7 steps
   const FIB_IDS = { ga: 'p8v_fib', rational: 'p8v_fibr', sine: 'p8v_fibs', orbit: 'p8v_fibo' };
+  const SPEC_COL = { ga: '#00ffcc', rational: '#ffd700', sine: '#cc88ff', orbit: '#ff9800' };
 
   const setFibVariant = v => {
     fibVariant = v;
     envMat.opacity = v ? 0.72 : 0;
     Object.values(FIB_IDS).forEach(id => document.getElementById(id).classList.remove('lit'));
     if (v) document.getElementById(FIB_IDS[v]).classList.add('lit');
+  };
+
+  // ── Spectrograph canvas ──────────────────────────────────────────────────
+  let showSpec = false;
+  const specPanel  = document.getElementById('spec-panel');
+  const specCanvas = document.getElementById('p8spec');
+  const specCtx    = specCanvas ? specCanvas.getContext('2d') : null;
+  const Y_WORLD_MAX = baseY(STEPS - 1) * 1.15;
+  const X_WORLD_MAX = 3.6;
+
+  const drawSpec = () => {
+    if (!specCtx) return;
+    const W = specCanvas.width, H = specCanvas.height;
+    specCtx.clearRect(0, 0, W, H);
+    // center guide
+    specCtx.strokeStyle = 'rgba(0,255,200,0.10)';
+    specCtx.lineWidth = 0.5;
+    specCtx.beginPath(); specCtx.moveTo(W / 2, 0); specCtx.lineTo(W / 2, H); specCtx.stroke();
+    // orbit node tick marks
+    specCtx.strokeStyle = 'rgba(0,255,200,0.18)';
+    for (let s = 0; s < STEPS; s++) {
+      const idx = Math.round(s * (N_ENV - 1) / (STEPS - 1));
+      const wy = envArr[idx * 3 + 1];
+      const cy = H - 4 - ((wy - 0) / Y_WORLD_MAX) * (H - 8);
+      specCtx.beginPath(); specCtx.moveTo(W / 2 - 3, cy); specCtx.lineTo(W / 2 + 3, cy); specCtx.stroke();
+    }
+    // waveform
+    const col = SPEC_COL[fibVariant] || '#00ffcc';
+    specCtx.strokeStyle = col;
+    specCtx.lineWidth = 1.5;
+    specCtx.beginPath();
+    for (let i = 0; i < N_ENV; i++) {
+      const wx = envArr[i * 3], wy = envArr[i * 3 + 1];
+      const cx = W / 2 + (wx / X_WORLD_MAX) * (W / 2 - 5);
+      const cy = H - 4 - ((wy - 0) / Y_WORLD_MAX) * (H - 8);
+      i === 0 ? specCtx.moveTo(cx, cy) : specCtx.lineTo(cx, cy);
+    }
+    specCtx.stroke();
+    // node dots at integer steps
+    specCtx.fillStyle = col;
+    for (let s = 0; s < STEPS; s++) {
+      const idx = Math.round(s * (N_ENV - 1) / (STEPS - 1));
+      const wx = envArr[idx * 3], wy = envArr[idx * 3 + 1];
+      const cx = W / 2 + (wx / X_WORLD_MAX) * (W / 2 - 5);
+      const cy = H - 4 - ((wy - 0) / Y_WORLD_MAX) * (H - 8);
+      specCtx.beginPath(); specCtx.arc(cx, cy, 1.8, 0, Math.PI * 2); specCtx.fill();
+    }
   };
 
   const PRESETS = {
@@ -673,6 +721,11 @@ export function buildS7() {
     document.getElementById(id).onclick = () => setFibVariant(fibVariant === v ? '' : v);
   });
   document.getElementById('p8men').onclick = () => setMeniscus(!showMeniscus);
+  document.getElementById('p8spec_btn').onclick = () => {
+    showSpec = !showSpec;
+    document.getElementById('p8spec_btn').classList.toggle('lit', showSpec);
+    specPanel.classList.toggle('vis', showSpec);
+  };
 
   // ── Hover / raycasting ───────────────────────────────────────────────────
   const raycaster = new THREE.Raycaster();
@@ -824,6 +877,7 @@ export function buildS7() {
       envArr[i * 3 + 2] = radius * Math.sin(angle);
     }
     envAttr.needsUpdate = true;
+    if (showSpec) drawSpec();
 
     // ── Driver helix updates (inverse, below clock) ───────────────────────
     if (showInversion) {

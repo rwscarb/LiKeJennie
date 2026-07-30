@@ -46,6 +46,10 @@ h1{font-size:3.5rem;color:#ff9800;letter-spacing:.35em;line-height:1;margin-bott
 .ov{position:absolute;top:12px;right:14px;pointer-events:none;font-size:8.5px;line-height:1.7;text-align:right;z-index:5;transform:scale(1.25);transform-origin:top right;}
 #camCoords{position:absolute;top:10px;left:12px;pointer-events:none;font-family:'Courier New',monospace;font-size:8.5px;color:#2a6a4a;line-height:1.7;z-index:5;letter-spacing:.03em;white-space:pre;transform:scale(1.25);transform-origin:top left;}
 #clkDisplay{position:absolute;bottom:18px;right:14px;pointer-events:none;font-family:'Courier New',monospace;font-size:8.5px;line-height:1.75;text-align:right;z-index:5;transform:scale(1.25);transform-origin:bottom right;}
+#spec-panel{position:absolute;left:10px;top:50%;transform:translateY(-50%);z-index:5;display:none;flex-direction:column;align-items:center;gap:3px;pointer-events:none}
+#spec-panel.vis{display:flex}
+#spec-panel canvas{border:1px solid rgba(0,255,200,0.18);background:rgba(0,8,6,0.70);border-radius:3px;display:block}
+#spec-panel .spec-lbl{font-family:'Courier New',monospace;font-size:6.5px;color:#00ffcc99;letter-spacing:.06em;text-transform:uppercase}
 /* ── controls ─────────────────────────────────────── */
 .ctrls{display:flex;align-items:center;gap:6px;margin-top:7px;flex-wrap:wrap;min-height:20px;position:relative;z-index:2}
 .cset{display:none;align-items:center;gap:6px;flex-wrap:wrap}

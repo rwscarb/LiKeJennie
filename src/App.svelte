@@ -306,6 +306,10 @@ afterUpdate(() => {
     <div id="camCoords" bind:this={camCoords}></div>
     <div class="ov" bind:this={ov}></div>
     <div id="clkDisplay" bind:this={clkDisplay}></div>
+    <div id="spec-panel">
+      <span class="spec-lbl">spectrograph</span>
+      <canvas id="p8spec" width="90" height="210"></canvas>
+    </div>
     <button id="fsBtn2" on:click={fullscreen}>&#x26F6; FULL</button>
   </div>
   <div class="ctrls">
@@ -352,6 +356,7 @@ afterUpdate(() => {
       <button class="btn" id="p8center" title="recenter view on the helix axis">⊙ CENTER</button>
       <button class="btn" id="p8v_top">TOP</button>
       <button class="btn" id="p8v_bottom">BOTTOM</button>
+      <button class="btn" id="p8spec_btn">SPEC</button>
       <button class="btn" style="opacity:.35;letter-spacing:.18em;padding:3px 7px" on:click={() => { p8adv = !p8adv; }} title="advanced controls">···</button>
       <div style="display:{p8adv ? 'contents' : 'none'}">
       <button class="btn" id="p8v_fib">FIB</button>
