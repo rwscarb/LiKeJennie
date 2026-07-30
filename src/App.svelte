@@ -355,6 +355,9 @@ afterUpdate(() => {
       <button class="btn" style="opacity:.35;letter-spacing:.18em;padding:3px 7px" on:click={() => { p8adv = !p8adv; }} title="advanced controls">···</button>
       <div style="display:{p8adv ? 'contents' : 'none'}">
       <button class="btn" id="p8v_fib">FIB</button>
+      <button class="btn" id="p8men">MENISCUS</button>
+      <button class="btn" id="p8v_galaxy">GALAXY</button>
+      <button class="btn" id="p8v_dodeca">DODECA</button>
       <button class="btn" id="p8inv">INVERSION</button>
       <button class="btn" id="p8shade">SHADING</button>
       <span class="clbl">A</span>
@@ -474,10 +477,34 @@ const nodePos = (step, offset = 0) => (&#123;
 
     <hr>
 
-    <h2>The Pulsating Inversion (F₈ = 21)</h2>
-    <p>21 steps = F₈. Press <strong>INVERSION</strong> to reveal a counter-phase ghost layer.</p>
-    <pre><code>const breathInv = 1 - 0.10 * Math.sin(t * 0.50); // counter-phase</code></pre>
-    <p>Phase-tension lines connect each node to its ghost. The golden ring at step 20 is the anchor.</p>
+    <h2>The Clock: Pivot Between Two Worlds</h2>
+    <p>A 12-hour clock face sits at the center of the helix, acting as the pivot point between the main helix above and the driver helix below.</p>
+    <p>Three faces are marked as trit digits in balanced ternary:</p>
+    <ul>
+      <li><strong>h=5</strong> → −1 (contraction)</li>
+      <li><strong>h=6</strong> → 0 / nil (the absent center)</li>
+      <li><strong>h=7</strong> → +1 / palindrome (BT(7) = "757")</li>
+    </ul>
+    <p>Hours 2 and 4 are marked in amber — they are two-thirds of the driver group {2, 4, 7}. Hour 7 completes the group. The clock face shows 6+7=13 as a dashed arc: nil plus the palindrome equals the driver.</p>
+
+    <hr>
+
+    <h2>The Driver: 13 Below</h2>
+    <p>The orbit values split into two groups that each sum to 13: &#123;2, 4, 7&#125; and &#123;1, 5, 8&#125;−1. The group &#123;2, 4, 7&#125; is called the driver. 13 is not in the orbit — it sits outside, pulling.</p>
+    <p>Press <strong>INVERSION</strong> to reveal the driver helix below the clock. It is amber — the color of {2, 4, 7} — and grows downward in counter-phase to the main helix above.</p>
+    <pre><code>const breath    = 1 + 0.10 * Math.sin(t * 0.50);  // main helix: inhales up
+const breathInv = 1 - 0.10 * Math.sin(t * 0.50);  // driver: exhales down</code></pre>
+    <p>When the main helix contracts, the driver expands. When the main helix expands, the driver contracts. The clock face between them does not move.</p>
+    <p>Phase-tension lines connect each node to its mirror below. The amber ring at the clock boundary is the anchor.</p>
+
+    <hr>
+
+    <h2>The Meniscus: Boundary Surface</h2>
+    <p>Press <strong>MENISCUS</strong> to reveal an amber membrane at the clock level. It is concave — dipping toward the driver — like the surface of water in a glass.</p>
+    <pre><code>// height at radius r from center:
+const h = CLK_Y - dip * (1 - (r / R_MAX) ** 2);
+// flat at the rim, deepest at center</code></pre>
+    <p>The meniscus breathes with the driver: it dips deeper when the driver expands. It marks the exact boundary where above becomes below.</p>
 
     <hr>
 

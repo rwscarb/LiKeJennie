@@ -560,13 +560,22 @@ export function buildS7() {
     invLabelData.forEach(l => { l.lbl.element.textContent = showDecimal ? l.val : l.bt; });
   };
 
+  let showMeniscus = false;
+
   const setInvVisible = v => {
     invMeshes.forEach(m => { m.visible = v; });
     invLabelData.forEach(({ lbl }) => { lbl.visible = v; });
     invLineData.forEach(({ line }) => { line.visible = v; });
     invBackbone.visible = v;
     anchorLine.visible  = v;
-    menMesh.visible     = v;
+    if (v && showMeniscus) menMesh.visible = true;
+    else if (!v) menMesh.visible = showMeniscus;
+  };
+
+  const setMeniscus = on => {
+    showMeniscus = on;
+    menMesh.visible = on;
+    document.getElementById('p8men').classList.toggle('lit', on);
   };
 
   document.getElementById('p8inv').onclick = () => {
@@ -699,7 +708,10 @@ export function buildS7() {
   // on the helix axis (0,7,0). Needed because shared links / panning can leave the
   // pivot off-axis, which makes the helix swing around instead of spinning in place.
   document.getElementById('p8center').onclick = () => applyPreset('side');
-  document.getElementById('p8v_fib').onclick = () => setFib(!fibMode);
+  document.getElementById('p8v_fib').onclick    = () => setFib(!fibMode);
+  document.getElementById('p8v_galaxy').onclick = () => setGalaxy(!galaxyMode);
+  document.getElementById('p8v_dodeca').onclick = () => setDodeca(!dodecaMode);
+  document.getElementById('p8men').onclick       = () => setMeniscus(!showMeniscus);
 
   // ── Hover / raycasting ───────────────────────────────────────────────────
   const raycaster = new THREE.Raycaster();
