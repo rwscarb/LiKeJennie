@@ -24,7 +24,7 @@ function packState(scene, pos, tgt, sliders, flags) {
   [pos.x, pos.y, pos.z, tgt.x, tgt.y, tgt.z].forEach(f => { v.setFloat32(o, f, true); o += 4; });
   _SKEYS.forEach(k => { const [mn,mx]=_SRANGE[k]; v.setUint16(o, Math.round(Math.max(0,Math.min(1,(parseFloat(sliders[k]||mn)-mn)/(mx-mn)))*65535), true); o+=2; });
   v.setUint8(o, (flags.inv?1:0)|(flags.shade?2:0)|(flags.comp?4:0));
-  return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/_/g,'_').replace(/=/g,'');
+  return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
 }
 function unpackState(enc) {
   try {
@@ -413,7 +413,7 @@ while n not in seen:
     <p>1↔8 &nbsp;·&nbsp; 2↔7 &nbsp;·&nbsp; 4↔5</p>
     <p>This visualization uses two helix strands. Strand A carries the orbit values. Strand B carries the echo values. Strand B is offset by π radians (180°) from Strand A.</p>
     <p>Each rung connects a node on Strand A to its echo node on Strand B.</p>
-    <p>The orbit values form two groups: {2, 4, 7} with sum 13, and {5, 8} with sum 13. Both groups have the same sum.</p>
+    <p>The orbit values form two groups: &#123;2, 4, 7&#125; with sum 13, and &#123;5, 8&#125; with sum 13. Both groups have the same sum.</p>
 
     <hr>
 
@@ -449,11 +449,11 @@ while n not in seen:
     <pre><code>const PHI = (1 + Math.sqrt(5)) / 2;
 const GA  = 2 * Math.PI * (2 - PHI);   // ≈ 137.508°
 
-const nodePos = (step, offset = 0) => ({
+const nodePos = (step, offset = 0) => (&#123;
   x: (0.28 + step * 0.13) * Math.cos(step * GA + offset),
   y:  step * 0.68,
   z: (0.28 + step * 0.13) * Math.sin(step * GA + offset),
-});
+&#125;);
 // Strand A: offset = 0
 // Strand B: offset = Math.PI  (180° apart)</code></pre>
 
@@ -486,4 +486,3 @@ const nodePos = (step, offset = 0) => ({
     <p>7 encodes to "757" (display palindrome). 757 encodes to "1001001" (BT palindrome). Prime, indivisible, reflects without distortion.</p>
   </article>
 </div>
-</body>
