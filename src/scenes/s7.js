@@ -718,20 +718,20 @@ export function buildS7() {
     specCtx.strokeStyle = 'rgba(0,255,200,0.10)';
     specCtx.lineWidth = 0.75;
     specCtx.beginPath(); specCtx.moveTo(W / 2, 0); specCtx.lineTo(W / 2, H); specCtx.stroke();
-    // use unscaled Y so the waveform tracks rotation (not breath)
-    const cyAt = s => H - 4 - (baseY(s) / Y_WORLD_MAX) * (H - 8);
+    // s=0 (first char) at top; Y flipped so low step index → low cy value
+    const cyAt = s => 4 + (baseY(s) / Y_WORLD_MAX) * (H - 8);
     // project (X, Z) onto decoder viewing angle — auto-loops at decoderSpeed rev/sec
     const decoderRot = t * decoderSpeed * Math.PI * 2;
     const projX = i => envArr[i * 3] * Math.cos(decoderRot) + envArr[i * 3 + 2] * Math.sin(decoderRot);
-    // orbit node tick marks + optional character labels
+    // orbit node tick marks + character labels
     specCtx.strokeStyle = 'rgba(0,255,200,0.22)';
-    specCtx.fillStyle = 'rgba(0,255,200,0.60)';
-    specCtx.font = '8px monospace';
+    specCtx.fillStyle = 'rgba(0,255,200,0.92)';
+    specCtx.font = 'bold 11px monospace';
     specCtx.textAlign = 'right';
     for (let s = 0; s < STEPS; s++) {
       const cy = cyAt(s);
       specCtx.beginPath(); specCtx.moveTo(W / 2 - 5, cy); specCtx.lineTo(W / 2 + 5, cy); specCtx.stroke();
-      if (msgChars[s]) specCtx.fillText(msgChars[s], W / 2 - 7, cy + 3);
+      if (msgChars[s]) specCtx.fillText(msgChars[s], W / 2 - 7, cy + 4);
     }
     specCtx.textAlign = 'left';
     // waveform
@@ -746,14 +746,6 @@ export function buildS7() {
       i === 0 ? specCtx.moveTo(cx, cy) : specCtx.lineTo(cx, cy);
     }
     specCtx.stroke();
-    // node dots at integer steps
-    specCtx.fillStyle = col;
-    for (let s = 0; s < STEPS; s++) {
-      const idx = Math.round(s * (N_ENV - 1) / (STEPS - 1));
-      const cx = W / 2 + (projX(idx) / X_WORLD_MAX) * (W / 2 - 7);
-      const cy = cyAt(s);
-      specCtx.beginPath(); specCtx.arc(cx, cy, 2.8, 0, Math.PI * 2); specCtx.fill();
-    }
   };
 
   const PRESETS = {
