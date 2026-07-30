@@ -362,6 +362,7 @@ afterUpdate(() => {
       <button class="btn" id="p8b_ccw">CCW</button>
       <button class="btn" id="p8v_side">SIDE</button>
       <button class="btn" id="p8v_top">TOP</button>
+      <button class="btn" id="p8v_bottom">BOTTOM</button>
       <button class="btn" id="p8v_hero">HERO</button>
       <span class="stat" id="p8stat"></span>
       <div class="srow">
