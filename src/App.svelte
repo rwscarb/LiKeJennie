@@ -308,7 +308,10 @@ afterUpdate(() => {
     <div id="clkDisplay" bind:this={clkDisplay}></div>
     <div id="spec-panel">
       <span class="spec-lbl">spectrograph</span>
-      <canvas id="p8spec" width="90" height="210"></canvas>
+      <div style="display:flex;gap:2px;align-items:flex-start">
+        <canvas id="p8spec" width="90" height="210"></canvas>
+        <div id="decode-panel"></div>
+      </div>
     </div>
     <button id="fsBtn2" on:click={fullscreen}>&#x26F6; FULL</button>
   </div>

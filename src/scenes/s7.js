@@ -668,6 +668,38 @@ export function buildS7() {
     if (v) document.getElementById(FIB_IDS[v]).classList.add('lit');
   };
 
+  // ── Orbit class → candidate letters ─────────────────────────────────────
+  // For each orbit index (0-5) list lowercase letters where charCode % 6 === index
+  const ORBIT_CANDS = (() => {
+    const map = Array.from({ length: M }, () => []);
+    for (let c = 97; c <= 122; c++) map[c % M].push(String.fromCharCode(c));
+    return map; // index matches ORBIT array position
+  })();
+
+  const decodePanel = document.getElementById('decode-panel');
+
+  const updateDecoder = () => {
+    if (!decodePanel) return;
+    let html = '';
+    for (let s = 0; s < STEPS; s++) {
+      const idx = Math.round(s * (N_ENV - 1) / (STEPS - 1));
+      const wx = envArr[idx * 3], wz = envArr[idx * 3 + 2];
+      const r = Math.sqrt(wx * wx + wz * wz);
+      // find closest orbit value
+      const ov = ORBIT.reduce((best, v) => {
+        return Math.abs(R_BASE + v * 0.11 - r) < Math.abs(R_BASE + best * 0.11 - r) ? v : best;
+      }, ORBIT[0]);
+      const orbitIdx = ORBIT.indexOf(ov);
+      const cands = ORBIT_CANDS[orbitIdx];
+      const known = msgChars[s] ? msgChars[s].toLowerCase() : null;
+      const candsHtml = cands.map(ch =>
+        ch === known ? `<span class="hit">${ch}</span>` : `<span class="cands">${ch}</span>`
+      ).join('');
+      html += `<div class="dr"><span class="ov">${ov}</span>${candsHtml}</div>`;
+    }
+    decodePanel.innerHTML = html;
+  };
+
   // ── Spectrograph canvas ──────────────────────────────────────────────────
   let showSpec = false;
   const specPanel  = document.getElementById('spec-panel');
@@ -901,7 +933,7 @@ export function buildS7() {
       envArr[i * 3 + 2] = radius * Math.sin(angle);
     }
     envAttr.needsUpdate = true;
-    if (showSpec) drawSpec();
+    if (showSpec) { drawSpec(); if (fibVariant === 'orbit') updateDecoder(); }
 
     // ── Driver helix updates (inverse, below clock) ───────────────────────
     if (showInversion) {
