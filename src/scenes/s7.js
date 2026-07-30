@@ -684,7 +684,6 @@ export function buildS7() {
     side:   { pos: [20,  5, 10],  tgt: [0, 7, 0] },
     top:    { pos: [ 0, 22,  0],  tgt: [0, 7, 0] },
     bottom: { pos: [ 0, -8,  0],  tgt: [0, 7, 0] },
-    hero:   { pos: [12,  0, 18],  tgt: [0, 7, 0] },
   };
   const applyPreset = key => {
     const { pos, tgt } = PRESETS[key];
@@ -693,7 +692,7 @@ export function buildS7() {
     controls.target.set(...tgt);
     controls.update();
   };
-  ['side', 'top', 'bottom', 'hero'].forEach(k => {
+  ['side', 'top', 'bottom'].forEach(k => {
     document.getElementById(`p8v_${k}`).onclick = () => applyPreset(k);
   });
   // Always-visible recenter: restores the default view with the orbit target back

@@ -352,10 +352,9 @@ afterUpdate(() => {
       <button class="btn" id="p8center" title="recenter view on the helix axis">⊙ CENTER</button>
       <button class="btn" id="p8v_top">TOP</button>
       <button class="btn" id="p8v_bottom">BOTTOM</button>
-      <button class="btn" id="p8v_hero">HERO</button>
       <button class="btn" style="opacity:.35;letter-spacing:.18em;padding:3px 7px" on:click={() => { p8adv = !p8adv; }} title="advanced controls">···</button>
       <div style="display:{p8adv ? 'contents' : 'none'}">
-      <button class="btn" id="p8v_fib">FIB SPIRAL</button>
+      <button class="btn" id="p8v_fib">FIB</button>
       <button class="btn" id="p8inv">INVERSION</button>
       <button class="btn" id="p8shade">SHADING</button>
       <span class="clbl">A</span>
