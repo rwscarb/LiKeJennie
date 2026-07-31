@@ -102,11 +102,15 @@ optuna:
 runpod-sync:
 	@test -n "$(RUNPOD_HOST)" || (echo "  ERROR: RUNPOD_HOST not set in .env"; exit 1)
 	@test -n "$(RUNPOD_PORT)" || (echo "  ERROR: RUNPOD_PORT not set in .env"; exit 1)
-	rsync -avz \
+	tar czf - -C $(WIND_DIR) \
 	    --exclude='.venv' --exclude='__pycache__' --exclude='*.pyc' \
 	    --exclude='cache_*.npz' --exclude='train.log' \
-	    -e "ssh -p $(RUNPOD_PORT) -i $(RUNPOD_SSH_KEY) -o StrictHostKeyChecking=no" \
-	    $(WIND_DIR)/ root@$(RUNPOD_HOST):/root/wind/
+	    . \
+	| ssh root@$(RUNPOD_HOST) -p $(RUNPOD_PORT) -i $(RUNPOD_SSH_KEY) -o StrictHostKeyChecking=no \
+	    "mkdir -p /root/wind && tar xzf - -C /root/wind"
+	sed 's|^WIND_DIR.*|WIND_DIR   := wind|' Makefile \
+	| ssh root@$(RUNPOD_HOST) -p $(RUNPOD_PORT) -i $(RUNPOD_SSH_KEY) -o StrictHostKeyChecking=no \
+	    "cat > /root/Makefile"
 
 # ── UI ─────────────────────────────────────────────────────────────────────────
 dev:
