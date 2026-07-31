@@ -534,32 +534,40 @@ export function buildS7() {
     l.position.set((R_ARC - .52) * Math.cos(aMid), (R_ARC - .52) * Math.sin(aMid), 0);
     CLKG.add(l); R.css2dObjects.push(l); }
 
-  // ── OLIVER 42 overlay — {3,6,9} complement lemniscate at clock level ────────
-  // Lies flat in XZ at y=CLK_Y, coplanar with the clock face.
-  // Right loop = 3 (violet), left loop = 6 (rose), crossing = void/9 (absent).
-  const OLV_A  = 3.2;  // lemniscate scale (just outside CLK_R = 2.6)
-  const OLV_Y  = CLK_Y;
-  const OLV_C3 = 0x9933ff;
-  const OLV_C6 = 0xff33bb;
+  // ── OLIVER 42 overlay — {3,6,9} complement as domed lemniscate ──────────────
+  // Domed Bernoulli lemniscate: loops arch UPWARD from the clock plane (CLK_Y),
+  // creating two hemisphere-like lobes meeting at the bridge/void (node 9, absent).
+  // Right dome = 3 (violet), left dome = 6 (rose), crossing = void/9 (absent).
+  const OLV_A    = 3.2;  // lemniscate XZ scale (just outside CLK_R = 2.6)
+  const OLV_Y    = CLK_Y;
+  const OLV_DOME = 2.0;  // how far apexes arch above CLK_Y
+  const OLV_C3   = 0x9933ff;
+  const OLV_C6   = 0xff33bb;
+  const OLV_CS3  = '#bb55ff';
+  const OLV_CS6  = '#ff55cc';
 
+  // Domed lemniscate: Y rises proportionally to distance from the crossing
   function olvPt(t) {
     const s = Math.sin(t), c = Math.cos(t), d = 1 + s * s;
-    return new THREE.Vector3(OLV_A * c / d, OLV_Y, OLV_A * s * c / d);
+    const x = OLV_A * c / d;
+    const z = OLV_A * s * c / d;
+    const rise = Math.sqrt(x * x + z * z) / OLV_A; // 0 at crossing, 1 at apex
+    return new THREE.Vector3(x, OLV_Y + OLV_DOME * rise, z);
   }
 
   const OLV_SEGS = 256, OLV_HALF = OLV_SEGS / 2;
   const olvRightPts = [], olvLeftPts = [];
   for (let i = 0; i <= OLV_HALF; i++) {
     olvRightPts.push(olvPt(-Math.PI / 2 + (i / OLV_HALF) * Math.PI));
-    olvLeftPts.push(olvPt(Math.PI / 2 + (i / OLV_HALF) * Math.PI));
+    olvLeftPts.push(olvPt( Math.PI / 2 + (i / OLV_HALF) * Math.PI));
   }
 
   const makeLemTube = (pts, color) => {
     const curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.5);
-    const geo   = new THREE.TubeGeometry(curve, OLV_HALF, 0.045, 6, false);
+    const geo   = new THREE.TubeGeometry(curve, OLV_HALF, 0.052, 6, false);
     const mat   = new THREE.MeshPhongMaterial({
       color, emissive: color, emissiveIntensity: 0.35,
-      transparent: true, opacity: 0.75, shininess: 60,
+      transparent: true, opacity: 0.78, shininess: 60,
     });
     R.disposables.push(geo, mat);
     const m = new THREE.Mesh(geo, mat);
@@ -571,30 +579,33 @@ export function buildS7() {
   const olvRight = makeLemTube(olvRightPts, OLV_C3);
   const olvLeft  = makeLemTube(olvLeftPts,  OLV_C6);
 
-  // Apex nodes — node 3 (right) and node 6 (left)
+  // Apex nodes at the top of each dome
   const makeOlvNode = (pos, color) => {
     const geo = new THREE.SphereGeometry(0.22, 20, 14);
     const mat = new THREE.MeshPhongMaterial({
-      color, emissive: color, emissiveIntensity: 0.50,
-      transparent: true, opacity: 0.88,
+      color, emissive: color, emissiveIntensity: 0.55,
+      transparent: true, opacity: 0.90,
     });
     R.disposables.push(geo, mat);
     const m = new THREE.Mesh(geo, mat);
     m.position.copy(pos);
+    m.userData = { baseEI: 0.55 };
     m.visible = false;
     scene.add(m);
     return m;
   };
 
-  const olvNode3 = makeOlvNode(olvPt(0),        OLV_C3);
-  const olvNode6 = makeOlvNode(olvPt(Math.PI),  OLV_C6);
+  const olvNode3Pos = olvPt(0);
+  const olvNode6Pos = olvPt(Math.PI);
+  const olvNode3    = makeOlvNode(olvNode3Pos, OLV_C3);
+  const olvNode6    = makeOlvNode(olvNode6Pos, OLV_C6);
 
-  // Void ring at crossing — where 9 would be
-  const olvVoidGeo = new THREE.TorusGeometry(0.20, 0.04, 8, 32);
-  const olvVoidMat = new THREE.MeshBasicMaterial({ color: 0x220033, transparent: true, opacity: 0.35 });
+  // Void ring at crossing bridge (where 9 would be)
+  const olvVoidGeo = new THREE.TorusGeometry(0.22, 0.045, 8, 32);
+  const olvVoidMat = new THREE.MeshBasicMaterial({ color: 0x220033, transparent: true, opacity: 0.40 });
   R.disposables.push(olvVoidGeo, olvVoidMat);
   const olvVoid = new THREE.Mesh(olvVoidGeo, olvVoidMat);
-  olvVoid.rotation.x = Math.PI / 2; // lie flat in XZ
+  olvVoid.rotation.x = Math.PI / 2;
   olvVoid.position.y = OLV_Y;
   olvVoid.visible = false;
   scene.add(olvVoid);
@@ -613,14 +624,44 @@ export function buildS7() {
     return o;
   };
 
-  const olvLbl3    = makeOlvLbl('3',  olvPt(0).add(new THREE.Vector3(0.7, 0.5, 0)),       '#bb55ff', '16px');
-  const olvLbl6    = makeOlvLbl('6',  olvPt(Math.PI).add(new THREE.Vector3(-0.7, 0.5, 0)), '#ff55cc', '16px');
-  const olvLblVoid = makeOlvLbl('—',  new THREE.Vector3(0, OLV_Y + 0.55, 0),               '#331133', '18px');
+  const olvLbl3    = makeOlvLbl('3', olvNode3Pos.clone().add(new THREE.Vector3(0.65, 0.45, 0)),  OLV_CS3, '16px');
+  const olvLbl6    = makeOlvLbl('6', olvNode6Pos.clone().add(new THREE.Vector3(-0.65, 0.45, 0)), OLV_CS6, '16px');
+  const olvLblVoid = makeOlvLbl('—', new THREE.Vector3(0, OLV_Y + 0.50, 0), '#2a0033', '18px');
 
-  const olvObjs = [olvRight, olvLeft, olvNode3, olvNode6, olvVoid, olvLbl3, olvLbl6, olvLblVoid];
+  // Pulsing traveler
+  const olvTravGeo = new THREE.SphereGeometry(0.16, 14, 10);
+  const olvTravMat = new THREE.MeshPhongMaterial({
+    color: OLV_C3, emissive: OLV_C3, emissiveIntensity: 1.0,
+    transparent: true, opacity: 0.95,
+  });
+  R.disposables.push(olvTravGeo, olvTravMat);
+  const olvTrav = new THREE.Mesh(olvTravGeo, olvTravMat);
+  olvTrav.visible = false;
+  scene.add(olvTrav);
+
+  // Tail
+  const OLV_TAIL   = 16;
+  const olvTailArr  = new Float32Array((OLV_TAIL + 1) * 3);
+  const olvTailGeo  = new THREE.BufferGeometry();
+  const olvTailAttr = new THREE.BufferAttribute(olvTailArr, 3);
+  olvTailAttr.setUsage(THREE.DynamicDrawUsage);
+  olvTailGeo.setAttribute('position', olvTailAttr);
+  const olvTailMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.20 });
+  R.disposables.push(olvTailGeo, olvTailMat);
+  const olvTailLine = new THREE.Line(olvTailGeo, olvTailMat);
+  olvTailLine.visible = false;
+  scene.add(olvTailLine);
+  const olvTailHistory = [];
+
+  const OLV_LOOP_T = 5.5; // seconds per full lemniscate cycle
+  let olvStartT    = null;
+
+  const olvAllObjs = [olvRight, olvLeft, olvNode3, olvNode6, olvVoid, olvTrav, olvTailLine,
+                      olvLbl3, olvLbl6, olvLblVoid];
   const setOliver = on => {
     showOliver = on;
-    olvObjs.forEach(o => { o.visible = on; });
+    olvAllObjs.forEach(o => { o.visible = on; });
+    if (on) olvStartT = null; // reset traveler on enable
     document.getElementById('p8oliver')?.classList.toggle('lit', on);
   };
 
@@ -1210,6 +1251,44 @@ export function buildS7() {
           `₃ <span style="color:#FF6B35">${toBT(hh)}</span>` +
           `·<span style="color:#00E5FF">${toBT(mm)}</span>` +
           `·<span style="color:#FFD700">${toBT(ss)}</span></div>`;
+    }
+
+    // ── Oliver 42 traveler animation ──────────────────────────────────────
+    if (showOliver) {
+      if (olvStartT === null) olvStartT = t;
+      const olvElapsed = t - olvStartT;
+      const olvLoopT   = (olvElapsed / OLV_LOOP_T) % 1;
+      const olvParam   = olvLoopT * Math.PI * 2;
+
+      const olvPos = olvPt(olvParam);
+      olvTrav.position.copy(olvPos);
+
+      // Color by hemisphere: violet in right loop (|t mod 2π| < π/2 or > 3π/2), rose in left
+      const inRight = olvParam < Math.PI / 2 || olvParam > 3 * Math.PI / 2;
+      const olvCol  = inRight ? OLV_C3 : OLV_C6;
+      olvTravMat.color.setHex(olvCol);
+      olvTravMat.emissive.setHex(olvCol);
+
+      // Dim near the crossing bridge (y close to OLV_Y = ground level)
+      const bridgeDist = olvPos.y - OLV_Y;
+      olvTravMat.opacity = 0.30 + 0.65 * Math.min(1, bridgeDist / OLV_DOME);
+
+      // Pulse apex nodes as traveler approaches
+      const d3 = olvPos.distanceTo(olvNode3Pos);
+      const d6 = olvPos.distanceTo(olvNode6Pos);
+      olvNode3.material.emissiveIntensity = olvNode3.userData.baseEI + 2.0 * Math.max(0, 1 - d3 / 1.0);
+      olvNode6.material.emissiveIntensity = olvNode6.userData.baseEI + 2.0 * Math.max(0, 1 - d6 / 1.0);
+
+      // Tail
+      olvTailHistory.push(olvPos.clone());
+      if (olvTailHistory.length > OLV_TAIL) olvTailHistory.shift();
+      for (let i = 0; i < olvTailHistory.length; i++) {
+        olvTailArr[i * 3]     = olvTailHistory[i].x;
+        olvTailArr[i * 3 + 1] = olvTailHistory[i].y;
+        olvTailArr[i * 3 + 2] = olvTailHistory[i].z;
+      }
+      olvTailAttr.needsUpdate = true;
+      olvTailGeo.setDrawRange(0, olvTailHistory.length);
     }
 
     R.labelRenderer.render(scene, camera);
