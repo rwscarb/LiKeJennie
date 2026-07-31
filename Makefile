@@ -1,8 +1,10 @@
-WIND_DIR := src/experiments/wind
-UI_DIR   := src/ui
+WIND_DIR   := src/experiments/wind
+UI_DIR     := src/ui
+S3_BUCKET  := s3://hak4
+CF_DIST_ID := ETGRAW2YE5AZA
 
 .PHONY: all help test test-py test-py-unit test-py-e2e test-js test-js-e2e \
-        lint format format-check sync install train optuna dev build clean clean-cache
+        lint format format-check sync install train optuna dev build deploy clean clean-cache
 
 # ── Default ────────────────────────────────────────────────────────────────────
 all: help
@@ -34,6 +36,7 @@ help:
 	@echo "  UI"
 	@echo "    dev              vite dev server"
 	@echo "    build            vite build"
+	@echo "    deploy           build → s3://hak4 → CloudFront invalidation"
 	@echo ""
 	@echo "  Cleanup"
 	@echo "    clean            remove __pycache__ + train.log"
@@ -88,6 +91,10 @@ dev:
 
 build:
 	cd $(UI_DIR) && npm run build
+
+deploy: build
+	aws s3 cp --recursive $(UI_DIR)/dist/ $(S3_BUCKET)/
+	aws cloudfront create-invalidation --distribution-id $(CF_DIST_ID) --paths '/*'
 
 # ── Cleanup ────────────────────────────────────────────────────────────────────
 clean:
