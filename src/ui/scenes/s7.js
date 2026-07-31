@@ -534,25 +534,26 @@ export function buildS7() {
     l.position.set((R_ARC - .52) * Math.cos(aMid), (R_ARC - .52) * Math.sin(aMid), 0);
     CLKG.add(l); R.css2dObjects.push(l); }
 
-  // ── OLIVER 42 overlay — {3,6,9} complement as domed lemniscate ──────────────
-  // Domed Bernoulli lemniscate: loops arch UPWARD from the clock plane (CLK_Y),
-  // creating two hemisphere-like lobes meeting at the bridge/void (node 9, absent).
-  // Right dome = 3 (violet), left dome = 6 (rose), crossing = void/9 (absent).
-  const OLV_A    = 3.2;  // lemniscate XZ scale (just outside CLK_R = 2.6)
+  // ── OLIVER 42 overlay — {3,6,9} complement as hourglass/event horizon ───────
+  // Right loop (node 3) arches UP into orbit space; left loop (node 6) descends DOWN
+  // into the driver/complement space. They pinch at CLK_Y — the throat where 9 is absent.
+  // Viewed from the side: an hourglass. Viewed from above: the ∞ sign (Wife's drawing).
+  const OLV_A    = 3.0;  // lemniscate XZ scale
   const OLV_Y    = CLK_Y;
-  const OLV_DOME = 2.0;  // how far apexes arch above CLK_Y
+  const OLV_DOME = 2.2;  // height of each dome above/below CLK_Y
   const OLV_C3   = 0x9933ff;
   const OLV_C6   = 0xff33bb;
   const OLV_CS3  = '#bb55ff';
   const OLV_CS6  = '#ff55cc';
 
-  // Domed lemniscate: Y rises proportionally to distance from the crossing
+  // Hourglass lemniscate: right loop goes UP, left loop goes DOWN
   function olvPt(t) {
     const s = Math.sin(t), c = Math.cos(t), d = 1 + s * s;
     const x = OLV_A * c / d;
     const z = OLV_A * s * c / d;
-    const rise = Math.sqrt(x * x + z * z) / OLV_A; // 0 at crossing, 1 at apex
-    return new THREE.Vector3(x, OLV_Y + OLV_DOME * rise, z);
+    const rise = Math.sqrt(x * x + z * z) / OLV_A; // 0 at throat, 1 at apex
+    const inRight = t < Math.PI / 2 || t > 3 * Math.PI / 2;
+    return new THREE.Vector3(x, OLV_Y + (inRight ? 1 : -1) * OLV_DOME * rise, z);
   }
 
   const OLV_SEGS = 256, OLV_HALF = OLV_SEGS / 2;
@@ -578,6 +579,28 @@ export function buildS7() {
 
   const olvRight = makeLemTube(olvRightPts, OLV_C3);
   const olvLeft  = makeLemTube(olvLeftPts,  OLV_C6);
+
+  // Transparent dome surfaces — fill the hemispheres with ghostly shell geometry
+  const makeDomeSurf = (color, phiStart) => {
+    // SphereGeometry at clock level: upper (phiStart=0) or lower (phiStart=π/2) hemisphere
+    const geo = new THREE.SphereGeometry(OLV_A, 40, 12, 0, Math.PI * 2, phiStart, Math.PI / 2);
+    const mat = new THREE.MeshPhongMaterial({
+      color, emissive: color, emissiveIntensity: 0.12,
+      transparent: true, opacity: 0.12,
+      side: THREE.DoubleSide, depthWrite: false,
+    });
+    R.disposables.push(geo, mat);
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(0, OLV_Y, 0);
+    // Upper dome sits above equator (y > OLV_Y); lower dome flips down
+    if (phiStart > 0) m.scale.y = -1; // mirror lower dome downward
+    m.visible = false;
+    scene.add(m);
+    return m;
+  };
+
+  const olvDome3 = makeDomeSurf(OLV_C3, 0);           // upper (node 3)
+  const olvDome6 = makeDomeSurf(OLV_C6, Math.PI / 2); // lower (node 6)
 
   // Apex nodes at the top of each dome
   const makeOlvNode = (pos, color) => {
@@ -656,8 +679,8 @@ export function buildS7() {
   const OLV_LOOP_T = 5.5; // seconds per full lemniscate cycle
   let olvStartT    = null;
 
-  const olvAllObjs = [olvRight, olvLeft, olvNode3, olvNode6, olvVoid, olvTrav, olvTailLine,
-                      olvLbl3, olvLbl6, olvLblVoid];
+  const olvAllObjs = [olvRight, olvLeft, olvDome3, olvDome6, olvNode3, olvNode6, olvVoid,
+                      olvTrav, olvTailLine, olvLbl3, olvLbl6, olvLblVoid];
   const setOliver = on => {
     showOliver = on;
     olvAllObjs.forEach(o => { o.visible = on; });
