@@ -3,9 +3,12 @@ UI_DIR     := src/ui
 S3_BUCKET  := s3://hak4
 CF_DIST_ID := ETGRAW2YE5AZA
 
+-include .env
+RUNPOD_SSH_KEY ?= $(HOME)/.ssh/id_ed25519
+
 .PHONY: all help test test-py test-py-unit test-py-e2e test-js test-js-e2e \
         lint format format-check sync install train optuna dev build deploy \
-        clean clean-cache
+        runpod-sync clean clean-cache
 
 # ── Default ────────────────────────────────────────────────────────────────────
 all: help
@@ -38,6 +41,9 @@ help:
 	@printf "  $(BOLD)Training$(RESET)\n"
 	@printf "    $(GREEN)train$(RESET)            run iso_wind_rgnn.py -v  (logs → train.log)\n"
 	@printf "    $(GREEN)optuna$(RESET)           run 40-trial HPO         (logs → train.log)\n"
+	@printf "\n"
+	@printf "  $(BOLD)RunPod$(RESET)  $(set RUNPOD_HOST + RUNPOD_PORT in .env)\n"
+	@printf "    $(GREEN)runpod-sync$(RESET)      rsync wind/ to pod /root/wind/\n"
 	@printf "\n"
 	@printf "  $(BOLD)UI$(RESET)\n"
 	@printf "    $(GREEN)dev$(RESET)              vite dev server\n"
@@ -90,6 +96,17 @@ train:
 
 optuna:
 	cd $(WIND_DIR) && uv run python -u iso_wind_rgnn.py --optuna --n-trials 40 -v 2>&1 | tee train.log
+
+# ── RunPod ─────────────────────────────────────────────────────────────────────
+# Set RUNPOD_HOST and RUNPOD_PORT in .env (changes each pod session)
+runpod-sync:
+	@test -n "$(RUNPOD_HOST)" || (echo "  ERROR: RUNPOD_HOST not set in .env"; exit 1)
+	@test -n "$(RUNPOD_PORT)" || (echo "  ERROR: RUNPOD_PORT not set in .env"; exit 1)
+	rsync -avz \
+	    --exclude='.venv' --exclude='__pycache__' --exclude='*.pyc' \
+	    --exclude='cache_*.npz' --exclude='train.log' \
+	    -e "ssh -p $(RUNPOD_PORT) -i $(RUNPOD_SSH_KEY) -o StrictHostKeyChecking=no" \
+	    $(WIND_DIR)/ root@$(RUNPOD_HOST):/root/wind/
 
 # ── UI ─────────────────────────────────────────────────────────────────────────
 dev:
