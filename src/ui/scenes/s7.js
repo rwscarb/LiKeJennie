@@ -534,33 +534,36 @@ export function buildS7() {
     l.position.set((R_ARC - .52) * Math.cos(aMid), (R_ARC - .52) * Math.sin(aMid), 0);
     CLKG.add(l); R.css2dObjects.push(l); }
 
-  // ── OLIVER 42 overlay — {3,6,9} complement as hourglass/event horizon ───────
-  // Right loop (node 3) arches UP into orbit space; left loop (node 6) descends DOWN
-  // into the driver/complement space. They pinch at CLK_Y — the throat where 9 is absent.
-  // Viewed from the side: an hourglass. Viewed from above: the ∞ sign (Wife's drawing).
-  const OLV_A    = 3.0;  // lemniscate XZ scale
+  // ── OLIVER 42 overlay — {3,6,9} complement as violin resonant body ───────────
+  // Vertical figure-8: upper chamber (node 3, violet) arches UP from the bridge;
+  // lower chamber (node 6, rose) descends DOWN. Bridge = absent 9. Strings pass through.
+  // Geometry from Wife's drawing: two trapezoidal chambers meeting at a heavy horizontal ring.
+  const OLV_A    = 2.2;   // lemniscate horizontal scale (inner loop spread)
+  const OLV_DOME = 3.0;   // height of each chamber above/below CLK_Y
   const OLV_Y    = CLK_Y;
-  const OLV_DOME = 2.2;  // height of each dome above/below CLK_Y
   const OLV_C3   = 0x9933ff;
   const OLV_C6   = 0xff33bb;
   const OLV_CS3  = '#bb55ff';
   const OLV_CS6  = '#ff55cc';
 
-  // Hourglass lemniscate: right loop goes UP, left loop goes DOWN
+  // Vertical Bernoulli lemniscate (90°-rotated):
+  //   t=0   → (0, OLV_Y+OLV_DOME, 0)  — top apex = node 3
+  //   t=π   → (0, OLV_Y-OLV_DOME, 0)  — bottom apex = node 6
+  //   t=π/2 → (0, OLV_Y, 0)           — bridge crossing (void/9)
   function olvPt(t) {
     const s = Math.sin(t), c = Math.cos(t), d = 1 + s * s;
-    const x = OLV_A * c / d;
-    const z = OLV_A * s * c / d;
-    const rise = Math.sqrt(x * x + z * z) / OLV_A; // 0 at throat, 1 at apex
-    const inRight = t < Math.PI / 2 || t > 3 * Math.PI / 2;
-    return new THREE.Vector3(x, OLV_Y + (inRight ? 1 : -1) * OLV_DOME * rise, z);
+    return new THREE.Vector3(
+      -(OLV_A * s * c / d),      // horizontal spread inside chamber
+      OLV_Y + OLV_DOME * c / d,  // vertical: up at t=0 (node 3), down at t=π (node 6)
+      0,
+    );
   }
 
   const OLV_SEGS = 256, OLV_HALF = OLV_SEGS / 2;
-  const olvRightPts = [], olvLeftPts = [];
+  const olvUpperPts = [], olvLowerPts = [];
   for (let i = 0; i <= OLV_HALF; i++) {
-    olvRightPts.push(olvPt(-Math.PI / 2 + (i / OLV_HALF) * Math.PI));
-    olvLeftPts.push(olvPt( Math.PI / 2 + (i / OLV_HALF) * Math.PI));
+    olvUpperPts.push(olvPt(-Math.PI / 2 + (i / OLV_HALF) * Math.PI)); // t: -π/2→π/2  (upper, node 3)
+    olvLowerPts.push(olvPt( Math.PI / 2 + (i / OLV_HALF) * Math.PI)); // t:  π/2→3π/2 (lower, node 6)
   }
 
   const makeLemTube = (pts, color) => {
@@ -577,32 +580,36 @@ export function buildS7() {
     return m;
   };
 
-  const olvRight = makeLemTube(olvRightPts, OLV_C3);
-  const olvLeft  = makeLemTube(olvLeftPts,  OLV_C6);
+  const olvUpper = makeLemTube(olvUpperPts, OLV_C3);  // node 3 (upper, violet)
+  const olvLower = makeLemTube(olvLowerPts, OLV_C6);  // node 6 (lower, rose)
 
-  // Transparent dome surfaces — fill the hemispheres with ghostly shell geometry
-  const makeDomeSurf = (color, phiStart) => {
-    // SphereGeometry at clock level: upper (phiStart=0) or lower (phiStart=π/2) hemisphere
-    const geo = new THREE.SphereGeometry(OLV_A, 40, 12, 0, Math.PI * 2, phiStart, Math.PI / 2);
+  // Outer resonant chamber walls — truncated cones (frustums) meeting at the bridge.
+  // Upper: wide at top, narrow at bridge. Lower: narrow at bridge, wide at bottom.
+  const makeChamber = (color, yCenter, wideAtTop) => {
+    const rNarrow = OLV_A * 0.18;
+    const rWide   = OLV_A * 0.95;
+    const geo = new THREE.CylinderGeometry(
+      wideAtTop ? rWide : rNarrow,
+      wideAtTop ? rNarrow : rWide,
+      OLV_DOME, 32, 1, true,
+    );
     const mat = new THREE.MeshPhongMaterial({
-      color, emissive: color, emissiveIntensity: 0.12,
-      transparent: true, opacity: 0.12,
+      color, emissive: color, emissiveIntensity: 0.10,
+      transparent: true, opacity: 0.11,
       side: THREE.DoubleSide, depthWrite: false,
     });
     R.disposables.push(geo, mat);
     const m = new THREE.Mesh(geo, mat);
-    m.position.set(0, OLV_Y, 0);
-    // Upper dome sits above equator (y > OLV_Y); lower dome flips down
-    if (phiStart > 0) m.scale.y = -1; // mirror lower dome downward
+    m.position.set(0, yCenter, 0);
     m.visible = false;
     scene.add(m);
     return m;
   };
 
-  const olvDome3 = makeDomeSurf(OLV_C3, 0);           // upper (node 3)
-  const olvDome6 = makeDomeSurf(OLV_C6, Math.PI / 2); // lower (node 6)
+  const olvChamber3 = makeChamber(OLV_C3, OLV_Y + OLV_DOME / 2, true);  // upper: wide at top
+  const olvChamber6 = makeChamber(OLV_C6, OLV_Y - OLV_DOME / 2, false); // lower: wide at bottom
 
-  // Apex nodes at the top of each dome
+  // Apex nodes
   const makeOlvNode = (pos, color) => {
     const geo = new THREE.SphereGeometry(0.22, 20, 14);
     const mat = new THREE.MeshPhongMaterial({
@@ -618,20 +625,23 @@ export function buildS7() {
     return m;
   };
 
-  const olvNode3Pos = olvPt(0);
-  const olvNode6Pos = olvPt(Math.PI);
+  const olvNode3Pos = olvPt(0);        // (0, OLV_Y+OLV_DOME, 0) — top
+  const olvNode6Pos = olvPt(Math.PI);  // (0, OLV_Y-OLV_DOME, 0) — bottom
   const olvNode3    = makeOlvNode(olvNode3Pos, OLV_C3);
   const olvNode6    = makeOlvNode(olvNode6Pos, OLV_C6);
 
-  // Void ring at crossing bridge (where 9 would be)
-  const olvVoidGeo = new THREE.TorusGeometry(0.22, 0.045, 8, 32);
-  const olvVoidMat = new THREE.MeshBasicMaterial({ color: 0x220033, transparent: true, opacity: 0.40 });
-  R.disposables.push(olvVoidGeo, olvVoidMat);
-  const olvVoid = new THREE.Mesh(olvVoidGeo, olvVoidMat);
-  olvVoid.rotation.x = Math.PI / 2;
-  olvVoid.position.y = OLV_Y;
-  olvVoid.visible = false;
-  scene.add(olvVoid);
+  // Bridge — prominent horizontal ring at CLK_Y (the absent 9, void at the waist)
+  const olvBridgeGeo = new THREE.TorusGeometry(OLV_A * 0.62, 0.085, 8, 48);
+  const olvBridgeMat = new THREE.MeshPhongMaterial({
+    color: 0x330044, emissive: 0x220033, emissiveIntensity: 0.40,
+    transparent: true, opacity: 0.65,
+  });
+  R.disposables.push(olvBridgeGeo, olvBridgeMat);
+  const olvBridge = new THREE.Mesh(olvBridgeGeo, olvBridgeMat);
+  olvBridge.rotation.x = Math.PI / 2;
+  olvBridge.position.y = OLV_Y;
+  olvBridge.visible = false;
+  scene.add(olvBridge);
 
   // Labels
   const makeOlvLbl = (text, pos, color, size = '13px') => {
@@ -647,9 +657,27 @@ export function buildS7() {
     return o;
   };
 
-  const olvLbl3    = makeOlvLbl('3', olvNode3Pos.clone().add(new THREE.Vector3(0.65, 0.45, 0)),  OLV_CS3, '16px');
-  const olvLbl6    = makeOlvLbl('6', olvNode6Pos.clone().add(new THREE.Vector3(-0.65, 0.45, 0)), OLV_CS6, '16px');
-  const olvLblVoid = makeOlvLbl('—', new THREE.Vector3(0, OLV_Y + 0.50, 0), '#2a0033', '18px');
+  const olvLbl3    = makeOlvLbl('3', olvNode3Pos.clone().add(new THREE.Vector3(0.55,  0.30, 0)), OLV_CS3, '16px');
+  const olvLbl6    = makeOlvLbl('6', olvNode6Pos.clone().add(new THREE.Vector3(0.55, -0.30, 0)), OLV_CS6, '16px');
+  const olvLblVoid = makeOlvLbl('—', new THREE.Vector3(0.55, OLV_Y, 0), '#2a0033', '18px');
+
+  // Strings — vertical wires through the bridge (the void crossing)
+  const makeOlvString = (xOff) => {
+    const pts = [
+      new THREE.Vector3(xOff, OLV_Y - OLV_DOME * 1.05, 0),
+      new THREE.Vector3(xOff, OLV_Y + OLV_DOME * 1.05, 0),
+    ];
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    const mat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.11 });
+    R.disposables.push(geo, mat);
+    const line = new THREE.Line(geo, mat);
+    line.visible = false;
+    scene.add(line);
+    return line;
+  };
+  const olvStr1 = makeOlvString(-OLV_A * 0.28);
+  const olvStr2 = makeOlvString(0);
+  const olvStr3 = makeOlvString( OLV_A * 0.28);
 
   // Pulsing traveler
   const olvTravGeo = new THREE.SphereGeometry(0.16, 14, 10);
@@ -679,12 +707,13 @@ export function buildS7() {
   const OLV_LOOP_T = 5.5; // seconds per full lemniscate cycle
   let olvStartT    = null;
 
-  const olvAllObjs = [olvRight, olvLeft, olvDome3, olvDome6, olvNode3, olvNode6, olvVoid,
-                      olvTrav, olvTailLine, olvLbl3, olvLbl6, olvLblVoid];
+  const olvAllObjs = [olvUpper, olvLower, olvChamber3, olvChamber6, olvNode3, olvNode6,
+                      olvBridge, olvTrav, olvTailLine, olvLbl3, olvLbl6, olvLblVoid,
+                      olvStr1, olvStr2, olvStr3];
   const setOliver = on => {
     showOliver = on;
     olvAllObjs.forEach(o => { o.visible = on; });
-    if (on) olvStartT = null; // reset traveler on enable
+    if (on) olvStartT = null;
     document.getElementById('p8oliver')?.classList.toggle('lit', on);
   };
 
@@ -1286,14 +1315,14 @@ export function buildS7() {
       const olvPos = olvPt(olvParam);
       olvTrav.position.copy(olvPos);
 
-      // Color by hemisphere: violet in right loop (|t mod 2π| < π/2 or > 3π/2), rose in left
-      const inRight = olvParam < Math.PI / 2 || olvParam > 3 * Math.PI / 2;
-      const olvCol  = inRight ? OLV_C3 : OLV_C6;
+      // Upper chamber (node 3): t where cos(t)>0, i.e. t in (-π/2, π/2)
+      const inUpper = olvParam < Math.PI / 2 || olvParam > 3 * Math.PI / 2;
+      const olvCol  = inUpper ? OLV_C3 : OLV_C6;
       olvTravMat.color.setHex(olvCol);
       olvTravMat.emissive.setHex(olvCol);
 
-      // Dim near the crossing bridge (y close to OLV_Y = ground level)
-      const bridgeDist = olvPos.y - OLV_Y;
+      // Dim near the bridge crossing (y close to OLV_Y)
+      const bridgeDist = Math.abs(olvPos.y - OLV_Y);
       olvTravMat.opacity = 0.30 + 0.65 * Math.min(1, bridgeDist / OLV_DOME);
 
       // Pulse apex nodes as traveler approaches
