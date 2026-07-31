@@ -1,4 +1,4 @@
-// Scene registry: 10 slide descriptors, in panel order.
+// Scene registry: 11 slide descriptors, in panel order.
 import { buildS0  } from './s0.js';
 import { buildS1  } from './s1.js';
 import { buildS2  } from './s2.js';
@@ -9,6 +9,7 @@ import { buildS6  } from './s6.js';
 import { buildS7  } from './s7.js';
 import { buildS8  } from './s8.js';
 import { buildS10 } from './s10.js';
+import { buildS11 } from './s11.js';
 
 export const scenes = [
   { id: 'divisor-lattice',   num: '01', label: 'DIVISOR LATTICE',   build: buildS0  },
@@ -21,4 +22,5 @@ export const scenes = [
   { id: 'mod9-orbit',        num: '08', label: 'HELIX',             build: buildS7  },
   { id: 'clock',             num: '09', label: 'CLOCK',             build: buildS8  },
   { id: 'orbit-cycle',       num: '10', label: 'ORBIT CYCLE',       build: buildS10 },
+  { id: 'oliver42',          num: '11', label: 'OLIVER 42',         build: buildS11 },
 ];

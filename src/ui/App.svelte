@@ -401,6 +401,10 @@ afterUpdate(() => {
     <div class="cset" class:on={active === 9}>
       <span class="stat">drag to rotate &nbsp;&middot;&nbsp; ×2 mod 9 orbit cycle</span>
     </div>
+    <div class="cset" class:on={active === 10}>
+      <button class="btn lit" id="p11rot">AUTO-ROTATE</button>
+      <span class="stat">drag to rotate &nbsp;&middot;&nbsp; hover a node &nbsp;&middot;&nbsp; {3,6,9} complement</span>
+    </div>
   </div>
 </div>
 
