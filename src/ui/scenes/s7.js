@@ -893,7 +893,9 @@ export function buildS7() {
     if (idx >= 0) {
       const { val, bt, cs, isEcho } = allMeshes[idx].userData;
       const echo = COMP_OF[val];
-      let h = `<div class="th" style="color:${cs}">${val}</div>`;
+      const glabel = showGreek ? (GREEK[val] ?? val) : null;
+      let h = `<div class="th" style="color:${cs}">${glabel ?? val}</div>`;
+      if (glabel) h += `<p class="tr" style="color:#888aaa">decimal: <b>${val}</b></p>`;
       h += `<p class="tr">trit: <b>${bt}</b> · ${isEcho ? 'echo' : 'orbit'}</p>`;
       h += `<p class="tr">echo of <b>${echo}</b> [${BT[echo]}]</p>`;
       h += `<p class="tr" style="color:#888aaa">6=nil · balanced on 6</p>`;
