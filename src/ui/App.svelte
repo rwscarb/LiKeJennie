@@ -593,3 +593,7 @@ const h = CLK_Y - dip * (1 - (r / R_MAX) ** 2);
     <p>The clock at the helix midpoint sits at step 10-11 of the 21-node sequence — at the transition between orbit values 7 and 5. The driver group is below the clock. The echo group is above it.</p>
   </article>
 </div>
+
+<div class="footer">
+  <a href="mailto:oliver42@fib896.com">oliver42@fib896.com</a>
+</div>

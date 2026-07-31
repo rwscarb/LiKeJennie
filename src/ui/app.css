@@ -193,3 +193,8 @@ input[type=range]::-moz-range-thumb{width:8px;height:8px;background:#00ff88;bord
 #panelwrap:fullscreen .ov,#panelwrap:-webkit-full-screen .ov{transform:scale(2);transform-origin:top right}
 #panelwrap:fullscreen #camCoords,#panelwrap:-webkit-full-screen #camCoords{transform:scale(2);transform-origin:top left;font-size:8.5px}
 #panelwrap:fullscreen #clkDisplay,#panelwrap:-webkit-full-screen #clkDisplay{transform:scale(2);transform-origin:bottom right;font-size:8.5px}
+
+/* ── footer ───────────────────────────────────────── */
+.footer{text-align:center;padding:1.2rem 0 2rem;font-size:.72rem;letter-spacing:.12em;opacity:.45}
+.footer a{color:#00ff88;text-decoration:none}
+.footer a:hover{opacity:.8}
