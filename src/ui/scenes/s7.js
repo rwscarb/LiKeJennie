@@ -557,11 +557,18 @@ export function buildS7() {
     document.getElementById('p8rot').classList.toggle('lit', controls.autoRotate);
   };
 
+  const setGreekTitle = on => {
+    const h1 = document.getElementById('site-title');
+    if (h1) h1.textContent = on ? 'JENNIE φ' : 'JENNIE 21';
+    document.title = on ? 'JENNIE φ' : 'JENNIE 21';
+  };
+
   document.getElementById('p8comp').onclick = () => {
     showDecimal = !showDecimal;
     showGreek = false;
     document.getElementById('p8comp').classList.toggle('lit', showDecimal);
     document.getElementById('p8greek').classList.remove('lit');
+    setGreekTitle(false);
     invLabelData.forEach(l => { l.lbl.element.textContent = nodeLabel(l); });
     syncOrbitLabels();
   };
@@ -573,6 +580,7 @@ export function buildS7() {
       showDecimal = false;
       document.getElementById('p8comp').classList.remove('lit');
     }
+    setGreekTitle(showGreek);
     invLabelData.forEach(l => { l.lbl.element.textContent = nodeLabel(l); });
     syncOrbitLabels();
   };

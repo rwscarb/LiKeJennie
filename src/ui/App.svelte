@@ -274,7 +274,7 @@ afterUpdate(() => {
 <canvas id="rain" bind:this={rain}></canvas>
 
 <div class="hdr">
-  <h1>JENNIE φ</h1>
+  <h1 id="site-title">JENNIE 21</h1>
   <div class="sub">2<sup>7</sup> &times; 7 &nbsp;&middot;&nbsp; Lucas<sub>4</sub>=7 &nbsp;&middot;&nbsp; &tau;(896)=16 active experts &nbsp;&middot;&nbsp; Kimi K3 MoE &nbsp;&middot;&nbsp; 1/89=&Sigma;F(n)/10<sup>n+1</sup> &nbsp;&middot;&nbsp; dr(896)=5, dr(897)=6</div>
   <div class="gleg">
     <span style="color:#00ff88">&#9679; Fibonacci</span>
