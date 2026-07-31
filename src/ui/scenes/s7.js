@@ -101,6 +101,7 @@ export function buildS7() {
   let showShading   = false;
   let showDecimal   = true;
   let showGreek     = false;
+  let showOliver    = false;
 
   const invMeshes    = []; // { mesh, s } — strand A positions, counter-phase Y
   const invLabelData = []; // { lbl, val, bt, cs, s }
@@ -533,6 +534,96 @@ export function buildS7() {
     l.position.set((R_ARC - .52) * Math.cos(aMid), (R_ARC - .52) * Math.sin(aMid), 0);
     CLKG.add(l); R.css2dObjects.push(l); }
 
+  // ── OLIVER 42 overlay — {3,6,9} complement lemniscate at clock level ────────
+  // Lies flat in XZ at y=CLK_Y, coplanar with the clock face.
+  // Right loop = 3 (violet), left loop = 6 (rose), crossing = void/9 (absent).
+  const OLV_A  = 3.2;  // lemniscate scale (just outside CLK_R = 2.6)
+  const OLV_Y  = CLK_Y;
+  const OLV_C3 = 0x9933ff;
+  const OLV_C6 = 0xff33bb;
+
+  function olvPt(t) {
+    const s = Math.sin(t), c = Math.cos(t), d = 1 + s * s;
+    return new THREE.Vector3(OLV_A * c / d, OLV_Y, OLV_A * s * c / d);
+  }
+
+  const OLV_SEGS = 256, OLV_HALF = OLV_SEGS / 2;
+  const olvRightPts = [], olvLeftPts = [];
+  for (let i = 0; i <= OLV_HALF; i++) {
+    olvRightPts.push(olvPt(-Math.PI / 2 + (i / OLV_HALF) * Math.PI));
+    olvLeftPts.push(olvPt(Math.PI / 2 + (i / OLV_HALF) * Math.PI));
+  }
+
+  const makeLemTube = (pts, color) => {
+    const curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.5);
+    const geo   = new THREE.TubeGeometry(curve, OLV_HALF, 0.045, 6, false);
+    const mat   = new THREE.MeshPhongMaterial({
+      color, emissive: color, emissiveIntensity: 0.35,
+      transparent: true, opacity: 0.75, shininess: 60,
+    });
+    R.disposables.push(geo, mat);
+    const m = new THREE.Mesh(geo, mat);
+    m.visible = false;
+    scene.add(m);
+    return m;
+  };
+
+  const olvRight = makeLemTube(olvRightPts, OLV_C3);
+  const olvLeft  = makeLemTube(olvLeftPts,  OLV_C6);
+
+  // Apex nodes — node 3 (right) and node 6 (left)
+  const makeOlvNode = (pos, color) => {
+    const geo = new THREE.SphereGeometry(0.22, 20, 14);
+    const mat = new THREE.MeshPhongMaterial({
+      color, emissive: color, emissiveIntensity: 0.50,
+      transparent: true, opacity: 0.88,
+    });
+    R.disposables.push(geo, mat);
+    const m = new THREE.Mesh(geo, mat);
+    m.position.copy(pos);
+    m.visible = false;
+    scene.add(m);
+    return m;
+  };
+
+  const olvNode3 = makeOlvNode(olvPt(0),        OLV_C3);
+  const olvNode6 = makeOlvNode(olvPt(Math.PI),  OLV_C6);
+
+  // Void ring at crossing — where 9 would be
+  const olvVoidGeo = new THREE.TorusGeometry(0.20, 0.04, 8, 32);
+  const olvVoidMat = new THREE.MeshBasicMaterial({ color: 0x220033, transparent: true, opacity: 0.35 });
+  R.disposables.push(olvVoidGeo, olvVoidMat);
+  const olvVoid = new THREE.Mesh(olvVoidGeo, olvVoidMat);
+  olvVoid.rotation.x = Math.PI / 2; // lie flat in XZ
+  olvVoid.position.y = OLV_Y;
+  olvVoid.visible = false;
+  scene.add(olvVoid);
+
+  // Labels
+  const makeOlvLbl = (text, pos, color, size = '13px') => {
+    const div = document.createElement('div');
+    div.className = 'node-lbl';
+    div.textContent = text;
+    div.style.cssText = `font-size:${size};color:${color};`;
+    const o = new CSS2DObject(div);
+    o.position.copy(pos);
+    o.visible = false;
+    scene.add(o);
+    R.css2dObjects.push(o);
+    return o;
+  };
+
+  const olvLbl3    = makeOlvLbl('3',  olvPt(0).add(new THREE.Vector3(0.7, 0.5, 0)),       '#bb55ff', '16px');
+  const olvLbl6    = makeOlvLbl('6',  olvPt(Math.PI).add(new THREE.Vector3(-0.7, 0.5, 0)), '#ff55cc', '16px');
+  const olvLblVoid = makeOlvLbl('—',  new THREE.Vector3(0, OLV_Y + 0.55, 0),               '#331133', '18px');
+
+  const olvObjs = [olvRight, olvLeft, olvNode3, olvNode6, olvVoid, olvLbl3, olvLbl6, olvLblVoid];
+  const setOliver = on => {
+    showOliver = on;
+    olvObjs.forEach(o => { o.visible = on; });
+    document.getElementById('p8oliver')?.classList.toggle('lit', on);
+  };
+
   // ── HUD ──────────────────────────────────────────────────────────────────
   ov.innerHTML =
     `<div style="color:#4ac880;letter-spacing:.1em">08 · JENNIE φ</div>` +
@@ -841,7 +932,8 @@ export function buildS7() {
   Object.entries(FIB_IDS).forEach(([v, id]) => {
     document.getElementById(id).onclick = () => setFibVariant(fibVariant === v ? '' : v);
   });
-  document.getElementById('p8men').onclick = () => setMeniscus(!showMeniscus);
+  document.getElementById('p8men').onclick    = () => setMeniscus(!showMeniscus);
+  document.getElementById('p8oliver').onclick = () => setOliver(!showOliver);
   document.getElementById('p8msg').addEventListener('input', e => encodeMsg(e.target.value));
   const sliderToHz = v => Math.pow(10, v / 100 - 1);
   const fmtHz = hz => hz >= 1e6 ? (hz/1e6).toFixed(2)+'M' : hz >= 1e3 ? (hz/1e3).toFixed(hz>=1e4?1:2)+'k' : hz >= 10 ? hz.toFixed(1) : hz.toFixed(2);
