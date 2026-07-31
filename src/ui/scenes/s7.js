@@ -707,9 +707,70 @@ export function buildS7() {
   const OLV_LOOP_T = 5.5; // seconds per full lemniscate cycle
   let olvStartT    = null;
 
+  // ── Complement helix — {3,6} going DOWN from bridge (CLK_Y) ──────────────
+  // orbit[s] × 3 mod 9 → 3 or 6, giving the complement 2-cycle at the same
+  // angular positions as Strand A. The bridge ring is where they hand off.
+  const compY      = s => CLK_Y - s * H_STEP;
+  const COMP_SEQ   = [3, 6]; // orbit × 3 mod 9 = [3,6,3,6,…]
+  const compMeshes = [];
+  const compLbls   = [];
+
+  // Backbone spine
+  const compBBArr  = new Float32Array(STEPS * 3);
+  const compBBGeo  = new THREE.BufferGeometry();
+  const compBBAttr = new THREE.BufferAttribute(compBBArr, 3);
+  compBBAttr.setUsage(THREE.DynamicDrawUsage);
+  compBBGeo.setAttribute('position', compBBAttr);
+  const compBBMat  = new THREE.LineBasicMaterial({ color: 0xcc44ff, transparent: true, opacity: 0.32 });
+  R.disposables.push(compBBGeo, compBBMat);
+  const compBackbone = new THREE.Line(compBBGeo, compBBMat);
+  compBackbone.visible = false;
+  scene.add(compBackbone);
+
+  // ×3 connection rungs: each orbit node → complement node (shows ×3 gate)
+  const compRungArr  = new Float32Array(STEPS * 6);
+  const compRungGeo  = new THREE.BufferGeometry();
+  const compRungAttr = new THREE.BufferAttribute(compRungArr, 3);
+  compRungAttr.setUsage(THREE.DynamicDrawUsage);
+  compRungGeo.setAttribute('position', compRungAttr);
+  const compRungMat  = new THREE.LineBasicMaterial({ color: 0x6622aa, transparent: true, opacity: 0.20 });
+  R.disposables.push(compRungGeo, compRungMat);
+  const compRungs = new THREE.LineSegments(compRungGeo, compRungMat);
+  compRungs.visible = false;
+  scene.add(compRungs);
+
+  for (let s = 0; s < STEPS; s++) {
+    const val = COMP_SEQ[s % 2];
+    const col = val === 3 ? OLV_C3 : OLV_C6;
+    const cs  = val === 3 ? OLV_CS3 : OLV_CS6;
+
+    const geo = new THREE.SphereGeometry(0.12, 14, 9);
+    const mat = new THREE.MeshPhongMaterial({
+      color: col, emissive: col, emissiveIntensity: 0.35,
+      transparent: true, opacity: 0.78, shininess: 70,
+    });
+    R.disposables.push(geo, mat);
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(nodeX(s, 0, rotA), compY(s), nodeZ(s, 0, rotA));
+    mesh.visible = false;
+    scene.add(mesh);
+    compMeshes.push(mesh);
+
+    const div = document.createElement('div');
+    div.className = 'node-lbl';
+    div.textContent = String(val);
+    div.style.cssText = `font-size:10px;color:${cs};opacity:0.80;`;
+    const lbl = new CSS2DObject(div);
+    lbl.visible = false;
+    scene.add(lbl);
+    R.css2dObjects.push(lbl);
+    compLbls.push(lbl);
+  }
+
   const olvAllObjs = [olvUpper, olvLower, olvChamber3, olvChamber6, olvNode3, olvNode6,
                       olvBridge, olvTrav, olvTailLine, olvLbl3, olvLbl6, olvLblVoid,
-                      olvStr1, olvStr2, olvStr3];
+                      olvStr1, olvStr2, olvStr3,
+                      compBackbone, compRungs, ...compMeshes, ...compLbls];
   const setOliver = on => {
     showOliver = on;
     olvAllObjs.forEach(o => { o.visible = on; });
@@ -1341,6 +1402,23 @@ export function buildS7() {
       }
       olvTailAttr.needsUpdate = true;
       olvTailGeo.setDrawRange(0, olvTailHistory.length);
+
+      // Complement helix: positions follow rotA (same angular alignment as Strand A)
+      for (let s = 0; s < STEPS; s++) {
+        const cx = nodeX(s, 0, rotA), cz = nodeZ(s, 0, rotA), cy = compY(s);
+        compMeshes[s].position.set(cx, cy, cz);
+        const { lx, lz } = labelEnd(s, 0, rotA, LEADER);
+        compLbls[s].position.set(lx, cy - 0.10, lz);
+        compBBArr[s * 3]     = cx;
+        compBBArr[s * 3 + 1] = cy;
+        compBBArr[s * 3 + 2] = cz;
+        // ×3 rung: orbit node (above) → complement node (below)
+        const base = s * 6;
+        compRungArr[base]     = cx; compRungArr[base + 1] = baseY(s) * breath; compRungArr[base + 2] = cz;
+        compRungArr[base + 3] = cx; compRungArr[base + 4] = cy;               compRungArr[base + 5] = cz;
+      }
+      compBBAttr.needsUpdate   = true;
+      compRungAttr.needsUpdate = true;
     }
 
     R.labelRenderer.render(scene, camera);
