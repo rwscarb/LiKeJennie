@@ -17,7 +17,7 @@ from config import (
     EIA_BA,
     N,
     ISO_COORDS,
-    EIA_URL,
+    EIA_URLS,
     WIND_COL,
     METEO_URL,
     _CACHE_EIA,
@@ -34,37 +34,13 @@ def _parse_dt(s):
     raise ValueError(f"Unrecognised EIA timestamp: {s!r}")
 
 
-def fetch_eia_wind(url=EIA_URL, verbose=True):
-    """
-    Download EIA hourly grid balance CSV and extract wind generation for the 8
-    target BAs. Returns (X [T, N], cap_lo, cap_hi, utc_sorted). Missing values
-    are forward-filled; results are normalised to [0, 1] and cached.
-    """
-    if os.path.exists(_CACHE_EIA):
-        if verbose:
-            print(f"  Loading EIA 930 data from cache ({_CACHE_EIA}) ...")
-        d = np.load(_CACHE_EIA, allow_pickle=True)
-        X, cap_lo, cap_hi = d["X"], d["cap_lo"], d["cap_hi"]
-        utc_sorted = list(d["utc_sorted"])
-        if verbose:
-            print(f"  Loaded {len(utc_sorted)} hourly observations per ISO")
-            print(f"  Date range: {utc_sorted[0]}  →  {utc_sorted[-1]}")
-        return X, cap_lo, cap_hi, utc_sorted
-
-    if verbose:
-        print(f"  Downloading EIA 930 data (Jul-Dec 2024) ...")
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-    with urllib.request.urlopen(req, timeout=60) as r:
-        raw = r.read().decode("utf-8", errors="replace")
-
-    ba_idx = {ba: i for i, ba in enumerate(EIA_BA)}
+def _parse_eia_csv(raw, ba_idx):
+    """Parse one EIA balance CSV string into a {utc: {ba_idx: mw}} dict."""
     reader = csv.reader(io.StringIO(raw))
     headers = [h.strip().strip('"') for h in next(reader)]
-
     ba_col = headers.index("Balancing Authority")
     utc_col = headers.index("UTC Time at End of Hour")
     wind_col = headers.index(WIND_COL)
-
     data = defaultdict(dict)
     for row in reader:
         if len(row) <= max(ba_col, utc_col, wind_col):
@@ -79,6 +55,42 @@ def fetch_eia_wind(url=EIA_URL, verbose=True):
         except ValueError:
             mw = np.nan
         data[utc][ba_idx[ba]] = mw
+    return data
+
+
+def fetch_eia_wind(urls=EIA_URLS, verbose=True):
+    """
+    Download EIA hourly grid balance CSVs (one per six-month file) and extract
+    wind generation for the 8 target BAs. Multiple files are merged chronologically.
+    Returns (X [T, N], cap_lo, cap_hi, utc_sorted). Missing values are
+    forward-filled; results are normalised to [0, 1] and cached.
+    """
+    if os.path.exists(_CACHE_EIA):
+        if verbose:
+            print(f"  Loading EIA 930 data from cache ({_CACHE_EIA}) ...")
+        d = np.load(_CACHE_EIA, allow_pickle=True)
+        X, cap_lo, cap_hi = d["X"], d["cap_lo"], d["cap_hi"]
+        utc_sorted = list(d["utc_sorted"])
+        if verbose:
+            print(f"  Loaded {len(utc_sorted)} hourly observations per ISO")
+            print(f"  Date range: {utc_sorted[0]}  →  {utc_sorted[-1]}")
+        return X, cap_lo, cap_hi, utc_sorted
+
+    if isinstance(urls, str):
+        urls = [urls]
+
+    ba_idx = {ba: i for i, ba in enumerate(EIA_BA)}
+    data: dict = {}
+    for url in urls:
+        if verbose:
+            print(f"  Downloading {url.split('/')[-1]} ...")
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=120) as r:
+            raw = r.read().decode("utf-8", errors="replace")
+        for utc, vals in _parse_eia_csv(raw, ba_idx).items():
+            if utc not in data:
+                data[utc] = {}
+            data[utc].update(vals)
 
     utc_sorted = sorted(data.keys(), key=_parse_dt)
     T = len(utc_sorted)

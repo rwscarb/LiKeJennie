@@ -31,15 +31,18 @@ TOP_K_SOURCES = 3  # directed upwind sources per node
 D_IN = L * FEAT + TOP_K_SOURCES * 3  # 24 own + 9 directed cross-ISO = 33
 H1, H2 = 32, 16
 
-# Data sources
-EIA_URL = (
-    "https://www.eia.gov/electricity/gridmonitor/sixMonthFiles/"
-    "EIA930_BALANCE_2024_Jul_Dec.csv"
-)
+# Data sources — all six-month EIA balance files to include (chronological order)
+_EIA_BASE = "https://www.eia.gov/electricity/gridmonitor/sixMonthFiles/"
+EIA_URLS = [
+    _EIA_BASE + "EIA930_BALANCE_2023_Jan_Jun.csv",
+    _EIA_BASE + "EIA930_BALANCE_2023_Jul_Dec.csv",
+    _EIA_BASE + "EIA930_BALANCE_2024_Jan_Jun.csv",
+    _EIA_BASE + "EIA930_BALANCE_2024_Jul_Dec.csv",
+]
 WIND_COL = "Net Generation (MW) from Wind without Integrated Battery Storage"
 METEO_URL = "https://archive-api.open-meteo.com/v1/archive"
 
 # Cache locations (same directory as this file)
 _CACHE_DIR = _os.path.dirname(_os.path.abspath(__file__))
-_CACHE_EIA = _os.path.join(_CACHE_DIR, "cache_eia.npz")
-_CACHE_WEATHER = _os.path.join(_CACHE_DIR, "cache_weather.npz")
+_CACHE_EIA = _os.path.join(_CACHE_DIR, "cache_eia_2023_2024.npz")
+_CACHE_WEATHER = _os.path.join(_CACHE_DIR, "cache_weather_2023_2024.npz")
