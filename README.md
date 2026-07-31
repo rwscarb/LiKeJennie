@@ -110,9 +110,12 @@ node.position.y = baseY(step) * breath;
 ## Development
 
 ```bash
-npm install
-npm run dev      # dev server at localhost:5173
-npm run build    # production build → dist/
+make              # show all available targets
+make sync         # install python deps (uv) + npm deps
+make dev          # vite dev server at localhost:5173
+make build        # production build → src/ui/dist/
+make deploy       # build + sync to s3://hak4 + CloudFront invalidation
+make test         # run all tests (python + js)
 ```
 
 **Stack:** [Svelte](https://svelte.dev) · [Vite](https://vitejs.dev) · [Three.js](https://threejs.org) (WebGL + CSS2DRenderer)
@@ -123,15 +126,34 @@ npm run build    # production build → dist/
 
 ```
 src/
-  App.svelte          # shell: canvas, tabs, nav, controls
-  app.css             # global styles + responsive breakpoints
-  lib/
-    state.js          # active scene store (writable, starts at scene 8)
-  scenes/
-    index.js          # scene registry (9 panels)
-    shared.js         # Three.js setup, R singleton, tooltip helpers
-    s7.js             # JENNIE 21 helix — main scene
-    s0–s6, s8.js      # other panels
+  ui/                       # WebGL visualisation (Svelte + Vite)
+    index.html
+    main.js
+    App.svelte              # shell: canvas, tabs, nav, controls
+    app.css                 # global styles + responsive breakpoints
+    lib/
+      state.js              # active scene store (writable, starts at scene 8)
+    scenes/
+      index.js              # scene registry (9 panels)
+      shared.js             # Three.js setup, R singleton, tooltip helpers
+      s7.js                 # JENNIE 21 helix — main scene
+      s0–s6, s8.js          # other panels
+    tests/
+      unit/                 # vitest unit tests (state, shared math)
+      e2e/                  # playwright e2e tests
+
+  experiments/
+    wind/                   # ISO wind power forecasting (Python)
+      constants.py          # grid topology, feature dims, EIA URLs
+      config.py             # runtime config (cache paths)
+      data.py               # EIA 930 + Open-Meteo data loading
+      features.py           # directed cross-ISO sources, sliding-window dataset
+      models.py             # BatchedISOModel + MLP with RSM coupling layer
+      train.py              # training loop, inference, RMSE
+      hpo.py                # Optuna hyperparameter search
+      iso_wind_rgnn.py      # entrypoint (--optuna, --wd, --lr, --alphas)
+      pyproject.toml        # python deps + tool config (uv)
+      tests/                # pytest unit + e2e pipeline tests
 ```
 
 ---

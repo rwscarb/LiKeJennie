@@ -3,8 +3,18 @@ UI_DIR     := src/ui
 S3_BUCKET  := s3://hak4
 CF_DIST_ID := ETGRAW2YE5AZA
 
+# Load .env (RUNPOD_API_KEY, RUNPOD_POD_ID) — ignored if missing
+-include .env
+export RUNPOD_API_KEY
+RUNPOD_SSH_KEY  ?= $(HOME)/.runpod/keys/runpod_id_ed25519
+RUNPOD_SSH_HOST  = $(RUNPOD_POD_ID)-22.proxy.runpod.net
+RUNPOD_SSH       = ssh -i $(RUNPOD_SSH_KEY) -o StrictHostKeyChecking=no root@$(RUNPOD_SSH_HOST)
+RUNPOD_DEST     := /root
+
 .PHONY: all help test test-py test-py-unit test-py-e2e test-js test-js-e2e \
-        lint format format-check sync install train optuna dev build deploy clean clean-cache
+        lint format format-check sync install train optuna dev build deploy \
+        runpod-start runpod-stop runpod-sync runpod-train runpod-optuna runpod-logs \
+        clean clean-cache
 
 # ── Default ────────────────────────────────────────────────────────────────────
 all: help
@@ -37,6 +47,14 @@ help:
 	@echo "    dev              vite dev server"
 	@echo "    build            vite build"
 	@echo "    deploy           build → s3://hak4 → CloudFront invalidation"
+	@echo ""
+	@echo "  RunPod  (requires RUNPOD_API_KEY + RUNPOD_POD_ID in .env)"
+	@echo "    runpod-start     start the pod"
+	@echo "    runpod-stop      stop the pod"
+	@echo "    runpod-sync      rsync wind/ source to pod"
+	@echo "    runpod-train     sync + run train in tmux (logs → /root/train.log)"
+	@echo "    runpod-optuna    sync + run 40-trial HPO in tmux"
+	@echo "    runpod-logs      tail /root/train.log on pod"
 	@echo ""
 	@echo "  Cleanup"
 	@echo "    clean            remove __pycache__ + train.log"
@@ -96,7 +114,36 @@ deploy: build
 	aws s3 cp --recursive $(UI_DIR)/dist/ $(S3_BUCKET)/
 	aws cloudfront create-invalidation --distribution-id $(CF_DIST_ID) --paths '/*'
 
-# ── Cleanup ────────────────────────────────────────────────────────────────────
+# ── RunPod ─────────────────────────────────────────────────────────────────────
+runpod-start:
+	runpodctl start pod $(RUNPOD_POD_ID)
+
+runpod-stop:
+	runpodctl stop pod $(RUNPOD_POD_ID)
+
+runpod-sync:
+	rsync -avz \
+	    --exclude='.venv' --exclude='__pycache__' --exclude='*.pyc' \
+	    --exclude='cache_*.npz' --exclude='train.log' \
+	    -e "ssh -i $(RUNPOD_SSH_KEY) -o StrictHostKeyChecking=no" \
+	    $(WIND_DIR)/ root@$(RUNPOD_SSH_HOST):$(RUNPOD_DEST)/
+
+runpod-train: runpod-sync
+	$(RUNPOD_SSH) "tmux kill-session -t run 2>/dev/null; \
+	    tmux new-session -d -s run \
+	    'cd $(RUNPOD_DEST) && python -u iso_wind_rgnn.py -v 2>&1 | tee train.log'"
+	@echo "  training running in tmux session 'run' — tail with: make runpod-logs"
+
+runpod-optuna: runpod-sync
+	$(RUNPOD_SSH) "tmux kill-session -t run 2>/dev/null; \
+	    tmux new-session -d -s run \
+	    'cd $(RUNPOD_DEST) && python -u iso_wind_rgnn.py --optuna --n-trials 40 -v 2>&1 | tee train.log'"
+	@echo "  optuna running in tmux session 'run' — tail with: make runpod-logs"
+
+runpod-logs:
+	$(RUNPOD_SSH) "tail -f $(RUNPOD_DEST)/train.log"
+
+# ── Cleanup ─────────────────────────────────────────────────────────────────────
 clean:
 	find $(WIND_DIR) -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	find $(WIND_DIR) -name "*.pyc" -delete 2>/dev/null || true

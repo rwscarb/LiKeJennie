@@ -3,3 +3,7 @@ __pycache__/
 node_modules/
 dist/
 data/
+.env
+src/experiments/wind/.venv/
+src/experiments/wind/cache_*.npz
+src/experiments/wind/train.log
