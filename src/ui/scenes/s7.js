@@ -33,7 +33,7 @@ export function buildS7() {
   const GA  = 2 * Math.PI * (2 - PHI);
 
   let R_BASE = 3.00;
-  let R_GROW = 0.00;
+  let R_GROW = 0.08;  // conical flare: r(s) = 3.00 + 0.08·s → radius expands from 3.0→4.6
   let H_STEP = 0.68;
   let breathAmp  = 0.10;
   let breathFreq = 0.50;
