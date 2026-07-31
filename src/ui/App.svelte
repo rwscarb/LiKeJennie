@@ -358,14 +358,14 @@ afterUpdate(() => {
     <div class="cset" class:on={active === 7}>
       <button class="btn lit" id="p8rot">AUTO-ROTATE</button>
       <button class="btn lit" id="p8comp">COMPLEMENT</button>
-      <button class="btn" id="p8greek">GREEK</button>
       <button class="btn" id="p8center" title="recenter view on the helix axis">⊙ CENTER</button>
       <button class="btn" id="p8v_top">TOP</button>
       <button class="btn" id="p8v_bottom">BOTTOM</button>
-      <button class="btn" id="p8spec_btn">DECODER</button>
-      <span class="clbl">Hz</span><input type="range" id="p8dec_rot" min="0" max="700" step="1" value="115" style="width:60px"><span class="sval" id="p8dec_hz_val">1.4</span>
       <button class="btn" style="opacity:.35;letter-spacing:.18em;padding:3px 7px" on:click={() => { p8adv = !p8adv; }} title="advanced controls">···</button>
       <div style="display:{p8adv ? 'contents' : 'none'}">
+      <button class="btn" id="p8greek">GREEK</button>
+      <button class="btn" id="p8spec_btn">DECODER</button>
+      <span class="clbl">Hz</span><input type="range" id="p8dec_rot" min="0" max="700" step="1" value="115" style="width:60px"><span class="sval" id="p8dec_hz_val">1.4</span>
       <button class="btn" id="p8v_fib">FIB</button>
       <button class="btn" id="p8v_fibr">RATIONAL</button>
       <button class="btn" id="p8v_fibs">SINE</button>
