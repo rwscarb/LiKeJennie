@@ -40,7 +40,15 @@ export function buildS7() {
   const LEADER     = 0.88;
   const LEADER_INV = 0.36; // inversion labels sit inset toward axis
 
-  const helixR = s        => R_BASE + s * R_GROW;
+  // Harmonic radial wave: r(s,t) = base + flare + waveAmp·sin(2π·waveK·s/STEPS + waveOmega·t)
+  let showWave  = false;
+  let waveAmp   = 0.40;   // radial oscillation depth
+  let waveK     = 2.0;    // full wave cycles across the helix (2 = two standing waves)
+  let waveOmega = 0.85;   // temporal frequency rad/s
+  let waveT     = 0;      // updated each frame
+
+  const helixR = s => R_BASE + s * R_GROW
+    + (showWave ? waveAmp * Math.sin(waveK * s * (2 * Math.PI / STEPS) + waveT) : 0);
   // Dynamic position helpers: φ is the strand's base phase, rot is accumulated rotation
   const nodeX  = (s, φ, rot) => helixR(s) * Math.cos(s * GA + φ + rot);
   const nodeZ  = (s, φ, rot) => helixR(s) * Math.sin(s * GA + φ + rot);
@@ -1088,6 +1096,10 @@ export function buildS7() {
   });
   document.getElementById('p8men').onclick    = () => setMeniscus(!showMeniscus);
   document.getElementById('p8oliver').onclick = () => setOliver(!showOliver);
+  document.getElementById('p8wave').onclick   = () => {
+    showWave = !showWave;
+    document.getElementById('p8wave')?.classList.toggle('lit', showWave);
+  };
   document.getElementById('p8msg').addEventListener('input', e => encodeMsg(e.target.value));
   const sliderToHz = v => Math.pow(10, v / 100 - 1);
   const fmtHz = hz => hz >= 1e6 ? (hz/1e6).toFixed(2)+'M' : hz >= 1e3 ? (hz/1e3).toFixed(hz>=1e4?1:2)+'k' : hz >= 10 ? hz.toFixed(1) : hz.toFixed(2);
@@ -1178,6 +1190,7 @@ export function buildS7() {
 
     rotA += spinA * dt;
     rotB += spinB * dt;
+    if (showWave) waveT = t * waveOmega;
 
     const breath    = 1 + breathAmp * Math.sin(t * breathFreq);
     const breathInv = 1 - breathAmp * Math.sin(t * breathFreq);
