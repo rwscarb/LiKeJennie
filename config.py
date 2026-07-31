@@ -1,6 +1,7 @@
 """
 Shared constants: grid topology, feature dimensions, cache paths.
 """
+
 import os as _os
 
 ISOS = ["CAISO", "ERCOT", "SPP", "MISO", "PJM", "NYISO", "ISO-NE", "BPA"]
@@ -9,22 +10,22 @@ N = len(ISOS)
 
 # Representative lat/lon for the dominant wind generation zone in each ISO
 ISO_COORDS = [
-    (35.1, -118.4),   # CAISO  — Tehachapi Pass
-    (31.5,  -99.5),   # ERCOT  — West Texas wind belt
-    (37.5,  -98.0),   # SPP    — Kansas corridor
-    (42.0,  -93.5),   # MISO   — Central Iowa
-    (39.5,  -79.0),   # PJM    — Allegheny Front
-    (43.7,  -75.4),   # NYISO  — Tug Hill Plateau
-    (44.5,  -69.5),   # ISO-NE — Central Maine
-    (45.7, -119.5),   # BPA    — Columbia River Gorge
+    (35.1, -118.4),  # CAISO  — Tehachapi Pass
+    (31.5, -99.5),  # ERCOT  — West Texas wind belt
+    (37.5, -98.0),  # SPP    — Kansas corridor
+    (42.0, -93.5),  # MISO   — Central Iowa
+    (39.5, -79.0),  # PJM    — Allegheny Front
+    (43.7, -75.4),  # NYISO  — Tug Hill Plateau
+    (44.5, -69.5),  # ISO-NE — Central Maine
+    (45.7, -119.5),  # BPA    — Columbia River Gorge
 ]
 
 # Physical AC/DC interconnect edges (fixed topology)
 PHYS = [(0, 7), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6)]
 
 # Feature engineering
-L = 6            # lookback hours
-FEAT = 4         # own features per step: generation, wind_speed, cos(dir), sin(dir)
+L = 6  # lookback hours
+FEAT = 4  # own features per step: generation, wind_speed, cos(dir), sin(dir)
 TOP_K_SOURCES = 3  # directed upwind sources per node
 
 D_IN = L * FEAT + TOP_K_SOURCES * 3  # 24 own + 9 directed cross-ISO = 33

@@ -1,12 +1,12 @@
 """
 Training loop, inference, and RMSE utility.
 """
+
 import time
 
 import numpy as np
 import torch
 import torch.nn.functional as F
-
 
 rmse = lambda p, y: float(np.sqrt(np.mean((p - y) ** 2)))
 
@@ -51,7 +51,5 @@ def predict_model(model, Xs_te, device="cpu"):
     model.eval()
     with torch.no_grad():
         return (
-            model(torch.tensor(Xs_te, dtype=torch.float32, device=device))
-            .cpu()
-            .numpy()
+            model(torch.tensor(Xs_te, dtype=torch.float32, device=device)).cpu().numpy()
         )

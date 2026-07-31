@@ -1,6 +1,7 @@
 """
 Feature engineering: directed cross-ISO sources and sliding-window dataset construction.
 """
+
 import numpy as np
 
 from config import N, ISO_COORDS, L, FEAT, TOP_K_SOURCES
@@ -27,7 +28,9 @@ def compute_directed_sources(
                 xa_c = xa - xa.mean()
                 xb_c = xb - xb.mean()
                 denom = np.linalg.norm(xa_c) * np.linalg.norm(xb_c)
-                corr[(a, b, h)] = float(np.dot(xa_c, xb_c) / denom) if denom > 0 else 0.0
+                corr[(a, b, h)] = (
+                    float(np.dot(xa_c, xb_c) / denom) if denom > 0 else 0.0
+                )
 
     sources = []
     for i in range(N):

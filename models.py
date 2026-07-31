@@ -7,6 +7,7 @@ upwind source signals before the MLP. Parameterised as the matrix
 exponential of a skew-symmetric matrix, which is always orthogonal.
 Initialised to zero → identity at startup (pure pass-through).
 """
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -37,20 +38,20 @@ class BatchedISOModel(nn.Module):
 
     def _rsm_Q(self):
         A = self.S - self.S.transpose(-2, -1)  # skew-symmetric
-        return torch.linalg.matrix_exp(A)       # [N, K, K], orthogonal
+        return torch.linalg.matrix_exp(A)  # [N, K, K], orthogonal
 
     def forward(self, X):
         # X: [B, N, D_IN] — last k*f dims are directed source features
         B, N, D = X.shape
         d_own = D - self.k * self.f
-        own = X[:, :, :d_own]                                            # [B, N, L*FEAT]
-        src = X[:, :, d_own:].reshape(B, N, self.k, self.f)             # [B, N, K, F]
-        Q = self._rsm_Q()                                                 # [N, K, K]
+        own = X[:, :, :d_own]  # [B, N, L*FEAT]
+        src = X[:, :, d_own:].reshape(B, N, self.k, self.f)  # [B, N, K, F]
+        Q = self._rsm_Q()  # [N, K, K]
         src = torch.einsum("nkj,bnjf->bnkf", Q, src).reshape(B, N, self.k * self.f)
-        X = torch.cat([own, src], dim=-1)                                 # [B, N, D_IN]
+        X = torch.cat([own, src], dim=-1)  # [B, N, D_IN]
         H1 = F.relu(torch.einsum("bni,nij->bnj", X, self.W1) + self.b1)
         H2 = F.relu(torch.einsum("bni,nij->bnj", H1, self.W2) + self.b2)
-        return (H2 * self.Wo).sum(-1) + self.bo                          # [B, N]
+        return (H2 * self.Wo).sum(-1) + self.bo  # [B, N]
 
 
 class MLP(nn.Module):
@@ -84,7 +85,7 @@ class MLP(nn.Module):
         d_own = D - self.k * self.f
         own = X[..., :d_own]
         src = X[..., d_own:].reshape(*leading, self.k, self.f)  # [..., K, F]
-        Q = self._rsm_Q()                                         # [K, K]
+        Q = self._rsm_Q()  # [K, K]
         src = torch.einsum("kj,...jf->...kf", Q, src).reshape(*leading, self.k * self.f)
         X = torch.cat([own, src], dim=-1)
         H1 = F.relu(X @ self.W1 + self.b1)
