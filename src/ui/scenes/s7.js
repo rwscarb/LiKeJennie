@@ -1,5 +1,5 @@
 /**
- * JENNIE 21 — Scene 08
+ * JENNIE φ — Scene 08
  *
  * ×2 mod 9 orbit wound onto a Fibonacci phyllotaxis cone.
  * Strand A (orbit) and Strand B (echo) rotate independently via CW/CCW controls.
@@ -73,6 +73,9 @@ export function buildS7() {
   const BT = {};
   ORBIT.forEach(v => { BT[v] = toBT(v); });
 
+  // Greek ordinal: value → letter at that position in the Greek alphabet
+  const GREEK = { 1:'α', 2:'β', 4:'δ', 5:'ε', 7:'η', 8:'θ' };
+
   const STYLE = {
     1: { c: 0xFFD700, cs: '#FFD700' },
     2: { c: 0x00E5FF, cs: '#00E5FF' },
@@ -97,6 +100,7 @@ export function buildS7() {
   let showInversion = false;
   let showShading   = false;
   let showDecimal   = true;
+  let showGreek     = false;
 
   const invMeshes    = []; // { mesh, s } — strand A positions, counter-phase Y
   const invLabelData = []; // { lbl, val, bt, cs, s }
@@ -531,7 +535,7 @@ export function buildS7() {
 
   // ── HUD ──────────────────────────────────────────────────────────────────
   ov.innerHTML =
-    `<div style="color:#4ac880;letter-spacing:.1em">08 · JENNIE 21</div>` +
+    `<div style="color:#4ac880;letter-spacing:.1em">08 · JENNIE φ</div>` +
     `<div style="color:#FFD700;font-size:8px;margin-top:2px">896 = 2<sup>7</sup>×7 · τ=16 · φ-step</div>` +
     `<div style="color:#4a9068;font-size:7.5px;margin-top:2px">1→2→4→8→7→5 (×2 mod 9)</div>` +
     `<div style="font-size:7.5px;margin-top:2px">` +
@@ -555,9 +559,22 @@ export function buildS7() {
 
   document.getElementById('p8comp').onclick = () => {
     showDecimal = !showDecimal;
+    showGreek = false;
     document.getElementById('p8comp').classList.toggle('lit', showDecimal);
-    invLabelData.forEach(l => { l.lbl.element.textContent = showDecimal ? l.val : l.bt; });
-    syncOrbitLabels(); // handles allLabels, respecting ORBIT mode
+    document.getElementById('p8greek').classList.remove('lit');
+    invLabelData.forEach(l => { l.lbl.element.textContent = nodeLabel(l); });
+    syncOrbitLabels();
+  };
+
+  document.getElementById('p8greek').onclick = () => {
+    showGreek = !showGreek;
+    document.getElementById('p8greek').classList.toggle('lit', showGreek);
+    if (showGreek) {
+      showDecimal = false;
+      document.getElementById('p8comp').classList.remove('lit');
+    }
+    invLabelData.forEach(l => { l.lbl.element.textContent = nodeLabel(l); });
+    syncOrbitLabels();
   };
 
   let showMeniscus = false;
@@ -670,10 +687,12 @@ export function buildS7() {
     syncOrbitLabels();
   };
 
+  const nodeLabel = l => showGreek ? GREEK[l.val] ?? l.val : showDecimal ? l.val : l.bt;
+
   const syncOrbitLabels = () => {
     if (fibVariant !== 'orbit' || !msgChars.length || !showSpec) {
       allLabels.forEach(l => {
-        l.lbl.element.textContent = showDecimal ? l.val : l.bt;
+        l.lbl.element.textContent = nodeLabel(l);
         l.lbl.element.style.fontSize = '';
         l.lbl.element.style.color = '';
         l.lbl.element.style.textShadow = '';
@@ -688,7 +707,7 @@ export function buildS7() {
           l.lbl.element.style.color = '#ff55ff';
           l.lbl.element.style.textShadow = '0 0 12px #ff55ff, 0 0 24px #aa00aa';
         } else {
-          l.lbl.element.textContent = showDecimal ? l.val : l.bt;
+          l.lbl.element.textContent = nodeLabel(l);
           l.lbl.element.style.fontSize = '';
           l.lbl.element.style.color = '';
           l.lbl.element.style.textShadow = '';
@@ -1003,7 +1022,7 @@ export function buildS7() {
       invLabelData.forEach(l => {
         const { lx, lz } = labelEnd(l.s, 0, rotA, LEADER_INV);
         l.lbl.position.set(lx, INV_Y0 - baseY(l.s) * breathInv - 0.10, lz);
-        l.lbl.element.textContent = showDecimal ? l.val : l.bt;
+        l.lbl.element.textContent = nodeLabel(l);
       });
 
       invLineData.forEach(({ attr, arr, s }) => {

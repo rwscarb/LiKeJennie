@@ -274,7 +274,7 @@ afterUpdate(() => {
 <canvas id="rain" bind:this={rain}></canvas>
 
 <div class="hdr">
-  <h1>JENNIE 21</h1>
+  <h1>JENNIE φ</h1>
   <div class="sub">2<sup>7</sup> &times; 7 &nbsp;&middot;&nbsp; Lucas<sub>4</sub>=7 &nbsp;&middot;&nbsp; &tau;(896)=16 active experts &nbsp;&middot;&nbsp; Kimi K3 MoE &nbsp;&middot;&nbsp; 1/89=&Sigma;F(n)/10<sup>n+1</sup> &nbsp;&middot;&nbsp; dr(896)=5, dr(897)=6</div>
   <div class="gleg">
     <span style="color:#00ff88">&#9679; Fibonacci</span>
@@ -358,6 +358,7 @@ afterUpdate(() => {
     <div class="cset" class:on={active === 7}>
       <button class="btn lit" id="p8rot">AUTO-ROTATE</button>
       <button class="btn lit" id="p8comp">COMPLEMENT</button>
+      <button class="btn" id="p8greek">GREEK</button>
       <button class="btn" id="p8center" title="recenter view on the helix axis">⊙ CENTER</button>
       <button class="btn" id="p8v_top">TOP</button>
       <button class="btn" id="p8v_bottom">BOTTOM</button>
