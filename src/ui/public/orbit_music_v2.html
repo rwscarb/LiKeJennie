@@ -118,6 +118,8 @@ btn, .btn {
   border-top:1px solid var(--dim); padding-top:2px;
 }
 .note-name.active { color:var(--fg); }
+/* ── Visualizer canvas ── */
+#vizCanvas { image-rendering:pixelated; }
 </style>
 </head>
 <body>
@@ -203,6 +205,11 @@ btn, .btn {
       <div id="rowLabels" style="display:flex;flex-direction:column;gap:2px"></div>
       <div class="seq-grid" id="seqGrid"></div>
     </div>
+  </div>
+  <!-- Visualizer -->
+  <div class="section" id="vizSection" style="padding:8px 14px 10px;flex-shrink:0">
+    <div class="section-title" style="margin-bottom:5px">VISUALIZER</div>
+    <canvas id="vizCanvas" style="width:100%;height:72px;display:block;border-radius:2px;background:#020608"></canvas>
   </div>
 </div>
 
@@ -471,46 +478,7 @@ function drawFrame(ts) {
     if(animStep<0) animStep=0;
   }
 
-  // ── Geiss-style spectrograph (feedback trails + radial FFT) ─────────
-  // Feedback: semi-transparent fill instead of full clear = trails
-  ctx.fillStyle='rgba(4,4,8,0.22)';
-  ctx.fillRect(0,0,W,H);
-
-  if (analyser && freqData) {
-    analyser.getByteFrequencyData(freqData);
-    analyser.getByteTimeDomainData(waveData);
-    const cx=W*0.5, cy=H*0.5;
-    const R0=Math.min(W,H)*0.10, maxBar=Math.min(W,H)*0.32;
-    const BARS=256;
-    // Radial frequency bars
-    for (let i=0; i<BARS; i++) {
-      const t=i/BARS;
-      const angle=t*Math.PI*2-Math.PI/2;
-      const bin=Math.floor(t*freqData.length*0.65);
-      const v=freqData[bin]/255;
-      if (v<0.01) continue;
-      const r1=R0+v*maxBar;
-      const hue=(c60Hue*360+t*90)%360;
-      ctx.beginPath();
-      ctx.moveTo(cx+Math.cos(angle)*R0, cy+Math.sin(angle)*R0);
-      ctx.lineTo(cx+Math.cos(angle)*r1, cy+Math.sin(angle)*r1);
-      ctx.strokeStyle=`hsla(${hue|0},90%,${50+v*30|0}%,${(0.35+v*0.55).toFixed(2)})`;
-      ctx.lineWidth=1.8; ctx.stroke();
-    }
-    // Oscilloscope waveform ring
-    const wR=R0*0.72;
-    ctx.beginPath();
-    for (let i=0; i<waveData.length; i++) {
-      const t=i/waveData.length;
-      const angle=t*Math.PI*2-Math.PI/2;
-      const r=wR+(waveData[i]/128-1)*wR*0.55;
-      const x=cx+Math.cos(angle)*r, y=cy+Math.sin(angle)*r;
-      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-    }
-    ctx.closePath();
-    ctx.strokeStyle=`hsla(${c60Hue*360|0},60%,70%,0.28)`;
-    ctx.lineWidth=1.2; ctx.stroke();
-  }
+  ctx.clearRect(0,0,W,H);
 
   // ── C60 (left half) ─────────────────────────────────────────────────
   const C60X=W*0.30, C60Y=H*0.50, C60R=Math.min(W*0.12,H*0.19)*0.33;
@@ -613,6 +581,61 @@ function drawFrame(ts) {
   }
 }
 requestAnimationFrame(drawFrame);
+
+// ── Visualizer canvas (under sequencer) ─────────────────────────────────────
+const vizCanvas = document.getElementById('vizCanvas');
+const vctx = vizCanvas.getContext('2d');
+let VW=0, VH=0;
+function resizeViz() {
+  VW = vizCanvas.offsetWidth * devicePixelRatio;
+  VH = vizCanvas.offsetHeight * devicePixelRatio;
+  vizCanvas.width = VW; vizCanvas.height = VH;
+}
+resizeViz();
+new ResizeObserver(resizeViz).observe(vizCanvas);
+
+// Feedback buffer for Geiss-style trails
+function drawViz() {
+  requestAnimationFrame(drawViz);
+  if (!VW || !VH) return;
+  if (!analyser || !freqData) {
+    vctx.clearRect(0,0,VW,VH); return;
+  }
+  analyser.getByteFrequencyData(freqData);
+  analyser.getByteTimeDomainData(waveData);
+
+  // Feedback trail
+  vctx.fillStyle='rgba(2,6,8,0.28)';
+  vctx.fillRect(0,0,VW,VH);
+
+  const BARS = VW;
+  const maxBin = Math.floor(freqData.length * 0.72);
+  // Frequency bars
+  for (let i=0; i<BARS; i++) {
+    const t = i/BARS;
+    const bin = Math.floor(t * maxBin);
+    const v = freqData[bin] / 255;
+    if (v < 0.01) continue;
+    const barH = v * VH * 0.88;
+    // Color: cycle through orbit hues by frequency position
+    const hue = (c60Hue * 360 + t * 120) % 360;
+    vctx.fillStyle = `hsla(${hue|0},85%,${45+v*30|0}%,${(0.55+v*0.4).toFixed(2)})`;
+    vctx.fillRect(i, VH - barH, 1, barH);
+  }
+
+  // Waveform overlay
+  vctx.beginPath();
+  const wStep = VW / waveData.length;
+  for (let i=0; i<waveData.length; i++) {
+    const x = i * wStep;
+    const y = (waveData[i] / 128 - 1) * (VH * 0.35) + VH * 0.5;
+    i===0 ? vctx.moveTo(x,y) : vctx.lineTo(x,y);
+  }
+  vctx.strokeStyle = `hsla(${c60Hue*360|0},60%,75%,0.45)`;
+  vctx.lineWidth = devicePixelRatio;
+  vctx.stroke();
+}
+drawViz();
 
 // ── Control wiring ───────────────────────────────────────────────────────────
 document.getElementById('playBtn').addEventListener('click',function(){
