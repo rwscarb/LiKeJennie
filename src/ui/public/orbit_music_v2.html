@@ -6,8 +6,8 @@
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 :root {
-  --bg:#020c08; --fg:#00ff88; --dim:#0a2010; --cyan:#00e5ff;
-  --orng:#ff9800; --muted:#2a5a2a; --panel:#04160a;
+  --bg:#040408; --fg:#00ff88; --dim:#0a2028; --cyan:#00e5ff;
+  --orng:#ff9800; --muted:#1a6040; --panel:#040408;
 }
 body {
   background:var(--bg); color:var(--fg);
@@ -51,14 +51,14 @@ canvas { display:block; }
 .row .val { font-size:9px; color:var(--fg); width:36px; text-align:right; }
 /* ── Buttons ── */
 btn, .btn {
-  font-family:'Courier New',monospace; font-size:9px; letter-spacing:.10em;
-  background:none; border:1px solid var(--muted); color:var(--muted);
-  padding:4px 10px; cursor:pointer; transition:all .12s;
+  font-family:'Courier New',monospace; font-size:9px; letter-spacing:.07em; text-transform:uppercase;
+  background:var(--bg); border:1px solid var(--dim); color:var(--muted);
+  padding:3px 10px; cursor:pointer; transition:all .12s; border-radius:2px;
 }
-.btn:hover { border-color:var(--fg); color:var(--fg); }
-.btn.lit   { border-color:var(--fg); color:#fff; background:#00ff8820; }
-.btn.play  { border-color:var(--fg); color:var(--fg); font-size:11px; padding:5px 16px; }
-.btn.play.lit { background:#00ff8830; color:#fff; }
+.btn:hover { border-color:var(--cyan); color:var(--cyan); box-shadow:0 0 8px #00e5ff18; }
+.btn.lit   { border-color:var(--fg); color:var(--fg); box-shadow:0 0 5px #00ff8815; }
+.btn.play  { border-color:var(--fg); color:var(--fg); font-size:10px; padding:5px 16px; }
+.btn.play.lit { background:#00ff8820; color:#fff; }
 /* ── Step sequencer grid ── */
 .seq-grid {
   display:grid;
@@ -405,7 +405,7 @@ const CRX=Math.cos(0.38),SRX=Math.sin(0.38);
 const _tc=new Float32Array(3);
 
 // Orbit ring
-const OR=90, OX=720, OY=220;
+let OR=90, OX=720, OY=220;
 
 function orbitXY(i){
   const a=(i/6)*Math.PI*2-Math.PI/2;
@@ -416,6 +416,7 @@ let W=0,H=0;
 function resize(){
   W=canvas.parentElement.clientWidth; H=canvas.parentElement.clientHeight;
   canvas.width=W; canvas.height=H;
+  OR=Math.min(W,H)*0.09; OX=W*0.58; OY=H*0.26;
 }
 resize(); window.addEventListener('resize',resize);
 
@@ -436,7 +437,7 @@ function drawFrame(ts) {
   ctx.clearRect(0,0,W,H);
 
   // ── C60 (left half) ─────────────────────────────────────────────────
-  const C60_S=0.33, C60X=W*0.30, C60Y=H*0.50;
+  const C60X=W*0.30, C60Y=H*0.50, C60R=Math.min(W*0.12,H*0.19)*0.33;
   c60Ang=(c60Ang+dt*0.25)%(Math.PI*2);
 
   // Target hue from active orbit step (rows that are active in curStep)
@@ -466,8 +467,8 @@ function drawFrame(ts) {
     const hue=(c60Hue+depth*0.16-0.08+1)%1;
     const lum=0.04+depth*0.48;
     ctx.beginPath();
-    ctx.moveTo(C60X+rotV[i][0]*C60_S*W*0.12,C60Y+rotV[i][1]*C60_S*H*0.19);
-    ctx.lineTo(C60X+rotV[j][0]*C60_S*W*0.12,C60Y+rotV[j][1]*C60_S*H*0.19);
+    ctx.moveTo(C60X+rotV[i][0]*C60R,C60Y+rotV[i][1]*C60R);
+    ctx.lineTo(C60X+rotV[j][0]*C60R,C60Y+rotV[j][1]*C60R);
     ctx.strokeStyle=`hsl(${Math.round(hue*360)},90%,${Math.round(lum*100)}%)`;
     ctx.lineWidth=0.6+depth*0.9; ctx.stroke();
   }
@@ -475,7 +476,7 @@ function drawFrame(ts) {
   // C60 label
   ctx.font='11px "Courier New"'; ctx.fillStyle='rgba(0,255,136,0.25)';
   ctx.textAlign='center'; ctx.textBaseline='top';
-  ctx.fillText('C₆₀',C60X,C60Y+H*0.19*0.9+8);
+  ctx.fillText('C₆₀',C60X,C60Y+C60R*0.9+8);
 
   // ── Orbit ring (right) ────────────────────────────────────────────────
   const curOrbitStep = playing ? Math.floor(animStep / (STEPS/6)) % 6 : -1;
