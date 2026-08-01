@@ -410,7 +410,7 @@ afterUpdate(() => {
 
 <div class="tabs">
   {#each scenes as s, i}
-    <div class="tab" class:on={i === active} on:click={() => goTo(i)}><span class="n">{s.num}</span>{s.label}</div>
+    <div class="tab" class:on={i === active} on:click={() => goTo(i)}><span class="n">{s.num}</span>{s.label}{#if s.id === 'orbit-music'}<span class="launch-ico">↗</span>{/if}</div>
   {/each}
 </div>
 

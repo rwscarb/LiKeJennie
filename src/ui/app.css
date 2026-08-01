@@ -44,6 +44,7 @@ h1{font-size:3.5rem;color:#ff9800;letter-spacing:.35em;line-height:1;margin-bott
 .tab:hover{color:#00e5ff;border-color:#0a2028;background:#020506}
 .tab.on{color:#00e5ff;border-color:#0a2028;background:#040408;border-bottom-color:#040408;text-shadow:0 0 10px #00e5ff50}
 .tab .n{color:#a0a0a0;margin-right:.28rem;font-size:.48rem}
+.tab .launch-ico{margin-left:.25rem;font-size:.52rem;opacity:.55;vertical-align:middle}
 .tab.on .n{color:#1a5060}
 /* ── main panel ───────────────────────────────────── */
 .pw{background:#040408;border:1px solid #0a0a0a;border-top:none;border-radius:0 0 6px 6px;padding:1rem 1rem .75rem;max-width:1147px;margin:0 auto;position:relative;z-index:2}

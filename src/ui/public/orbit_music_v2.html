@@ -21,11 +21,18 @@ body {
 header {
   grid-column:1/-1;
   display:flex; align-items:center; gap:16px;
-  padding:8px 16px;
+  padding:6px 16px;
   border-bottom:1px solid var(--dim);
   background:var(--panel);
 }
-header h1 { font-size:10px; letter-spacing:.22em; color:var(--cyan); opacity:.75; }
+.site-crumb {
+  display:flex; align-items:baseline; gap:0; line-height:1;
+  flex-direction:column;
+}
+.site-crumb .site { font-size:9px; letter-spacing:.22em; color:#2a7040; opacity:.7; text-transform:uppercase; }
+.site-crumb .scene { font-size:10px; letter-spacing:.19em; color:var(--cyan); opacity:.82; text-transform:uppercase; }
+.site-crumb .scene .n { font-size:8px; color:#1a5060; margin-right:.3em; }
+.site-crumb .sub { font-size:8px; letter-spacing:.13em; color:var(--muted); opacity:.65; margin-top:1px; }
 .transport { display:flex; gap:8px; margin-left:auto; align-items:center; }
 /* ── Main canvas area ── */
 .stage { position:relative; background:var(--bg); min-width:0; }
@@ -116,7 +123,11 @@ btn, .btn {
 <body>
 
 <header>
-  <h1>ORBIT SEQUENCER &nbsp;·&nbsp; {1,2,4,8,7,5} × 55 Hz</h1>
+  <div class="site-crumb">
+    <span class="site">JENNIE 21</span>
+    <span class="scene"><span class="n">15</span>ORBIT MUSIC</span>
+    <span class="sub">{1,2,4,8,7,5} × 55 Hz &nbsp;·&nbsp; step sequencer &nbsp;·&nbsp; complement {3,6} as bass</span>
+  </div>
   <div class="transport">
     <span id="bpmVal" style="font-size:9px;color:var(--muted)">60 BPM</span>
     <input type="range" id="bpmSlider" min="20" max="240" value="60" style="width:80px">
@@ -309,6 +320,7 @@ const barLevels = Array(ROWS).fill(0);
 
 // ── Web Audio ────────────────────────────────────────────────────────────────
 let audioCtx=null, masterGain, wetGain, dryGain, delayL, delayR;
+let analyser=null, freqData=null, waveData=null;
 let waveform='triangle', reverbAmt=0.59, bassAmt=0.51, detuneAmt=3;
 
 function initAudio() {
@@ -316,6 +328,11 @@ function initAudio() {
   audioCtx = new (window.AudioContext||window.webkitAudioContext)();
   masterGain = audioCtx.createGain(); masterGain.gain.value=0.60;
   masterGain.connect(audioCtx.destination);
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 2048; analyser.smoothingTimeConstant = 0.82;
+  masterGain.connect(analyser);
+  freqData = new Uint8Array(analyser.frequencyBinCount);
+  waveData = new Uint8Array(analyser.fftSize);
   dryGain = audioCtx.createGain(); dryGain.gain.value=1.0; dryGain.connect(masterGain);
   wetGain = audioCtx.createGain(); wetGain.gain.value=reverbAmt;
   delayL = audioCtx.createDelay(0.6); delayL.delayTime.value=0.22;
@@ -454,7 +471,46 @@ function drawFrame(ts) {
     if(animStep<0) animStep=0;
   }
 
-  ctx.clearRect(0,0,W,H);
+  // ── Geiss-style spectrograph (feedback trails + radial FFT) ─────────
+  // Feedback: semi-transparent fill instead of full clear = trails
+  ctx.fillStyle='rgba(4,4,8,0.22)';
+  ctx.fillRect(0,0,W,H);
+
+  if (analyser && freqData) {
+    analyser.getByteFrequencyData(freqData);
+    analyser.getByteTimeDomainData(waveData);
+    const cx=W*0.5, cy=H*0.5;
+    const R0=Math.min(W,H)*0.10, maxBar=Math.min(W,H)*0.32;
+    const BARS=256;
+    // Radial frequency bars
+    for (let i=0; i<BARS; i++) {
+      const t=i/BARS;
+      const angle=t*Math.PI*2-Math.PI/2;
+      const bin=Math.floor(t*freqData.length*0.65);
+      const v=freqData[bin]/255;
+      if (v<0.01) continue;
+      const r1=R0+v*maxBar;
+      const hue=(c60Hue*360+t*90)%360;
+      ctx.beginPath();
+      ctx.moveTo(cx+Math.cos(angle)*R0, cy+Math.sin(angle)*R0);
+      ctx.lineTo(cx+Math.cos(angle)*r1, cy+Math.sin(angle)*r1);
+      ctx.strokeStyle=`hsla(${hue|0},90%,${50+v*30|0}%,${(0.35+v*0.55).toFixed(2)})`;
+      ctx.lineWidth=1.8; ctx.stroke();
+    }
+    // Oscilloscope waveform ring
+    const wR=R0*0.72;
+    ctx.beginPath();
+    for (let i=0; i<waveData.length; i++) {
+      const t=i/waveData.length;
+      const angle=t*Math.PI*2-Math.PI/2;
+      const r=wR+(waveData[i]/128-1)*wR*0.55;
+      const x=cx+Math.cos(angle)*r, y=cy+Math.sin(angle)*r;
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle=`hsla(${c60Hue*360|0},60%,70%,0.28)`;
+    ctx.lineWidth=1.2; ctx.stroke();
+  }
 
   // ── C60 (left half) ─────────────────────────────────────────────────
   const C60X=W*0.30, C60Y=H*0.50, C60R=Math.min(W*0.12,H*0.19)*0.33;
