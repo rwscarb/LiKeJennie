@@ -917,11 +917,49 @@ export function buildS7() {
                       compBackboneB, compRungsAB, ...compMeshesB, ...compLblsB,
                       olv640Line, olv640Lbl,
                       olvLblPH3, olvLblPH6, olvLblCA];
+  // ── Title glitch ─────────────────────────────────────────────────────────
+  const TITLE_J = 'JENNIE 21';
+  const TITLE_O = 'OLIVER 42';
+  const GLITCH_POOL = '0134Ø⊗×#@∅↯';
+  let _titleGlitchId = null, _titleOscId = null;
+
+  const _glitchTo = (target, done) => {
+    clearInterval(_titleGlitchId);
+    const h1 = document.getElementById('site-title');
+    let f = 0, steps = 14;
+    _titleGlitchId = setInterval(() => {
+      f++;
+      if (f >= steps) {
+        clearInterval(_titleGlitchId);
+        if (h1) { h1.textContent = target; document.title = target; }
+        if (done) done();
+      } else {
+        const p = f / steps;
+        if (h1) h1.textContent = target.split('').map((c, i) =>
+          c === ' ' ? ' ' : (Math.random() < p ? c : GLITCH_POOL[Math.floor(Math.random() * GLITCH_POOL.length)])
+        ).join('');
+      }
+    }, 52);
+  };
+
+  const _scheduleOscillation = () => {
+    _titleOscId = setTimeout(() => {
+      _glitchTo(TITLE_J, () => {
+        _titleOscId = setTimeout(() => {
+          if (showOliver) _glitchTo(TITLE_O, _scheduleOscillation);
+        }, 1800);
+      });
+    }, 6500 + Math.random() * 3000);
+  };
+
   const setOliver = on => {
     showOliver = on;
     olvAllObjs.forEach(o => { o.visible = on; });
     if (on) olvStartT = null;
     document.getElementById('p8oliver')?.classList.toggle('lit', on);
+    clearTimeout(_titleOscId);
+    if (on) { _glitchTo(TITLE_O, _scheduleOscillation); }
+    else     { _glitchTo(TITLE_J); }
   };
 
   // ── HUD ──────────────────────────────────────────────────────────────────

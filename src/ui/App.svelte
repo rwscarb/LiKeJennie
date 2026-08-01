@@ -664,7 +664,7 @@ const h = CLK_Y - dip * (1 - (r / R_MAX) ** 2);
     <pre><code>3 × 2 = 6   →   6 mod 9 = 6
 6 × 2 = 12  →  12 mod 9 = 3  ← back to start</code></pre>
     <p>This 2-cycle is the complement world. The main orbit has period 6; the complement has period 2. Together: lcm(6, 2) = 6. Their shared container is 21 nodes — which is 6 × 3 + 3, or more precisely, 21 = 3 × 7. Oliver42 is 2 × 21: both worlds fully stated.</p>
-    <p>The complement helix grows <em>downward</em> from the bridge, mirroring the jennie21 helix above. Strand A carries {3, 6, 3, 6, …}; Strand B (offset π) carries {6, 3, 6, 3, …}. The complement is the shadow below the floor.</p>
+    <p>The complement helix grows <em>downward</em> from the bridge, mirroring the jennie21 helix above. Strand A carries &#123;3, 6, 3, 6, ...&#125;; Strand B (offset π) carries &#123;6, 3, 6, 3, ...&#125;. The complement is the shadow below the floor.</p>
 
     <hr>
 
