@@ -11,6 +11,17 @@ body{min-height:100%;background:rgba(0,0,0,.88);color:#b0b0b0;font-family:'Couri
   100%{clip-path:none;transform:none;text-shadow:0 0 40px #ff980060}
 }
 @keyframes flicker{0%,100%{opacity:1}48%{opacity:.97}50%{opacity:.93}52%{opacity:.97}}
+/* ── Jennie Zen easter egg ────────────────────────── */
+h1{cursor:pointer}
+#zen-tagline{font-size:.48rem;color:#1e2e1e;letter-spacing:.38em;text-transform:lowercase;font-style:italic;margin:.1rem auto .35rem;text-align:center;user-select:none;transition:color .8s}
+.hdr:hover #zen-tagline{color:#2a4a2a}
+#zen-overlay{display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.92);backdrop-filter:blur(2px);align-items:center;justify-content:center;cursor:pointer}
+#zen-overlay.vis{display:flex}
+#zen-lyrics-body{max-height:80vh;overflow-y:auto;padding:2.5rem 2rem;cursor:default;text-align:center;max-width:540px;scrollbar-width:thin;scrollbar-color:#1a2a1a transparent}
+#zen-lyrics-body p{font-size:.72rem;color:#3a4a3a;letter-spacing:.08em;line-height:2.1;font-style:italic}
+#zen-lyrics-body p.zen-chorus{color:#4a6a4a}
+#zen-lyrics-body p.zen-anchor{color:#7aaa7a;letter-spacing:.22em;font-size:.82rem;margin:.8rem 0}
+#zen-lyrics-body p.zen-title{color:#1e2e1e;letter-spacing:.4em;font-size:.5rem;margin-top:2rem;font-style:normal;text-transform:uppercase}
 /* ── header ───────────────────────────────────────── */
 .hdr{text-align:center;padding:1.1rem 1rem .4rem;position:relative;z-index:2}
 h1{font-size:3.5rem;color:#ff9800;letter-spacing:.35em;line-height:1;margin-bottom:.15rem;animation:glitch 9s infinite,flicker 4s infinite}
