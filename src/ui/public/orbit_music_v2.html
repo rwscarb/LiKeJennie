@@ -119,6 +119,14 @@ btn, .btn {
   border-top:1px solid var(--dim); padding-top:2px;
 }
 .note-name.active { color:var(--fg); }
+/* ── User preset chips ── */
+.user-preset { display:inline-flex; align-items:center; gap:0; }
+.user-preset .del {
+  font-size:calc(var(--panel-fs,9px)*0.85); padding:3px 5px;
+  border-left:none; border-radius:0 2px 2px 0; opacity:.45;
+}
+.user-preset .del:hover { opacity:1; color:#ff4444; border-color:#ff4444; }
+.user-preset .load { border-radius:2px 0 0 2px; }
 /* ── Visualizer canvas ── */
 #vizCanvas { image-rendering:pixelated; }
 #vizResizeHandle {
@@ -198,6 +206,12 @@ btn, .btn {
       <button class="btn" data-preset="scatter">SCATTER</button>
       <button class="btn" data-preset="ce">CE</button>
       <button class="btn" data-preset="clear">CLEAR</button>
+    </div>
+    <div class="preset-row" id="userPresets" style="margin-top:5px;min-height:0"></div>
+    <div class="row" style="margin-top:6px;margin-bottom:0;gap:5px">
+      <input id="presetNameInput" type="text" maxlength="12" placeholder="name…"
+        style="flex:1;font-family:'Courier New',monospace;font-size:var(--panel-fs);background:#020c08;border:1px solid var(--dim);color:#00ffcc;padding:2px 6px;border-radius:2px;letter-spacing:.06em;text-transform:uppercase" spellcheck="false">
+      <button class="btn" id="savePresetBtn">SAVE</button>
     </div>
   </div>
   <!-- Sequencer grid -->
@@ -283,9 +297,42 @@ const PRESETS = {
 
 function applyPreset(name) {
   grid = Array.from({length:ROWS},()=>Array(STEPS).fill(false));
-  (PRESETS[name]||[]).forEach(([r,s])=>{ if(r<ROWS&&s<STEPS) grid[r][s]=true; });
+  const data = PRESETS[name] || (loadUserPresets()[name]||[]);
+  data.forEach(([r,s])=>{ if(r<ROWS&&s<STEPS) grid[r][s]=true; });
   renderGrid();
 }
+
+// ── User preset persistence ───────────────────────────────────────────────────
+function loadUserPresets() {
+  try { return JSON.parse(localStorage.getItem('orbitUserPresets')||'{}'); } catch(e){ return {}; }
+}
+function saveUserPresets(obj) {
+  try { localStorage.setItem('orbitUserPresets', JSON.stringify(obj)); } catch(e){}
+}
+
+function renderUserPresets() {
+  const row = document.getElementById('userPresets');
+  row.innerHTML = '';
+  const saved = loadUserPresets();
+  Object.keys(saved).forEach(name => {
+    const wrap = document.createElement('span');
+    wrap.className = 'user-preset';
+    const load = document.createElement('button');
+    load.className = 'btn load'; load.textContent = name;
+    load.addEventListener('click', () => applyPreset(name));
+    const del = document.createElement('button');
+    del.className = 'btn del'; del.textContent = '✕';
+    del.title = 'Delete '+name;
+    del.addEventListener('click', e => {
+      e.stopPropagation();
+      const obj = loadUserPresets(); delete obj[name];
+      saveUserPresets(obj); renderUserPresets();
+    });
+    wrap.appendChild(load); wrap.appendChild(del);
+    row.appendChild(wrap);
+  });
+}
+renderUserPresets();
 
 // ── Build sequencer UI ────────────────────────────────────────────────────────
 const seqGrid   = document.getElementById('seqGrid');
@@ -785,6 +832,22 @@ document.getElementById('presets').addEventListener('click',function(e){
   const btn=e.target.closest('[data-preset]'); if(!btn) return;
   applyPreset(btn.dataset.preset);
   if(playing){stopPlay();startPlay();}
+});
+
+document.getElementById('savePresetBtn').addEventListener('click',function(){
+  const input = document.getElementById('presetNameInput');
+  const name = input.value.trim().toUpperCase();
+  if (!name) { input.focus(); return; }
+  const cells = [];
+  for(let r=0;r<ROWS;r++) for(let s=0;s<STEPS;s++) if(grid[r][s]) cells.push([r,s]);
+  const obj = loadUserPresets();
+  obj[name] = cells;
+  saveUserPresets(obj);
+  input.value = '';
+  renderUserPresets();
+});
+document.getElementById('presetNameInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('savePresetBtn').click();
 });
 
 // Escape → signal parent to navigate back
