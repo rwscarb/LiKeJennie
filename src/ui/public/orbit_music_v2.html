@@ -776,8 +776,9 @@ function drawViz() {
     // ── TUNNEL: radial spokes zoom+rotate from focal point ──────────────
     voffCtx.clearRect(0,0,VW,VH);
     voffCtx.drawImage(vizCanvas,0,0);
-    vctx.clearRect(0,0,VW,VH);
-    vctx.save(); vctx.globalAlpha=0.80;
+    // Colored fog: tint old frames with orbit hue instead of pure black
+    vctx.fillStyle=`hsla(${hueBase|0},70%,8%,0.10)`; vctx.fillRect(0,0,VW,VH);
+    vctx.save(); vctx.globalAlpha=0.92;  // slower decay = longer glowing trails
     vctx.translate(cx,cy);
     vctx.scale(1.024*vizUserScale*0.004+1.018, 1.024*vizUserScale*0.004+1.018);
     vctx.rotate(0.006); vctx.translate(-cx,-cy);
@@ -792,7 +793,7 @@ function drawViz() {
       vctx.beginPath();
       vctx.moveTo(Math.cos(angle)*R_INNER,Math.sin(angle)*R_INNER);
       vctx.lineTo(Math.cos(angle)*(R_INNER+v*R_MAX),Math.sin(angle)*(R_INNER+v*R_MAX));
-      vctx.strokeStyle=`hsla(${hue|0},90%,${50+v*28|0}%,${(0.6+v*0.35).toFixed(2)})`;
+      vctx.strokeStyle=`hsla(${hue|0},100%,${62+v*30|0}%,${(0.75+v*0.25).toFixed(2)})`;
       vctx.lineWidth=1.6; vctx.stroke();
     }
     vctx.beginPath();
@@ -806,7 +807,7 @@ function drawViz() {
 
   } else if (vizMode === 'bars') {
     // ── BARS: classic spectrum bars with feedback ─────────────────────────
-    vctx.fillStyle='rgba(2,6,8,0.30)'; vctx.fillRect(0,0,VW,VH);
+    vctx.fillStyle=`hsla(${hueBase|0},65%,6%,0.14)`; vctx.fillRect(0,0,VW,VH);
     const bw=VW/maxBin;
     for(let i=0;i<maxBin;i++){
       const v=freqData[i]/255; if(v<0.01) continue;
@@ -818,7 +819,7 @@ function drawViz() {
 
   } else if (vizMode === 'mirror') {
     // ── MIRROR: symmetric bars from vertical center ───────────────────────
-    vctx.fillStyle='rgba(2,6,8,0.28)'; vctx.fillRect(0,0,VW,VH);
+    vctx.fillStyle=`hsla(${(hueBase+180)|0},65%,6%,0.12)`; vctx.fillRect(0,0,VW,VH);
     const bw=VW/maxBin, half=VH/2;
     for(let i=0;i<maxBin;i++){
       const v=freqData[i]/255; if(v<0.01) continue;
@@ -841,7 +842,8 @@ function drawViz() {
     voffCtx.clearRect(0,0,VW,VH);
     voffCtx.drawImage(vizCanvas,0,0);
     vctx.clearRect(0,0,VW,VH);
-    vctx.save(); vctx.globalAlpha=0.75;
+    vctx.fillStyle=`hsla(${hueBase|0},70%,6%,0.10)`; vctx.fillRect(0,0,VW,VH);
+    vctx.save(); vctx.globalAlpha=0.90;
     vctx.translate(cx,cy); vctx.scale(1.018,1.018); vctx.translate(-cx,-cy);
     vctx.drawImage(vizOff,0,0); vctx.restore();
     const R=Math.min(VW,VH)*0.42*vizUserScale;
@@ -859,7 +861,7 @@ function drawViz() {
 
   } else if (vizMode === 'spiral') {
     // ── SPIRAL: frequency data mapped along Archimedean spiral ───────────
-    vctx.fillStyle='rgba(2,6,8,0.22)'; vctx.fillRect(0,0,VW,VH);
+    vctx.fillStyle=`hsla(${(hueBase+60)|0},70%,7%,0.11)`; vctx.fillRect(0,0,VW,VH);
     const turns=3, rMax=Math.min(VW,VH)*0.46*vizUserScale;
     vctx.save(); vctx.translate(cx,cy);
     for(let i=0;i<maxBin;i++){
