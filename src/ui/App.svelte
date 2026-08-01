@@ -654,6 +654,71 @@ const h = CLK_Y - dip * (1 - (r / R_MAX) ** 2);
     <h2>Connection to the Helix</h2>
     <p>The orbit cycle is the hidden rhythm inside the helix. The 21 nodes of the helix repeat the sequence 1→2→4→8→7→5 three and a half times (21 ÷ 6 = 3.5). Each node inherits the properties of its orbit value: color, echo relationship, driver status.</p>
     <p>The clock at the helix midpoint sits at step 10-11 of the 21-node sequence — at the transition between orbit values 7 and 5. The driver group is below the clock. The echo group is above it.</p>
+
+    <hr>
+
+    <h1>OLIVER42</h1>
+
+    <h2>The Complement: {3, 6}</h2>
+    <p>Three values never enter the main orbit: 3, 6, and 9. Of these, 3 and 6 form their own closed 2-cycle under ×2 mod 9:</p>
+    <pre><code>3 × 2 = 6   →   6 mod 9 = 6
+6 × 2 = 12  →  12 mod 9 = 3  ← back to start</code></pre>
+    <p>This 2-cycle is the complement world. The main orbit has period 6; the complement has period 2. Together: lcm(6, 2) = 6. Their shared container is 21 nodes — which is 6 × 3 + 3, or more precisely, 21 = 3 × 7. Oliver42 is 2 × 21: both worlds fully stated.</p>
+    <p>The complement helix grows <em>downward</em> from the bridge, mirroring the jennie21 helix above. Strand A carries {3, 6, 3, 6, …}; Strand B (offset π) carries {6, 3, 6, 3, …}. The complement is the shadow below the floor.</p>
+
+    <hr>
+
+    <h2>The Violin Body: Bernoulli Lemniscate</h2>
+    <p>At the bridge (clock level), the two worlds meet through a vertical figure-8 — a Bernoulli lemniscate oriented along the Y axis. The upper loop belongs to node 3 (violet); the lower loop to node 6 (rose).</p>
+    <pre><code>// parametric: t ∈ [0, 2π)
+x(t) = −A·sin(t)·cos(t) / (1 + sin²t)
+y(t) =  A·cos(t)        / (1 + sin²t)  + offset
+
+// t=0   → top of upper loop  (node 3)
+// t=π   → bottom of lower loop (node 6)
+// t=π/2 → crossing point = bridge</code></pre>
+    <p>The two chambers are the two loops of the figure-8. The bridge crossing is where node 3 and node 6 trade places — the ×3 gate between worlds.</p>
+
+    <hr>
+
+    <h2>The Möbius Twist</h2>
+    <p>The lemniscate is not a plain ribbon — it carries a half-twist (π radians) as it completes one full traversal. This makes the surface a Möbius band: one-sided, non-orientable. Traveling the full loop brings you back to the start with your orientation flipped.</p>
+    <p>The half-twist is the topological signature of the ×3 crossing. Going from the orbit world ({1,2,4,8,7,5}) into the complement world ({3,6}) is an orientation reversal — you arrive on the other side.</p>
+    <p>Two bright edge lines trace the ribbon's edges: violet (node 3 edge) and rose (node 6 edge). Because of the half-twist, these two edges are actually one continuous loop — they connect at the seam. The surface has one edge, one face.</p>
+
+    <hr>
+
+    <h2>The 640 Axis</h2>
+    <p>A vertical spine passes through the center of both helices and the lemniscate. It marks 640 — the anti-matter counterpart of 896.</p>
+    <ul>
+      <li>896 × 3 → digital root 6 &nbsp;·&nbsp; 896 is matter</li>
+      <li>640 × 3 → digital root 3 &nbsp;·&nbsp; 640 is anti-matter at the tri-fold</li>
+      <li>640 × 3/2 = 960 &nbsp;·&nbsp; the ×3/2 gate preserves the 640 signature</li>
+    </ul>
+    <p>The axis is labeled with three citric acid pKₐ values: pKₐ₁ ≈ 3.13 (node 3 threshold), pKₐ₂ ≈ 4.76 (mid-channel), and pKₐ₃ = 6.40 (node 6 / 640 threshold). Citric acid — C₆H₈O₇ — has 6 + 8 + 7 = <strong>21 atoms</strong>. Its third deprotonation happens at pH 6.40, where the molecule crosses from the acidic world into the base world. Same gate, same numbers.</p>
+
+    <hr>
+
+    <h2>WAVE: Resonance</h2>
+    <p>Enabling WAVE activates two resonance behaviors. The two chambers of the lemniscate breathe — their opacity pulses in phase with the animation clock. Three strings run vertically through the lemniscate (left, center, right), vibrating as standing waves with sinusoidal displacement perpendicular to the axis:</p>
+    <pre><code>displacement(y, t) = amp · sin(π · y_normalized) · sin(freq · t + phase)</code></pre>
+    <p>The standing wave has a node at each end (zero displacement at the top and bottom anchor) and an antinode at the center. Three strings at different lateral offsets give the violin its voice.</p>
+
+    <hr>
+
+    <h2>COLLAPSE: Gravitational Singularity</h2>
+    <p>Enabling COLLAPSE animates the Möbius ribbon twisting beyond its half-twist toward a singularity. The twist coefficient increases from 0.5 (Möbius) toward 4.5 (extreme collapse). As it does:</p>
+    <ul>
+      <li>The ribbon narrows — its width collapses toward zero at the bridge crossing point</li>
+      <li>String vibration frequency climbs — an analog of Hawking radiation as the event horizon shrinks</li>
+      <li>The chambers pulse faster and brighter</li>
+      <li>The 640 axis brightens — the anti-matter spine becomes more visible as the matter world collapses into it</li>
+    </ul>
+    <p>The fixed point of the collapse is 9 — the absorbing state. 9 ≡ 0 mod 9; once anything reaches it, doubling gives 0 forever. The bridge crossing is where 9 lives. Collapse is the orbit spiraling into its own void.</p>
+    <pre><code>// twist coefficient during collapse:
+twistCoeff = 0.5 + progress × 1.5
+// at progress=0: Möbius half-twist (π)
+// at progress=1: 7.25π — ribbon spirals into bridge</code></pre>
   </article>
 </div>
 

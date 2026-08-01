@@ -14,13 +14,13 @@ export function buildS7() {
   const canvas = R.canvas, ov = R.ov;
   const scene  = R.scene  = new THREE.Scene();
   const camera = R.camera = mkCamera();
-  camera.position.set(20, 5, 10);
-  camera.lookAt(0, 7, 0);
+  camera.position.set(22, -0.5, 26);
+  camera.lookAt(0, -0.5, 0);
   const controls = R.controls = mkControls(camera);
-  controls.target.set(0, 7, 0);
+  controls.target.set(0, -0.5, 0);
   controls.update();
   controls.autoRotate = true;
-  controls.autoRotateSpeed = 0.28;
+  controls.autoRotateSpeed = 0.22;
 
   // ── Orbit constants ──────────────────────────────────────────────────────
   const ORBIT   = [1, 2, 4, 8, 7, 5];
@@ -1185,9 +1185,9 @@ export function buildS7() {
   };
 
   const PRESETS = {
-    side:   { pos: [20,  5, 10],  tgt: [0, 7, 0] },
-    top:    { pos: [ 0, 22,  0],  tgt: [0, 7, 0] },
-    bottom: { pos: [ 0, -8,  0],  tgt: [0, 7, 0] },
+    side:   { pos: [22, -0.5, 26],  tgt: [0, -0.5, 0] },
+    top:    { pos: [ 0,  30,   0],  tgt: [0, -0.5, 0] },
+    bottom: { pos: [ 0, -30,   0],  tgt: [0, -0.5, 0] },
   };
   const applyPreset = key => {
     const { pos, tgt } = PRESETS[key];
