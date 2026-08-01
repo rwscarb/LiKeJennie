@@ -40,7 +40,7 @@ canvas { display:block; }
 /* ── Right panel ── */
 .panel {
   background:var(--panel); border-left:1px solid var(--dim);
-  display:flex; flex-direction:column; gap:0; overflow-y:auto;
+  display:flex; flex-direction:column; gap:0; overflow-y:hidden;
   position:relative; width:320px;
   /* CSS custom properties — updated by resize drag */
   --panel-fs:9px; --cell-h:28px;
@@ -61,8 +61,11 @@ canvas { display:block; }
 .section-title::before { content:'▾'; font-size:.7em; opacity:.55; transition:transform .15s; }
 .section.collapsed .section-title::before { transform:rotate(-90deg); }
 .section.collapsed .section-title { margin-bottom:0; }
-.section-body { overflow:hidden; }
+.section-body { overflow:visible; }
 .section.collapsed .section-body { display:none; }
+/* seq section passes flex:1 through to its body */
+.section[style*="flex:1"] { display:flex; flex-direction:column; }
+.section[style*="flex:1"] > .section-body { flex:1; }
 /* ── Controls ── */
 .row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
 .row label { font-size:var(--panel-fs); color:var(--muted); width:58px; flex-shrink:0; }
