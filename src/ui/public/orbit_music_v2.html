@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ORBIT SEQUENCER</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg:#020c08; --fg:#00ff88; --dim:#0a2010; --cyan:#00e5ff;
+  --orng:#ff9800; --muted:#2a5a2a; --panel:#04160a;
+}
+body {
+  background:var(--bg); color:var(--fg);
+  font-family:'Courier New',monospace;
+  display:grid;
+  grid-template-rows:auto 1fr auto;
+  grid-template-columns:1fr 320px;
+  height:100vh; overflow:hidden; gap:0;
+}
+/* ── Header ── */
+header {
+  grid-column:1/-1;
+  display:flex; align-items:center; gap:16px;
+  padding:8px 16px;
+  border-bottom:1px solid var(--dim);
+  background:var(--panel);
+}
+header h1 { font-size:10px; letter-spacing:.22em; color:var(--cyan); opacity:.75; }
+.transport { display:flex; gap:8px; margin-left:auto; align-items:center; }
+/* ── Main canvas area ── */
+.stage { position:relative; background:var(--bg); }
+canvas { display:block; }
+/* ── Right panel ── */
+.panel {
+  background:var(--panel); border-left:1px solid var(--dim);
+  display:flex; flex-direction:column; gap:0; overflow-y:auto;
+}
+.section { padding:12px 14px; border-bottom:1px solid var(--dim); }
+.section-title { font-size:9px; color:var(--muted); letter-spacing:.15em; margin-bottom:8px; }
+/* ── Controls ── */
+.row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+.row label { font-size:9px; color:var(--muted); width:58px; flex-shrink:0; }
+.row input[type=range] {
+  flex:1; accent-color:var(--fg);
+  height:3px; background:var(--dim); appearance:none;
+}
+.row input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance:none; width:10px; height:10px;
+  border-radius:50%; background:var(--fg);
+}
+.row .val { font-size:9px; color:var(--fg); width:36px; text-align:right; }
+/* ── Buttons ── */
+btn, .btn {
+  font-family:'Courier New',monospace; font-size:9px; letter-spacing:.10em;
+  background:none; border:1px solid var(--muted); color:var(--muted);
+  padding:4px 10px; cursor:pointer; transition:all .12s;
+}
+.btn:hover { border-color:var(--fg); color:var(--fg); }
+.btn.lit   { border-color:var(--fg); color:#fff; background:#00ff8820; }
+.btn.play  { border-color:var(--fg); color:var(--fg); font-size:11px; padding:5px 16px; }
+.btn.play.lit { background:#00ff8830; color:#fff; }
+/* ── Step sequencer grid ── */
+.seq-grid {
+  display:grid;
+  grid-template-rows:repeat(6,28px);
+  grid-template-columns:repeat(16,1fr);
+  gap:2px;
+}
+.seq-cell {
+  border-radius:2px; cursor:pointer;
+  background:var(--dim); border:1px solid #0a1a10;
+  transition:background .08s;
+  position:relative;
+}
+.seq-cell.on { background:var(--on-col,#00ff8880); border-color:var(--on-col,#00ff88); }
+.seq-cell.cursor { outline:1px solid #fff; }
+.seq-cell.on.cursor { outline:2px solid #fff; }
+.row-label {
+  font-size:8px; color:var(--muted); text-align:right;
+  padding-right:6px; display:flex; align-items:center; justify-content:flex-end;
+}
+/* ── Waveform buttons ── */
+.wave-row { display:flex; gap:4px; flex-wrap:wrap; }
+/* ── Presets ── */
+.preset-row { display:flex; gap:4px; flex-wrap:wrap; }
+/* ── Freq bar ── */
+.freq-bars {
+  display:flex; gap:2px; align-items:flex-end; height:40px;
+  padding:4px 0;
+}
+.freq-bar {
+  flex:1; background:var(--fg); border-radius:1px 1px 0 0;
+  transition:height .08s;
+  min-height:1px;
+}
+/* ── Note labels ── */
+.note-names { display:flex; gap:2px; }
+.note-name {
+  flex:1; font-size:7px; color:var(--muted); text-align:center;
+  border-top:1px solid var(--dim); padding-top:2px;
+}
+.note-name.active { color:var(--fg); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>ORBIT SEQUENCER &nbsp;·&nbsp; {1,2,4,8,7,5} × 55 Hz</h1>
+  <div class="transport">
+    <span id="bpmVal" style="font-size:9px;color:var(--muted)">120 BPM</span>
+    <input type="range" id="bpmSlider" min="60" max="240" value="120" style="width:80px">
+    <button class="btn play" id="playBtn">▶ PLAY</button>
+  </div>
+</header>
+
+<div class="stage">
+  <canvas id="main"></canvas>
+</div>
+
+<div class="panel">
+  <!-- Waveform -->
+  <div class="section">
+    <div class="section-title">WAVEFORM</div>
+    <div class="wave-row" id="waveRow">
+      <button class="btn lit" data-wave="triangle">TRI</button>
+      <button class="btn" data-wave="sine">SINE</button>
+      <button class="btn" data-wave="sawtooth">SAW</button>
+      <button class="btn" data-wave="square">SQ</button>
+    </div>
+  </div>
+  <!-- Synth controls -->
+  <div class="section">
+    <div class="section-title">SYNTH</div>
+    <div class="row"><label>octave</label>
+      <button class="btn" id="octDn">−</button>
+      <span id="octVal" style="font-size:10px;color:var(--fg);width:24px;text-align:center">0</span>
+      <button class="btn" id="octUp">+</button>
+    </div>
+    <div class="row"><label>reverb</label>
+      <input type="range" id="reverbSlider" min="0" max="1" step=".01" value=".25">
+      <span class="val" id="reverbVal">25%</span>
+    </div>
+    <div class="row"><label>bass</label>
+      <input type="range" id="bassSlider" min="0" max="1" step=".01" value=".18">
+      <span class="val" id="bassVal">18%</span>
+    </div>
+    <div class="row"><label>detune</label>
+      <input type="range" id="detuneSlider" min="0" max="20" step=".5" value="3">
+      <span class="val" id="detuneVal">3¢</span>
+    </div>
+  </div>
+  <!-- Freq display -->
+  <div class="section">
+    <div class="section-title">HARMONICS</div>
+    <div class="freq-bars" id="freqBars"></div>
+    <div class="note-names" id="noteNames"></div>
+  </div>
+  <!-- Presets -->
+  <div class="section">
+    <div class="section-title">PRESETS</div>
+    <div class="preset-row" id="presets">
+      <button class="btn" data-preset="zen">ZEN</button>
+      <button class="btn" data-preset="orbit">ORBIT</button>
+      <button class="btn" data-preset="bass">BASS</button>
+      <button class="btn" data-preset="scatter">SCATTER</button>
+      <button class="btn" data-preset="clear">CLEAR</button>
+    </div>
+  </div>
+  <!-- Sequencer grid -->
+  <div class="section" style="flex:1">
+    <div class="section-title">STEP SEQUENCER &nbsp;<span style="color:#1a3a1a">16 steps · 6 orbit notes</span></div>
+    <div style="display:grid;grid-template-columns:36px 1fr;gap:4px;align-items:center">
+      <div></div>
+      <div style="display:grid;grid-template-columns:repeat(16,1fr);gap:2px;margin-bottom:3px">
+        <!-- beat markers -->
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:36px 1fr;gap:4px">
+      <div id="rowLabels" style="display:flex;flex-direction:column;gap:2px"></div>
+      <div class="seq-grid" id="seqGrid"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Orbit ────────────────────────────────────────────────────────────────────
+const ORBIT     = [1,2,4,8,7,5];
+const BASE      = 55;
+const FREQS     = ORBIT.map(v => v * BASE);
+const NOTE_NAMES = ['A1','A2','A3','A4','G4♮','C#4'];
+const STEP_HUES = [0.33,0.50,0.62,0.83,0.10,0.23];
+function stepColor(i, l=0.55) {
+  const h=STEP_HUES[i]; return `hsl(${Math.round(h*360)},90%,${Math.round(l*100)}%)`;
+}
+
+// Sequencer state: 6 rows × 16 steps
+const ROWS=6, STEPS=16;
+let grid = Array.from({length:ROWS},()=>Array(STEPS).fill(false));
+let curStep = 0;
+let octave  = 0;
+
+// ── Presets ──────────────────────────────────────────────────────────────────
+// Each preset is a sparse list of [row, step] pairs
+const PRESETS = {
+  orbit: [
+    [0,0],[1,2],[2,4],[3,6],[4,10],[5,12],
+    [0,8],[1,10],[2,12],[3,14],
+  ],
+  // ZEN-inspired: bouncy verse feel, strong chorus pattern
+  zen: [
+    // Verse-ish (steps 0-7): low-mid orbit
+    [0,0],[0,4],[0,6],
+    [1,1],[1,5],
+    [2,2],[2,7],
+    [3,3],
+    // Chorus-ish (steps 8-15): orbit notes scatter upward
+    [5,8],[5,10],
+    [4,9],[4,13],
+    [3,11],[3,15],
+    [2,12],
+    [1,14],
+    [0,8],[0,12],
+  ],
+  bass: [
+    [0,0],[0,4],[0,8],[0,12],
+    [1,2],[1,6],[1,10],[1,14],
+    [2,1],[2,9],
+  ],
+  scatter: [
+    [5,0],[4,1],[3,2],[2,3],[1,4],[0,5],
+    [5,6],[4,7],[3,8],[2,9],[1,10],[0,11],
+    [5,12],[4,13],[3,14],[2,15],
+  ],
+  clear: [],
+};
+
+function applyPreset(name) {
+  grid = Array.from({length:ROWS},()=>Array(STEPS).fill(false));
+  (PRESETS[name]||[]).forEach(([r,s])=>{ if(r<ROWS&&s<STEPS) grid[r][s]=true; });
+  renderGrid();
+}
+
+// ── Build sequencer UI ────────────────────────────────────────────────────────
+const seqGrid   = document.getElementById('seqGrid');
+const rowLabels = document.getElementById('rowLabels');
+const cells     = [];
+
+for (let r=0; r<ROWS; r++) {
+  const lbl = document.createElement('div');
+  lbl.style.cssText=`height:28px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:8px;color:${stepColor(r,.55)}`;
+  lbl.textContent = `${ORBIT[r]}×`;
+  rowLabels.appendChild(lbl);
+
+  cells.push([]);
+  for (let s=0; s<STEPS; s++) {
+    const cell = document.createElement('div');
+    cell.className='seq-cell';
+    cell.style.setProperty('--on-col', stepColor(r,.55));
+    cell.dataset.r=r; cell.dataset.s=s;
+    cell.addEventListener('click',()=>{ grid[r][s]=!grid[r][s]; renderGrid(); });
+    seqGrid.appendChild(cell);
+    cells[r].push(cell);
+  }
+}
+
+function renderGrid() {
+  for (let r=0; r<ROWS; r++)
+    for (let s=0; s<STEPS; s++) {
+      cells[r][s].classList.toggle('on', grid[r][s]);
+      cells[r][s].classList.toggle('cursor', s===curStep);
+    }
+}
+
+// ── Freq bars ────────────────────────────────────────────────────────────────
+const freqBars = document.getElementById('freqBars');
+const noteNames = document.getElementById('noteNames');
+const bars=[], nameEls=[];
+for (let i=0; i<ROWS; i++) {
+  const b=document.createElement('div');
+  b.className='freq-bar';
+  b.style.background=stepColor(i,.55);
+  freqBars.appendChild(b); bars.push(b);
+  const n=document.createElement('div');
+  n.className='note-name'; n.textContent=NOTE_NAMES[i];
+  n.style.color=stepColor(i,.40);
+  noteNames.appendChild(n); nameEls.push(n);
+}
+const barLevels = Array(ROWS).fill(0);
+
+// ── Web Audio ────────────────────────────────────────────────────────────────
+let audioCtx=null, masterGain, wetGain, dryGain, delayL, delayR;
+let waveform='triangle', reverbAmt=0.25, bassAmt=0.18, detuneAmt=3;
+
+function initAudio() {
+  if (audioCtx) { if (audioCtx.state==='suspended') audioCtx.resume(); return; }
+  audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  masterGain = audioCtx.createGain(); masterGain.gain.value=0.60;
+  masterGain.connect(audioCtx.destination);
+  dryGain = audioCtx.createGain(); dryGain.gain.value=1.0; dryGain.connect(masterGain);
+  wetGain = audioCtx.createGain(); wetGain.gain.value=reverbAmt;
+  delayL = audioCtx.createDelay(0.6); delayL.delayTime.value=0.22;
+  delayR = audioCtx.createDelay(0.6); delayR.delayTime.value=0.31;
+  const fbL=audioCtx.createGain(); fbL.gain.value=0.40;
+  const fbR=audioCtx.createGain(); fbR.gain.value=0.36;
+  delayL.connect(fbL); fbL.connect(delayL);
+  delayR.connect(fbR); fbR.connect(delayR);
+  wetGain.connect(delayL); wetGain.connect(delayR);
+  delayL.connect(masterGain); delayR.connect(masterGain);
+}
+
+function playNote(freq, startTime, dur, vol=0.28, wt=waveform) {
+  const osc=audioCtx.createOscillator(), env=audioCtx.createGain();
+  osc.type=wt; osc.frequency.value=freq;
+  if (detuneAmt>0) {
+    const osc2=audioCtx.createOscillator(), env2=audioCtx.createGain();
+    osc2.type=wt; osc2.frequency.value=freq*(1+detuneAmt/1200);
+    env2.gain.value=0.45;
+    osc2.connect(env2); env2.connect(env);
+    osc2.start(startTime); osc2.stop(startTime+dur+0.1);
+  }
+  osc.connect(env); env.connect(dryGain); env.connect(wetGain);
+  env.gain.setValueAtTime(0,startTime);
+  env.gain.linearRampToValueAtTime(vol,startTime+0.015);
+  env.gain.setValueAtTime(vol*0.80,startTime+dur*0.30);
+  env.gain.linearRampToValueAtTime(0,startTime+dur);
+  osc.start(startTime); osc.stop(startTime+dur+0.1);
+}
+
+function playBass(freq, startTime, dur) {
+  const osc=audioCtx.createOscillator(), env=audioCtx.createGain();
+  osc.type='sine'; osc.frequency.value=freq;
+  osc.connect(env); env.connect(dryGain);
+  env.gain.setValueAtTime(0,startTime);
+  env.gain.linearRampToValueAtTime(bassAmt*0.35,startTime+0.05);
+  env.gain.linearRampToValueAtTime(bassAmt*0.15,startTime+dur*0.7);
+  env.gain.linearRampToValueAtTime(0,startTime+dur);
+  osc.start(startTime); osc.stop(startTime+dur+0.1);
+}
+
+// ── Scheduler ────────────────────────────────────────────────────────────────
+let bpm=120, playing=false, schedTimer=null, nextAt=0, schedStepN=0;
+const LOOK=0.12;
+
+function stepDur() { return 60/(bpm*4); } // 16th note duration
+
+function scheduleStep(step, time) {
+  const dur = stepDur();
+  let hasNote=false;
+  for (let r=0; r<ROWS; r++) {
+    if (!grid[r][step]) continue;
+    const mult = Math.pow(2, octave);
+    playNote(FREQS[r]*mult, time, dur*0.85);
+    barLevels[r]=1.0;
+    hasNote=true;
+  }
+  // Bass every 4 steps (quarter note)
+  if (step%4===0) {
+    const bassFreq=(step<8)?[3*BASE,6*BASE][Math.floor(step/4)%2]:[6*BASE,3*BASE][Math.floor((step-8)/4)%2];
+    playBass(bassFreq*Math.pow(2,octave-1), time, dur*4);
+  }
+}
+
+function runSched() {
+  while (nextAt < audioCtx.currentTime + LOOK) {
+    const step = schedStepN % STEPS;
+    scheduleStep(step, nextAt);
+    schedStepN++;
+    nextAt += stepDur();
+  }
+  schedTimer = setTimeout(runSched,25);
+}
+
+function startPlay() {
+  initAudio();
+  schedStepN=0; nextAt=audioCtx.currentTime+0.05;
+  runSched(); playing=true;
+}
+function stopPlay() {
+  if(schedTimer) clearTimeout(schedTimer);
+  playing=false; curStep=0; renderGrid();
+}
+
+// ── Canvas: orbit ring + C60 ─────────────────────────────────────────────────
+const canvas=document.getElementById('main');
+const ctx=canvas.getContext('2d');
+
+// C60 geometry (truncated icosahedron)
+const phi=(1+Math.sqrt(5))/2;
+function* signCombos(v){
+  const nz=v.reduce((a,x,i)=>x!==0?[...a,i]:a,[]);
+  for(let m=0;m<(1<<nz.length);m++){const r=[...v];nz.forEach((j,k)=>{if(m&(1<<k))r[j]=-r[j]});yield r}
+}
+function cyc(v){return[[v[0],v[1],v[2]],[v[1],v[2],v[0]],[v[2],v[0],v[1]]]}
+const C60V=[];
+for(const t of[[0,1,3*phi],[1,2+phi,2*phi],[2,1+2*phi,phi]])
+  for(const s of signCombos(t))for(const p of cyc(s))C60V.push(p);
+const C60E=[];
+for(let i=0;i<C60V.length;i++)for(let j=i+1;j<C60V.length;j++){
+  const[a,b,c]=C60V[i],[d,e,f]=C60V[j];
+  if(Math.abs((a-d)**2+(b-e)**2+(c-f)**2-4)<0.01)C60E.push([i,j]);
+}
+
+let c60Ang=0, c60Hue=STEP_HUES[0];
+const CRX=Math.cos(0.38),SRX=Math.sin(0.38);
+const _tc=new Float32Array(3);
+
+// Orbit ring
+const OR=90, OX=720, OY=220;
+
+function orbitXY(i){
+  const a=(i/6)*Math.PI*2-Math.PI/2;
+  return[OX+Math.cos(a)*OR,OY+Math.sin(a)*OR];
+}
+
+let W=0,H=0;
+function resize(){
+  W=canvas.parentElement.clientWidth; H=canvas.parentElement.clientHeight;
+  canvas.width=W; canvas.height=H;
+}
+resize(); window.addEventListener('resize',resize);
+
+let animStep=-1, lastFrame=null;
+
+function drawFrame(ts) {
+  requestAnimationFrame(drawFrame);
+  const dt=lastFrame?Math.min((ts-lastFrame)/1000,0.05):0;
+  lastFrame=ts;
+
+  // Sync visual step from audio
+  if (playing && audioCtx) {
+    const elapsed=(audioCtx.currentTime-(nextAt-schedStepN*stepDur()));
+    animStep = Math.floor(elapsed/stepDur())%STEPS;
+    if(animStep<0) animStep=0;
+  }
+
+  ctx.clearRect(0,0,W,H);
+
+  // ── C60 (left half) ─────────────────────────────────────────────────
+  const C60_S=0.33, C60X=W*0.30, C60Y=H*0.50;
+  c60Ang=(c60Ang+dt*0.25)%(Math.PI*2);
+
+  // Target hue from active orbit step (rows that are active in curStep)
+  let activeRow=-1;
+  for(let r=0;r<ROWS;r++){if(grid[r][animStep%STEPS]){activeRow=r;break;}}
+  const targetHue=activeRow>=0?STEP_HUES[activeRow]:STEP_HUES[0];
+  let dh=targetHue-c60Hue; if(dh>.5)dh-=1;if(dh<-.5)dh+=1;
+  c60Hue=(c60Hue+dh*Math.min(1,dt*2)+1)%1;
+
+  const cosY=Math.cos(c60Ang),sinY=Math.sin(c60Ang);
+  const rotV=C60V.map(([vx,vy,vz])=>{
+    const y1=vy*CRX-vz*SRX,z1=vy*SRX+vz*CRX;
+    const x2=vx*cosY+z1*sinY,z2=-vx*sinY+z1*cosY;
+    return[x2,y1,z2];
+  });
+  let zMin=Infinity,zMax=-Infinity;
+  for(const[,,z]of rotV){if(z<zMin)zMin=z;if(z>zMax)zMax=z;}
+  const zR=zMax-zMin||1;
+
+  // Decay bar levels
+  for(let i=0;i<ROWS;i++) barLevels[i]=Math.max(0,barLevels[i]-dt*3.5);
+
+  // Draw C60 edges
+  const se=C60E.map(([i,j],ei)=>({i,j,z:(rotV[i][2]+rotV[j][2])/2})).sort((a,b)=>a.z-b.z);
+  for(const{i,j,z}of se){
+    const depth=(z-zMin)/zR;
+    const hue=(c60Hue+depth*0.16-0.08+1)%1;
+    const lum=0.04+depth*0.48;
+    ctx.beginPath();
+    ctx.moveTo(C60X+rotV[i][0]*C60_S*W*0.12,C60Y+rotV[i][1]*C60_S*H*0.19);
+    ctx.lineTo(C60X+rotV[j][0]*C60_S*W*0.12,C60Y+rotV[j][1]*C60_S*H*0.19);
+    ctx.strokeStyle=`hsl(${Math.round(hue*360)},90%,${Math.round(lum*100)}%)`;
+    ctx.lineWidth=0.6+depth*0.9; ctx.stroke();
+  }
+
+  // C60 label
+  ctx.font='11px "Courier New"'; ctx.fillStyle='rgba(0,255,136,0.25)';
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  ctx.fillText('C₆₀',C60X,C60Y+H*0.19*0.9+8);
+
+  // ── Orbit ring (right) ────────────────────────────────────────────────
+  const curOrbitStep = playing ? Math.floor(animStep / (STEPS/6)) % 6 : -1;
+
+  // Ring guide
+  ctx.beginPath(); ctx.arc(OX,OY,OR,0,Math.PI*2);
+  ctx.strokeStyle='#061408'; ctx.lineWidth=16; ctx.stroke();
+
+  for(let i=0;i<6;i++){
+    const[fx,fy]=orbitXY(i),[tx,ty]=orbitXY((i+1)%6);
+    const mx=(fx+tx)/2,my=(fy+ty)/2;
+    const dx=tx-fx,dy=ty-fy,len=Math.hypot(dx,dy);
+    const lift=0.20;
+    const cx2=mx+(-dy/len)*OR*lift,cy2=my+(dx/len)*OR*lift;
+    const active=(i===curOrbitStep);
+    ctx.beginPath(); ctx.moveTo(fx,fy); ctx.quadraticCurveTo(cx2,cy2,tx,ty);
+    ctx.strokeStyle=active?'#fff':`hsl(${Math.round(STEP_HUES[i]*360)},90%,50%)`;
+    ctx.globalAlpha=active?.88:.30; ctx.lineWidth=active?2.0:1.0; ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+  for(let i=0;i<6;i++){
+    const[x,y]=orbitXY(i);
+    const active=(i===curOrbitStep);
+    const col=`hsl(${Math.round(STEP_HUES[i]*360)},90%,58%)`;
+    if(active){
+      ctx.beginPath();ctx.arc(x,y,22,0,Math.PI*2);
+      const g=ctx.createRadialGradient(x,y,0,x,y,22);
+      g.addColorStop(0,col.replace('hsl','hsla').replace(')',',0.3)'));
+      g.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=g;ctx.fill();
+    }
+    ctx.beginPath();ctx.arc(x,y,active?10:6.5,0,Math.PI*2);
+    ctx.fillStyle=active?'#fff':'#061408'; ctx.strokeStyle=col;
+    ctx.lineWidth=1.5; ctx.fill();ctx.stroke();
+    ctx.font=`bold ${active?14:10}px 'Courier New'`;
+    ctx.fillStyle=active?'#020c08':col;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(String(ORBIT[i]),x,y);
+    if(active){
+      ctx.font='9px "Courier New"'; ctx.fillStyle='rgba(255,255,255,0.55)';
+      ctx.textBaseline='top';
+      ctx.fillText(`${FREQS[i]}Hz`,x,y+14);
+    }
+  }
+  ctx.font='8px "Courier New"'; ctx.fillStyle='rgba(0,229,255,0.35)';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('×2',OX,OY-7); ctx.fillText('mod 9',OX,OY+7);
+
+  // ── Step cursor on sequencer (flash col) ─────────────────────────────
+  curStep = animStep;
+  renderGrid();
+
+  // ── Freq bars update ─────────────────────────────────────────────────
+  for(let i=0;i<ROWS;i++){
+    const pct=barLevels[i];
+    bars[i].style.height=(pct*36+1)+'px';
+    nameEls[i].classList.toggle('active',pct>0.1);
+  }
+}
+requestAnimationFrame(drawFrame);
+
+// ── Control wiring ───────────────────────────────────────────────────────────
+document.getElementById('playBtn').addEventListener('click',function(){
+  if(playing){stopPlay();this.textContent='▶ PLAY';this.classList.remove('lit');}
+  else{startPlay();this.textContent='■ STOP';this.classList.add('lit');}
+});
+
+document.getElementById('bpmSlider').addEventListener('input',function(){
+  bpm=+this.value; document.getElementById('bpmVal').textContent=bpm+' BPM';
+});
+
+document.getElementById('reverbSlider').addEventListener('input',function(){
+  reverbAmt=+this.value;
+  document.getElementById('reverbVal').textContent=Math.round(reverbAmt*100)+'%';
+  if(wetGain) wetGain.gain.value=reverbAmt;
+});
+document.getElementById('bassSlider').addEventListener('input',function(){
+  bassAmt=+this.value;
+  document.getElementById('bassVal').textContent=Math.round(bassAmt*100)+'%';
+});
+document.getElementById('detuneSlider').addEventListener('input',function(){
+  detuneAmt=+this.value;
+  document.getElementById('detuneVal').textContent=this.value+'¢';
+});
+
+document.getElementById('waveRow').addEventListener('click',function(e){
+  const btn=e.target.closest('[data-wave]'); if(!btn) return;
+  waveform=btn.dataset.wave;
+  this.querySelectorAll('.btn').forEach(b=>b.classList.toggle('lit',b===btn));
+});
+
+let octaveVal=0;
+document.getElementById('octDn').addEventListener('click',()=>{
+  if(octave>-2){octave--;document.getElementById('octVal').textContent=octave>0?'+'+octave:octave;}
+});
+document.getElementById('octUp').addEventListener('click',()=>{
+  if(octave<2){octave++;document.getElementById('octVal').textContent=octave>0?'+'+octave:octave;}
+});
+
+document.getElementById('presets').addEventListener('click',function(e){
+  const btn=e.target.closest('[data-preset]'); if(!btn) return;
+  applyPreset(btn.dataset.preset);
+  if(playing){stopPlay();startPlay();}
+});
+
+// Load ZEN preset by default
+applyPreset('zen');
+</script>
+</body>
+</html>

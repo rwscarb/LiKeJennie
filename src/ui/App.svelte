@@ -516,8 +516,20 @@ afterUpdate(() => {
     <div class="cset" class:on={active === 13}>
       <span class="stat">drag to rotate C₆₀ &nbsp;&middot;&nbsp; 60 vertices · 90 edges · 12 pentagons + 20 hexagons</span>
     </div>
+    <div class="cset" class:on={active === 14}>
+      <span class="stat">orbit {1,2,4,8,7,5} × 55 Hz &nbsp;&middot;&nbsp; step sequencer &nbsp;&middot;&nbsp; complement {3,6} as bass</span>
+    </div>
   </div>
 </div>
+
+{#if active === 14}
+  <iframe
+    src="/orbit_music_v2.html"
+    title="Orbit Music Sequencer"
+    allow="autoplay"
+    style="position:fixed;top:0;left:0;width:100%;height:100%;border:none;background:#020c08;z-index:50;"
+  ></iframe>
+{/if}
 
 <div class="hint">&larr; &rarr; arrow keys &nbsp;&middot;&nbsp; tabs or dots &nbsp;&middot;&nbsp; keys 1&ndash;9</div>
 
@@ -881,6 +893,40 @@ Layer 6:  [1, 2, 4, 8, 7, 5]   ← identity: back to layer 0</code></pre>
     <p>The atom counts follow 60×n² for n = 1, 2, 3, 4. Radii scale as √n: the n=2 shell has √2 ≈ 1.41× the radius of C₆₀, and n=3 gives √3 ≈ 1.73×.</p>
     <p>The GNN MIRROR scene showed three nested copies of the orbit ring at scales 1, ⅓, ¹⁄₉ — self-similar directed cycles at decreasing radii, with the same structure at every level. The onion fullerenes are the physical realization of that nested structure: the same icosahedral directed graph at each scale, carbon atoms where the orbit nodes would be.</p>
     <p><strong>|I<sub>h</sub>| = 120 = 20 × 6.</strong> Twenty hexagonal faces, six-step orbit period. The symmetry group order factors as the product of the two key numbers in this visualization.</p>
+
+    <hr>
+
+    <h1>ORBIT MUSIC</h1>
+
+    <h2>The Orbit as a Harmonic Series</h2>
+    <p>The orbit values {1, 2, 4, 8, 7, 5} are not just digits — they are integer multipliers. Multiply each by 55 Hz (A1, the fundamental) and you get exact harmonics of A:</p>
+    <pre><code>1 × 55 = 55 Hz   A1  (fundamental)
+2 × 55 = 110 Hz  A2  (octave)
+4 × 55 = 220 Hz  A3  (second octave)
+8 × 55 = 440 Hz  A4  (concert A, the standard tuning reference)
+7 × 55 = 385 Hz  G4  (natural 7th — the blue note, the jazz note)
+5 × 55 = 275 Hz  C#4 (major 3rd — completes the A major triad)</code></pre>
+    <p>The orbit traversal is not just a number pattern — it is an ascent through the harmonic series from A1 to concert A, then back through the natural seventh and major third. The orbit IS an A major chord in just intonation.</p>
+
+    <hr>
+
+    <h2>The Complement Bass</h2>
+    <p>The complement {3, 6} × 55 Hz gives 165 Hz (E3) and 330 Hz (E4) — a perfect fifth above A. The relationship between the orbit and its complement is the relationship between the root and the fifth: the two poles of Western harmony.</p>
+    <pre><code>orbit     {1,2,4,8,7,5} × 55 Hz  →  A major (root, octaves, 7th, 3rd)
+complement {3,6}  × 55 Hz         →  E (perfect 5th above A)</code></pre>
+    <p>The complement cycle has period 2: 3 → 6 → 3 → 6. It beats at 1/3 the speed of the orbit — three orbit traversals per one complement cycle. In the music sequencer, the bass pulses every 3 orbit steps, alternating between E3 and E4, exactly mirroring the structural ratio.</p>
+
+    <hr>
+
+    <h2>Step Sequencer</h2>
+    <p>The sequencer has 6 rows (one per orbit value) × 16 steps. Each row plays its harmonic frequency when a step is activated. The C₆₀ wireframe on the left shifts hue toward the active row's color — the same iridescent palette as the BUCKMINSTER scene, synchronized to the beat.</p>
+    <p>BPM, waveform, octave, reverb depth, bass level, and oscillator detune are all adjustable. The <strong>ZEN preset</strong> approximates the melodic contour of Jennie's song <em>ZEN</em> using only the orbit harmonics — a song about emptiness and acceptance, played on the frequencies that orbit nothingness (mod 9 = 0).</p>
+
+    <hr>
+
+    <h2>Why 55 Hz</h2>
+    <p>55 Hz is A1 — two octaves below concert A (440 Hz). It is the lowest A in the standard bass guitar range. As the fundamental, it makes the harmonic series audible: the orbit traversal from 1 to 8 is literally the bottom four harmonics of A, followed by two chromatic color tones (G natural and C#) that make A major tonality explicit.</p>
+    <p>No tuning was required. The orbit itself chose the notes.</p>
   </article>
 </div>
 
