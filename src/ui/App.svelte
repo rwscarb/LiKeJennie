@@ -186,6 +186,8 @@ onMount(async () => {
     : Math.min(Math.max(parseInt(urlP.get('s') ?? '7', 10), 0), scenes.length - 1);
   if (initScene !== 7) cur.set(initScene);
   show(initScene);
+  // Stamp initial history entry so back-button navigates within the app
+  history.replaceState({ scene: initScene }, '', `?s=${initScene}`);
 
   if (_restored) {
     const { cam, tgt, sliders, flags } = _restored;
@@ -256,12 +258,20 @@ onMount(async () => {
   document.addEventListener('fullscreenchange', resize);
   const onOrbitBack = e => { if (e.data === 'orbit:back') goTo(get(cur) - 1); };
   addEventListener('message', onOrbitBack);
+  const onPopState = e => {
+    const idx = e.state?.scene ?? parseInt(new URLSearchParams(location.search).get('s') ?? '7', 10);
+    const safe = Math.min(Math.max(idx, 0), scenes.length - 1);
+    cur.set(safe);
+    show(safe);
+  };
+  addEventListener('popstate', onPopState);
   return () => {
     stopRain();
     cancelAnimationFrame(rafId);
     removeEventListener('resize', resize);
     removeEventListener('keydown', onKey);
     removeEventListener('message', onOrbitBack);
+    removeEventListener('popstate', onPopState);
     document.removeEventListener('fullscreenchange', resize);
     disposeScene();
     renderer.dispose();
