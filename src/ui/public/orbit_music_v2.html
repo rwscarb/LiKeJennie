@@ -311,22 +311,21 @@ const PRESETS = {
     [0,0],[1,2],[2,4],[3,6],[4,10],[5,12],
     [0,8],[1,10],[2,12],[3,14],
   ],
-  // ZEN (Jennie) opening — F#m key, A=3rd, C#=5th, G≈=E-chord 3rd
-  // rise low→A4 across first 8 steps, float at top, resolve back
+  // ZEN (Jennie) — use transp=-3 to shift orbit to F# minor
+  // Opening: F#→E descending figure detected from jennie.webm
+  // At transp-3: row3=F#4(370Hz), row4≈E4(324Hz), rows0-2=F#1/2/3
   zen: [
-    [0, 0],  // A1 sub-bass anchor — downbeat
-    [1, 0],  // A2 bass layer — with sub
-    [2, 2],  // A3 — first step up
-    [5, 3],  // C#4 — F#m 5th sparkle, syncopated
-    [3, 5],  // A4 — arrive at the top
-    [4, 7],  // G≈4 — E-chord color (≈G#), tension
-    [1, 8],  // A2 bass — beat 3 anchor
-    [3, 8],  // A4 — hold the top
-    [5, 10], // C#4 — sparkle again
-    [4, 11], // G≈4 — E-chord settle
-    [3, 12], // A4 — D-chord territory, still high
-    [2, 14], // A3 — begin descent
-    [5, 15], // C#4 — final lift before loop repeat
+    [0, 0],  // F#1 sub — downbeat
+    [1, 0],  // F#2 bass — downbeat
+    [1, 8],  // F#2 bass — beat 3
+    [3, 3],  // F#4 — phrase 1 opens
+    [3, 4],  // F#4 — hold
+    [4, 6],  // E4  — characteristic descend
+    [2, 7],  // F#3 — mid voice bridge
+    [3, 11], // F#4 — phrase 2 opens
+    [3, 12], // F#4 — hold
+    [4, 14], // E4  — descend again
+    [4, 15], // E4  — resolve into loop
   ],
   bass: [
     [0,0],[0,4],[0,8],[0,12],
@@ -348,10 +347,58 @@ const PRESETS = {
   clear: [],
 };
 
+// Synth settings bundled with named presets
+const PRESET_SYNTH = {
+  zen: { transpose:-3, waveform:'sine', reverbAmt:0.85, attackMs:80, bassAmt:0.30, detuneAmt:1, filterFreq:4000 },
+};
+
+function applySynthSettings(s) {
+  if (!s) return;
+  if (s.transpose !== undefined) {
+    transpose = s.transpose;
+    const el = document.getElementById('trVal');
+    if (el) el.textContent = (transpose>0?'+':'')+transpose+' st';
+  }
+  if (s.waveform !== undefined) {
+    waveform = s.waveform;
+    document.querySelectorAll('#waveRow [data-wave]').forEach(b =>
+      b.classList.toggle('lit', b.dataset.wave === waveform));
+  }
+  if (s.reverbAmt !== undefined) {
+    reverbAmt = s.reverbAmt;
+    const sl=document.getElementById('reverbSlider'), v=document.getElementById('reverbVal');
+    if(sl) sl.value=reverbAmt; if(v) v.textContent=Math.round(reverbAmt*100)+'%';
+    if(wetGain) wetGain.gain.value=reverbAmt;
+  }
+  if (s.attackMs !== undefined) {
+    attackMs = s.attackMs;
+    const sl=document.getElementById('atkSlider'), v=document.getElementById('atkVal');
+    if(sl) sl.value=attackMs; if(v) v.textContent=attackMs+'ms';
+  }
+  if (s.bassAmt !== undefined) {
+    bassAmt = s.bassAmt;
+    const sl=document.getElementById('bassSlider'), v=document.getElementById('bassVal');
+    if(sl) sl.value=bassAmt; if(v) v.textContent=Math.round(bassAmt*100)+'%';
+  }
+  if (s.detuneAmt !== undefined) {
+    detuneAmt = s.detuneAmt;
+    const sl=document.getElementById('detuneSlider'), v=document.getElementById('detuneVal');
+    if(sl) sl.value=detuneAmt; if(v) v.textContent=detuneAmt+'¢';
+  }
+  if (s.filterFreq !== undefined) {
+    const v2 = s.filterFreq;
+    const sl=document.getElementById('filtSlider'), v=document.getElementById('filtVal');
+    if(sl) sl.value=v2;
+    if(v) v.textContent=v2>=20000?'OFF':v2<1000?v2+'Hz':(Math.round(v2/100)/10)+'kHz';
+    if(filterNode) filterNode.frequency.value=v2;
+  }
+}
+
 function applyPreset(name) {
   grid = Array.from({length:ROWS},()=>Array(STEPS).fill(false));
   const data = PRESETS[name] || (loadUserPresets()[name]||[]);
   data.forEach(([r,s])=>{ if(r<ROWS&&s<STEPS) grid[r][s]=true; });
+  applySynthSettings(PRESET_SYNTH[name]);
   renderGrid();
 }
 
