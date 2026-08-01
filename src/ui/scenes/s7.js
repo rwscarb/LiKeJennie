@@ -515,8 +515,10 @@ export function buildS7() {
   const OLV_SEGS = 256;
   const OLV_W    = 0.28;  // ribbon half-width (full width = 0.56)
   let olvMobius, olvEdge3, olvEdge6;
+  let olvMobiusPosArr, olvMobiusPosAttr;
+  let olvEdge3PosArr, olvEdge3PosAttr, olvEdge6PosArr, olvEdge6PosAttr;
   {
-    const nV  = (OLV_SEGS + 1) * 2; // two edges: top (even indices) + bottom (odd indices)
+    const nV  = (OLV_SEGS + 1) * 2;
     const pos = new Float32Array(nV * 3);
     const col = new Float32Array(nV * 3);
     const idx = [];
@@ -532,12 +534,10 @@ export function buildS7() {
       if (Math.abs(tang.dot(up)) > 0.98) up.set(1, 0, 0);
       const right = new THREE.Vector3().crossVectors(tang, up).normalize();
       const nrm   = new THREE.Vector3().crossVectors(right, tang).normalize();
-      // half-twist: ribbon normal rotates π over the full path
       const cosT = Math.cos(t * 0.5), sinT = Math.sin(t * 0.5);
       const tnx  = nrm.x * cosT + right.x * sinT;
       const tny  = nrm.y * cosT + right.y * sinT;
       const tnz  = nrm.z * cosT + right.z * sinT;
-      // vertex color: violet→rose→violet over the cycle
       tc.copy(c3).lerp(c6, 0.5 - 0.5 * Math.cos(t));
       const ti = i * 2, bi = ti + 1;
       pos[ti*3]   = pt.x + OLV_W * tnx;  pos[ti*3+1] = pt.y + OLV_W * tny;  pos[ti*3+2] = pt.z + OLV_W * tnz;
@@ -545,13 +545,14 @@ export function buildS7() {
       col[ti*3] = tc.r; col[ti*3+1] = tc.g; col[ti*3+2] = tc.b;
       col[bi*3] = tc.r; col[bi*3+1] = tc.g; col[bi*3+2] = tc.b;
     }
-    // Quads along the ribbon (two triangles each)
     for (let i = 0; i < OLV_SEGS; i++) {
       const t0 = i*2, t1 = (i+1)*2, b0 = t0+1, b1 = t1+1;
       idx.push(t0, b0, t1,  b0, b1, t1);
     }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const geo     = new THREE.BufferGeometry();
+    const posAttr = new THREE.BufferAttribute(pos, 3);
+    posAttr.setUsage(THREE.DynamicDrawUsage);
+    geo.setAttribute('position', posAttr);
     geo.setAttribute('color',    new THREE.BufferAttribute(col, 3));
     geo.setIndex(idx);
     geo.computeVertexNormals();
@@ -563,27 +564,72 @@ export function buildS7() {
     olvMobius = new THREE.Mesh(geo, mat);
     olvMobius.visible = false;
     scene.add(olvMobius);
+    olvMobiusPosArr  = pos;
+    olvMobiusPosAttr = posAttr;
 
-    // Edge lines: trace the top and bottom ribbon edges with bright colored lines.
-    // These are ALWAYS visible regardless of viewing angle and make the half-twist
-    // explicit — watch the violet/rose line swap from "top" to "bottom" as it orbits.
-    const edgePts3 = [], edgePts6 = [];
+    // Edge lines — explicit dynamic Float32Arrays so collapse can update them
+    olvEdge3PosArr = new Float32Array((OLV_SEGS + 1) * 3);
+    olvEdge6PosArr = new Float32Array((OLV_SEGS + 1) * 3);
     for (let i = 0; i <= OLV_SEGS; i++) {
-      edgePts3.push(new THREE.Vector3(pos[i*6],   pos[i*6+1],   pos[i*6+2]));   // top edge
-      edgePts6.push(new THREE.Vector3(pos[i*6+3], pos[i*6+4],   pos[i*6+5]));   // bottom edge
+      olvEdge3PosArr[i*3]   = pos[i*6];   olvEdge3PosArr[i*3+1] = pos[i*6+1]; olvEdge3PosArr[i*3+2] = pos[i*6+2];
+      olvEdge6PosArr[i*3]   = pos[i*6+3]; olvEdge6PosArr[i*3+1] = pos[i*6+4]; olvEdge6PosArr[i*3+2] = pos[i*6+5];
     }
-    const makeEdge = (pts, color) => {
-      const eg  = new THREE.BufferGeometry().setFromPoints(pts);
-      const em  = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.90 });
+    const makeEdge = (arr, color) => {
+      const eg = new THREE.BufferGeometry();
+      const ea = new THREE.BufferAttribute(arr, 3);
+      ea.setUsage(THREE.DynamicDrawUsage);
+      eg.setAttribute('position', ea);
+      const em = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.90 });
       R.disposables.push(eg, em);
-      const el  = new THREE.Line(eg, em);
+      const el = new THREE.Line(eg, em);
       el.visible = false;
       scene.add(el);
-      return el;
+      return { line: el, attr: ea };
     };
-    olvEdge3 = makeEdge(edgePts3, OLV_C3);   // violet edge (node 3 side)
-    olvEdge6 = makeEdge(edgePts6, OLV_C6);   // rose edge   (node 6 side)
+    const e3 = makeEdge(olvEdge3PosArr, OLV_C3);
+    olvEdge3 = e3.line; olvEdge3PosAttr = e3.attr;
+    const e6 = makeEdge(olvEdge6PosArr, OLV_C6);
+    olvEdge6 = e6.line; olvEdge6PosAttr = e6.attr;
   }
+
+  // Scratch vectors for rebuildMobius — preallocated to avoid per-frame GC pressure
+  const _rmbT = new THREE.Vector3(), _rmbR = new THREE.Vector3();
+  const _rmbN = new THREE.Vector3(), _rmbU = new THREE.Vector3();
+
+  // Rebuild the Möbius ribbon geometry in-place.
+  // twistCoeff=0.5 → half-twist (Möbius); higher → tighter spiraling toward the singularity.
+  function rebuildMobius(twistCoeff, width) {
+    const p = olvMobiusPosArr, e3 = olvEdge3PosArr, e6 = olvEdge6PosArr;
+    for (let i = 0; i <= OLV_SEGS; i++) {
+      const t   = (i / OLV_SEGS) * Math.PI * 2;
+      const pt  = olvPt(t);
+      const pt1 = olvPt(t + Math.PI * 2 / OLV_SEGS);
+      _rmbT.subVectors(pt1, pt);
+      if (_rmbT.lengthSq() < 1e-10) _rmbT.set(0, 0.001, 0);
+      _rmbT.normalize();
+      _rmbU.set(0, 1, 0);
+      if (Math.abs(_rmbT.dot(_rmbU)) > 0.98) _rmbU.set(1, 0, 0);
+      _rmbR.crossVectors(_rmbT, _rmbU).normalize();
+      _rmbN.crossVectors(_rmbR, _rmbT).normalize();
+      const cosT = Math.cos(t * twistCoeff), sinT = Math.sin(t * twistCoeff);
+      const tnx  = _rmbN.x * cosT + _rmbR.x * sinT;
+      const tny  = _rmbN.y * cosT + _rmbR.y * sinT;
+      const tnz  = _rmbN.z * cosT + _rmbR.z * sinT;
+      const ti = i * 2, bi = ti + 1;
+      p[ti*3]=pt.x+width*tnx; p[ti*3+1]=pt.y+width*tny; p[ti*3+2]=pt.z+width*tnz;
+      p[bi*3]=pt.x-width*tnx; p[bi*3+1]=pt.y-width*tny; p[bi*3+2]=pt.z-width*tnz;
+      e3[i*3]=p[ti*3]; e3[i*3+1]=p[ti*3+1]; e3[i*3+2]=p[ti*3+2];
+      e6[i*3]=p[bi*3]; e6[i*3+1]=p[bi*3+1]; e6[i*3+2]=p[bi*3+2];
+    }
+    olvMobiusPosAttr.needsUpdate = true;
+    olvEdge3PosAttr.needsUpdate  = true;
+    olvEdge6PosAttr.needsUpdate  = true;
+  }
+
+  // Collapse animation state
+  let showCollapse  = false, collapseStartT = null, prevCollapse = false;
+  const COLLAPSE_MAX   = 4.5;  // peak collapsePhase → twist reaches 0.5 + 4.5×1.5 ≈ 7.25π
+  const COLLAPSE_OMEGA = 0.30; // rad/s → ~21s per collapse/expand cycle
 
   // Outer resonant chamber walls — truncated cones (frustums) meeting at the bridge.
   // Upper: wide at top, narrow at bridge. Lower: narrow at bridge, wide at bottom.
@@ -1166,6 +1212,11 @@ export function buildS7() {
     showWave = !showWave;
     document.getElementById('p8wave')?.classList.toggle('lit', showWave);
   };
+  document.getElementById('p8collapse').onclick = () => {
+    showCollapse = !showCollapse;
+    if (!showCollapse) { collapseStartT = null; prevCollapse = false; }
+    document.getElementById('p8collapse')?.classList.toggle('lit', showCollapse);
+  };
   document.getElementById('p8msg').addEventListener('input', e => encodeMsg(e.target.value));
   const sliderToHz = v => Math.pow(10, v / 100 - 1);
   const fmtHz = hz => hz >= 1e6 ? (hz/1e6).toFixed(2)+'M' : hz >= 1e3 ? (hz/1e3).toFixed(hz>=1e4?1:2)+'k' : hz >= 10 ? hz.toFixed(1) : hz.toFixed(2);
@@ -1515,42 +1566,62 @@ export function buildS7() {
         ? 0.14 + 0.18 * (0.5 + 0.5 * Math.sin(waveT * 1.5))
         : 0.20;
 
-      // Resonance: string vibration + chamber pulse when WAVE is on
-      if (showWave) {
-        // Each string vibrates as a standing wave: fixed at both ends, max at center
+      // Collapse: twist grows, ribbon narrows, strings chirp up in frequency
+      if (showCollapse) {
+        if (collapseStartT === null) collapseStartT = t;
+        const ce = t - collapseStartT;
+        const cp = COLLAPSE_MAX * 0.5 * (1 - Math.cos(COLLAPSE_OMEGA * ce));
+        rebuildMobius(0.5 + cp * 1.5, OLV_W * Math.max(0.04, 1 - (cp / COLLAPSE_MAX) * 0.92));
+        prevCollapse = true;
+        const strFreq = 3.2 * (1 + cp * 3.0);
         for (let si = 0; si < 3; si++) {
-          const xOff = olvStrXOffs[si];
-          const arr  = olvStrArrs[si];
-          // Phase offset per string: 0, 2π/3, 4π/3 — three harmonics
+          const xOff = olvStrXOffs[si], arr = olvStrArrs[si];
           const phase = si * (Math.PI * 2 / 3);
           for (let j = 0; j <= OLV_STR_SEGS; j++) {
-            const s  = j / OLV_STR_SEGS;          // 0 → 1 along string length
-            const env = Math.sin(s * Math.PI);      // envelope: 0 at ends, 1 at center
-            const vib = 0.14 * env * Math.sin(waveT * 3.2 + phase);
-            arr[j * 3]     = xOff + vib;
-            arr[j * 3 + 1] = OLV_STR_Y0 + s * OLV_STR_LEN;
-            arr[j * 3 + 2] = 0;
+            const s = j / OLV_STR_SEGS;
+            arr[j*3]   = xOff + 0.14 * (1 + cp * 0.8) * Math.sin(s * Math.PI) * Math.sin(waveT * strFreq + phase);
+            arr[j*3+1] = OLV_STR_Y0 + s * OLV_STR_LEN;
+            arr[j*3+2] = 0;
           }
           olvStrAttrs[si].needsUpdate = true;
         }
-        // Chamber walls breathe gently with the wave
-        const breathe = 0.08 + 0.07 * Math.sin(waveT * 1.8);
-        olvChamber3.material.opacity = breathe;
-        olvChamber6.material.opacity = breathe;
+        const cp01 = cp / COLLAPSE_MAX;
+        olvChamber3.material.opacity = 0.09 + 0.14 * cp01 * (0.5 + 0.5 * Math.sin(waveT * (1.8 + cp * 4)));
+        olvChamber6.material.opacity = olvChamber3.material.opacity;
+        olv640Mat.opacity = 0.15 + 0.40 * cp01;
       } else {
-        // Reset strings to straight when wave is off
-        for (let si = 0; si < 3; si++) {
-          const xOff = olvStrXOffs[si];
-          const arr  = olvStrArrs[si];
-          for (let j = 0; j <= OLV_STR_SEGS; j++) {
-            arr[j * 3]     = xOff;
-            arr[j * 3 + 1] = OLV_STR_Y0 + (j / OLV_STR_SEGS) * OLV_STR_LEN;
-            arr[j * 3 + 2] = 0;
+        // Restore geometry on exit from collapse
+        if (prevCollapse) { rebuildMobius(0.5, OLV_W); prevCollapse = false; }
+        collapseStartT = null;
+        // Resonance: string vibration + chamber pulse when WAVE is on
+        if (showWave) {
+          for (let si = 0; si < 3; si++) {
+            const xOff = olvStrXOffs[si], arr = olvStrArrs[si];
+            const phase = si * (Math.PI * 2 / 3);
+            for (let j = 0; j <= OLV_STR_SEGS; j++) {
+              const s = j / OLV_STR_SEGS;
+              arr[j*3]   = xOff + 0.14 * Math.sin(s * Math.PI) * Math.sin(waveT * 3.2 + phase);
+              arr[j*3+1] = OLV_STR_Y0 + s * OLV_STR_LEN;
+              arr[j*3+2] = 0;
+            }
+            olvStrAttrs[si].needsUpdate = true;
           }
-          olvStrAttrs[si].needsUpdate = true;
+          const breathe = 0.08 + 0.07 * Math.sin(waveT * 1.8);
+          olvChamber3.material.opacity = breathe;
+          olvChamber6.material.opacity = breathe;
+        } else {
+          for (let si = 0; si < 3; si++) {
+            const xOff = olvStrXOffs[si], arr = olvStrArrs[si];
+            for (let j = 0; j <= OLV_STR_SEGS; j++) {
+              arr[j*3]   = xOff;
+              arr[j*3+1] = OLV_STR_Y0 + (j / OLV_STR_SEGS) * OLV_STR_LEN;
+              arr[j*3+2] = 0;
+            }
+            olvStrAttrs[si].needsUpdate = true;
+          }
+          olvChamber3.material.opacity = 0.11;
+          olvChamber6.material.opacity = 0.11;
         }
-        olvChamber3.material.opacity = 0.11;
-        olvChamber6.material.opacity = 0.11;
       }
     }
 
