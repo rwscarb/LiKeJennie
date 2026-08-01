@@ -664,6 +664,10 @@ export function buildS7() {
   const olvLbl3    = makeOlvLbl('3', olvNode3Pos.clone().add(new THREE.Vector3(0.55,  0.30, 0)), OLV_CS3, '16px');
   const olvLbl6    = makeOlvLbl('6', olvNode6Pos.clone().add(new THREE.Vector3(0.55, -0.30, 0)), OLV_CS6, '16px');
   const olvLblVoid = makeOlvLbl('—', new THREE.Vector3(0.55, OLV_Y, 0), '#2a0033', '18px');
+  // Citric acid (C₆H₈O₇ = 21 atoms) encodes the framework: pKₐ₁≈3 (node 3), pKₐ₃=6.40 (640 threshold)
+  const olvLblPH3  = makeOlvLbl('pKₐ₁ 3.1', olvNode3Pos.clone().add(new THREE.Vector3(-0.90, 0.25, 0)), '#9944cc', '9px');
+  const olvLblPH6  = makeOlvLbl('pKₐ₃ 6.40', new THREE.Vector3(-0.90, OLV_Y + 0.18, 0), '#770099', '9px');
+  const olvLblCA   = makeOlvLbl('C₆H₈O₇', new THREE.Vector3(0.38, OLV_Y + 1.05, 0), '#550077', '9px');
 
   // Strings — vertical wires through the bridge (the void crossing)
   const makeOlvString = (xOff) => {
@@ -851,7 +855,8 @@ export function buildS7() {
                       olvStr1, olvStr2, olvStr3,
                       compBackbone, compRungs, ...compMeshes, ...compLbls,
                       compBackboneB, compRungsAB, ...compMeshesB, ...compLblsB,
-                      olv640Line, olv640Lbl];
+                      olv640Line, olv640Lbl,
+                      olvLblPH3, olvLblPH6, olvLblCA];
   const setOliver = on => {
     showOliver = on;
     olvAllObjs.forEach(o => { o.visible = on; });
