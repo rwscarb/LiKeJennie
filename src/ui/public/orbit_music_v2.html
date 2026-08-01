@@ -121,6 +121,13 @@ btn, .btn {
 .note-name.active { color:var(--fg); }
 /* ── Visualizer canvas ── */
 #vizCanvas { image-rendering:pixelated; }
+#vizResizeHandle {
+  position:absolute; top:0; left:0; right:0; height:6px;
+  cursor:row-resize; z-index:10;
+  background:transparent; border-top:1px solid var(--dim);
+  transition:background .15s;
+}
+#vizResizeHandle:hover, #vizResizeHandle.dragging { background:#00ff8828; border-top-color:#00ff8860; }
 </style>
 </head>
 <body>
@@ -208,9 +215,10 @@ btn, .btn {
     </div>
   </div>
   <!-- Visualizer -->
-  <div class="section" id="vizSection" style="padding:8px 14px 10px;flex-shrink:0">
-    <div class="section-title" style="margin-bottom:5px">VISUALIZER</div>
-    <canvas id="vizCanvas" style="width:100%;height:110px;display:block;border-radius:2px;background:#020608"></canvas>
+  <div class="section" id="vizSection" style="padding:0 14px 10px;flex-shrink:0;position:relative">
+    <div id="vizResizeHandle" title="Drag to resize"></div>
+    <div class="section-title" style="margin-bottom:5px;padding-top:8px">VISUALIZER <span style="opacity:.4;font-size:.8em">scroll·zoom · drag·pan · dbl·reset</span></div>
+    <canvas id="vizCanvas" style="width:100%;display:block;border-radius:2px;background:#020608;cursor:grab"></canvas>
   </div>
 </div>
 
@@ -596,13 +604,23 @@ function drawFrame(ts) {
 }
 requestAnimationFrame(drawFrame);
 
-// ── Visualizer canvas — 3D tunnel (persist, zoom, rotate, dissipate) ─────────
+// ── Visualizer canvas — 3D tunnel (resizable pane, pan/zoom navigation) ──────
 const vizCanvas = document.getElementById('vizCanvas');
 const vctx = vizCanvas.getContext('2d');
-// Offscreen ping-pong buffer so we can drawImage-transform without artifacts
 const vizOff = document.createElement('canvas');
-let voffCtx = vizOff.getContext('2d');
+const voffCtx = vizOff.getContext('2d');
 let VW=0, VH=0;
+
+// Navigation state (pan offset + user zoom scale)
+let vizPanX=0, vizPanY=0, vizUserScale=1.0, vizRot=0;
+
+function resetVizNav() { vizPanX=0; vizPanY=0; vizUserScale=1.0; }
+
+function applyVizH(h) {
+  h = Math.round(Math.min(Math.max(60, h), 420));
+  vizCanvas.style.height = h+'px';
+  try { localStorage.setItem('orbitVizH', h); } catch(e){}
+}
 
 function resizeViz() {
   VW = Math.round(vizCanvas.offsetWidth * devicePixelRatio);
@@ -613,8 +631,56 @@ function resizeViz() {
 resizeViz();
 new ResizeObserver(resizeViz).observe(vizCanvas);
 
-let vizRot = 0; // cumulative tunnel rotation (radians)
+// Restore saved height
+try { const h=localStorage.getItem('orbitVizH'); if(h) applyVizH(+h); } catch(e){}
 
+// ── Viz pane vertical resize handle ──────────────────────────────────────────
+(function(){
+  const handle = document.getElementById('vizResizeHandle');
+  let dragging=false, startY=0, startH=0;
+  handle.addEventListener('mousedown', e => {
+    dragging=true; startY=e.clientY;
+    startH=vizCanvas.offsetHeight;
+    handle.classList.add('dragging');
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    applyVizH(startH - (e.clientY - startY)); // drag up = taller
+  });
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging=false; handle.classList.remove('dragging');
+  });
+})();
+
+// ── Viz pan/zoom interaction ──────────────────────────────────────────────────
+(function(){
+  let panning=false, lastX=0, lastY=0;
+  vizCanvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    const factor = e.deltaY > 0 ? 0.93 : 1.07;
+    vizUserScale = Math.min(Math.max(0.15, vizUserScale * factor), 8.0);
+  }, {passive:false});
+  vizCanvas.addEventListener('mousedown', e => {
+    if (e.button!==0) return;
+    panning=true; lastX=e.clientX; lastY=e.clientY;
+    vizCanvas.style.cursor='grabbing';
+  });
+  vizCanvas.addEventListener('dblclick', () => { resetVizNav(); });
+  document.addEventListener('mousemove', e => {
+    if (!panning) return;
+    vizPanX += (e.clientX-lastX)*devicePixelRatio;
+    vizPanY += (e.clientY-lastY)*devicePixelRatio;
+    lastX=e.clientX; lastY=e.clientY;
+  });
+  document.addEventListener('mouseup', () => {
+    if (!panning) return;
+    panning=false; vizCanvas.style.cursor='grab';
+  });
+})();
+
+// ── Draw loop ─────────────────────────────────────────────────────────────────
 function drawViz() {
   requestAnimationFrame(drawViz);
   if (!VW || !VH) return;
@@ -623,48 +689,46 @@ function drawViz() {
   analyser.getByteFrequencyData(freqData);
   analyser.getByteTimeDomainData(waveData);
 
-  vizRot += 0.006; // ~21°/s — slow enough to feel 3D, fast enough to feel alive
+  vizRot += 0.006;
 
-  // ── 1. Copy current frame to offscreen buffer
+  // 1. Copy current frame to offscreen buffer
   voffCtx.clearRect(0,0,VW,VH);
   voffCtx.drawImage(vizCanvas,0,0);
 
-  // ── 2. Clear canvas then draw transformed (zoom + rotate) copy = "tunnel" motion
+  // 2. Feedback: zoom + rotate from the user's focal point → tunnel motion
   vctx.clearRect(0,0,VW,VH);
-  const cx=VW/2, cy=VH/2;
+  const cx = VW/2 + vizPanX, cy = VH/2 + vizPanY;
   vctx.save();
-  vctx.globalAlpha = 0.80;        // dissipation: ~0.80^60 ≈ gone in ~1s at 60fps
+  vctx.globalAlpha = 0.80;
   vctx.translate(cx, cy);
-  vctx.scale(1.024, 1.024);       // zoom: content "flies toward viewer"
-  vctx.rotate(0.006);             // slight spiral twist
+  vctx.scale(1.024 * vizUserScale*0.004 + 1.018, 1.024 * vizUserScale*0.004 + 1.018);
+  vctx.rotate(0.006);
   vctx.translate(-cx, -cy);
   vctx.drawImage(vizOff,0,0);
   vctx.restore();
 
-  // ── 3. Inject new spectrum at the tunnel's focal point (center ring)
+  // 3. Inject new spectrum at focal point
   const maxBin = Math.floor(freqData.length * 0.70);
-  const SPOKES = 128;             // radial spokes for the ring injected each frame
-  const R_INNER = Math.min(VW,VH)*0.08;
-  const R_OUTER_MAX = Math.min(VW,VH)*0.28;
+  const SPOKES = 128;
+  const baseR = Math.min(VW,VH) * 0.08 * vizUserScale;
+  const R_INNER = Math.max(4, Math.min(baseR, Math.min(VW,VH)*0.35));
+  const R_OUTER_MAX = R_INNER * 3.5;
   vctx.save();
   vctx.translate(cx, cy);
   for (let i=0; i<SPOKES; i++) {
     const t = i/SPOKES;
-    const angle = t * Math.PI*2 - Math.PI/2 + vizRot*0.15;
+    const angle = t*Math.PI*2 - Math.PI/2 + vizRot*0.15;
     const bin = Math.floor(t * maxBin);
     const v = freqData[bin]/255;
     if (v<0.015) continue;
-    const r1 = R_INNER;
-    const r2 = R_INNER + v*R_OUTER_MAX;
     const hue = (c60Hue*360 + t*120 + vizRot*8)%360;
     vctx.beginPath();
-    vctx.moveTo(Math.cos(angle)*r1, Math.sin(angle)*r1);
-    vctx.lineTo(Math.cos(angle)*r2, Math.sin(angle)*r2);
+    vctx.moveTo(Math.cos(angle)*R_INNER, Math.sin(angle)*R_INNER);
+    vctx.lineTo(Math.cos(angle)*(R_INNER+v*R_OUTER_MAX), Math.sin(angle)*(R_INNER+v*R_OUTER_MAX));
     vctx.strokeStyle=`hsla(${hue|0},90%,${50+v*28|0}%,${(0.6+v*0.35).toFixed(2)})`;
-    vctx.lineWidth=1.6;
-    vctx.stroke();
+    vctx.lineWidth=1.6; vctx.stroke();
   }
-  // Waveform ring at injection point
+  // Waveform ring
   vctx.beginPath();
   for (let i=0; i<=waveData.length; i++) {
     const t = i/waveData.length;
