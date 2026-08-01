@@ -565,7 +565,7 @@ function resize(){
   // Vertical stack: C60 upper, orbit ring lower — both centered horizontally
   // Shared base unit so sizes stay matched
   const _u = Math.min(W, H) * 0.12;
-  OR = _u * 1.10;   // orbit ring slightly larger
+  OR = _u * 1.55;   // orbit ring — comfortably larger
   OX=W*0.50; OY=H*0.74;
 }
 resize(); window.addEventListener('resize',resize);
@@ -587,7 +587,7 @@ function drawFrame(ts) {
   ctx.clearRect(0,0,W,H);
 
   // ── C60 (left half) ─────────────────────────────────────────────────
-  const C60X=W*0.50, C60Y=H*0.30, C60R=Math.min(W,H)*0.12*0.90;
+  const C60X=W*0.50, C60Y=H*0.28, C60R=Math.min(W,H)*0.12*0.60;
   c60Ang=(c60Ang+dt*0.25)%(Math.PI*2);
 
   // Target hue from active orbit step (rows that are active in curStep)
