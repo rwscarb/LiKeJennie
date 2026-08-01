@@ -293,20 +293,22 @@ const PRESETS = {
     [0,0],[1,2],[2,4],[3,6],[4,10],[5,12],
     [0,8],[1,10],[2,12],[3,14],
   ],
-  // ZEN-inspired: bouncy verse feel, strong chorus pattern
+  // ZEN (Jennie) opening — F#m key, A=3rd, C#=5th, G≈=E-chord 3rd
+  // rise low→A4 across first 8 steps, float at top, resolve back
   zen: [
-    // Verse-ish (steps 0-7): low-mid orbit
-    [0,0],[0,4],[0,6],
-    [1,1],[1,5],
-    [2,2],[2,7],
-    [3,3],
-    // Chorus-ish (steps 8-15): orbit notes scatter upward
-    [5,8],[5,10],
-    [4,9],[4,13],
-    [3,11],[3,15],
-    [2,12],
-    [1,14],
-    [0,8],[0,12],
+    [0, 0],  // A1 sub-bass anchor — downbeat
+    [1, 0],  // A2 bass layer — with sub
+    [2, 2],  // A3 — first step up
+    [5, 3],  // C#4 — F#m 5th sparkle, syncopated
+    [3, 5],  // A4 — arrive at the top
+    [4, 7],  // G≈4 — E-chord color (≈G#), tension
+    [1, 8],  // A2 bass — beat 3 anchor
+    [3, 8],  // A4 — hold the top
+    [5, 10], // C#4 — sparkle again
+    [4, 11], // G≈4 — E-chord settle
+    [3, 12], // A4 — D-chord territory, still high
+    [2, 14], // A3 — begin descent
+    [5, 15], // C#4 — final lift before loop repeat
   ],
   bass: [
     [0,0],[0,4],[0,8],[0,12],
