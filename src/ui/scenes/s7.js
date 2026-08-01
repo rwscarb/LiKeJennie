@@ -669,23 +669,37 @@ export function buildS7() {
   const olvLblPH6  = makeOlvLbl('pKₐ₃ 6.40', new THREE.Vector3(-0.90, OLV_Y + 0.18, 0), '#770099', '9px');
   const olvLblCA   = makeOlvLbl('C₆H₈O₇', new THREE.Vector3(0.38, OLV_Y + 1.05, 0), '#550077', '9px');
 
-  // Strings — vertical wires through the bridge (the void crossing)
+  // Strings — vertical wires through the bridge; dynamic so they can vibrate (resonance).
+  const OLV_STR_SEGS  = 20;
+  const OLV_STR_Y0    = OLV_Y - OLV_DOME * 1.05;
+  const OLV_STR_Y1    = OLV_Y + OLV_DOME * 1.05;
+  const OLV_STR_LEN   = OLV_STR_Y1 - OLV_STR_Y0;
+  const olvStrXOffs   = [-OLV_A * 0.28, 0, OLV_A * 0.28];
+  const olvStrArrs    = [];
+  const olvStrAttrs   = [];
   const makeOlvString = (xOff) => {
-    const pts = [
-      new THREE.Vector3(xOff, OLV_Y - OLV_DOME * 1.05, 0),
-      new THREE.Vector3(xOff, OLV_Y + OLV_DOME * 1.05, 0),
-    ];
-    const geo = new THREE.BufferGeometry().setFromPoints(pts);
-    const mat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.11 });
+    const arr  = new Float32Array((OLV_STR_SEGS + 1) * 3);
+    for (let i = 0; i <= OLV_STR_SEGS; i++) {
+      arr[i * 3]     = xOff;
+      arr[i * 3 + 1] = OLV_STR_Y0 + (i / OLV_STR_SEGS) * OLV_STR_LEN;
+      arr[i * 3 + 2] = 0;
+    }
+    const geo  = new THREE.BufferGeometry();
+    const attr = new THREE.BufferAttribute(arr, 3);
+    attr.setUsage(THREE.DynamicDrawUsage);
+    geo.setAttribute('position', attr);
+    const mat  = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.18 });
     R.disposables.push(geo, mat);
     const line = new THREE.Line(geo, mat);
     line.visible = false;
     scene.add(line);
+    olvStrArrs.push(arr);
+    olvStrAttrs.push(attr);
     return line;
   };
-  const olvStr1 = makeOlvString(-OLV_A * 0.28);
-  const olvStr2 = makeOlvString(0);
-  const olvStr3 = makeOlvString( OLV_A * 0.28);
+  const olvStr1 = makeOlvString(olvStrXOffs[0]);
+  const olvStr2 = makeOlvString(olvStrXOffs[1]);
+  const olvStr3 = makeOlvString(olvStrXOffs[2]);
 
   // Pulsing traveler
   const olvTravGeo = new THREE.SphereGeometry(0.16, 14, 10);
@@ -1500,6 +1514,44 @@ export function buildS7() {
       olv640Mat.opacity = showWave
         ? 0.14 + 0.18 * (0.5 + 0.5 * Math.sin(waveT * 1.5))
         : 0.20;
+
+      // Resonance: string vibration + chamber pulse when WAVE is on
+      if (showWave) {
+        // Each string vibrates as a standing wave: fixed at both ends, max at center
+        for (let si = 0; si < 3; si++) {
+          const xOff = olvStrXOffs[si];
+          const arr  = olvStrArrs[si];
+          // Phase offset per string: 0, 2π/3, 4π/3 — three harmonics
+          const phase = si * (Math.PI * 2 / 3);
+          for (let j = 0; j <= OLV_STR_SEGS; j++) {
+            const s  = j / OLV_STR_SEGS;          // 0 → 1 along string length
+            const env = Math.sin(s * Math.PI);      // envelope: 0 at ends, 1 at center
+            const vib = 0.14 * env * Math.sin(waveT * 3.2 + phase);
+            arr[j * 3]     = xOff + vib;
+            arr[j * 3 + 1] = OLV_STR_Y0 + s * OLV_STR_LEN;
+            arr[j * 3 + 2] = 0;
+          }
+          olvStrAttrs[si].needsUpdate = true;
+        }
+        // Chamber walls breathe gently with the wave
+        const breathe = 0.08 + 0.07 * Math.sin(waveT * 1.8);
+        olvChamber3.material.opacity = breathe;
+        olvChamber6.material.opacity = breathe;
+      } else {
+        // Reset strings to straight when wave is off
+        for (let si = 0; si < 3; si++) {
+          const xOff = olvStrXOffs[si];
+          const arr  = olvStrArrs[si];
+          for (let j = 0; j <= OLV_STR_SEGS; j++) {
+            arr[j * 3]     = xOff;
+            arr[j * 3 + 1] = OLV_STR_Y0 + (j / OLV_STR_SEGS) * OLV_STR_LEN;
+            arr[j * 3 + 2] = 0;
+          }
+          olvStrAttrs[si].needsUpdate = true;
+        }
+        olvChamber3.material.opacity = 0.11;
+        olvChamber6.material.opacity = 0.11;
+      }
     }
 
     R.labelRenderer.render(scene, camera);
