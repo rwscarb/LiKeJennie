@@ -12,6 +12,28 @@ let glc, ov, tt, rain, labelHost, panelwrap, camCoords, clkDisplay;
 let renderer, labelRenderer, rafId = 0;
 let active = 7;
 let p8adv = false;
+
+// ── Notes gallery ─────────────────────────────────────────────────────────────
+const NOTE_IMGS = [
+  '2026-07-28_page15_960-757-bt-table.jpg',
+  '76462b6b-3768-4933-899f-17dedace5dc2.jpg',
+  '4ff1a2e9-008f-468c-aebd-3a2470899a00.jpg',
+  '33c1f7cc-0b81-428c-88a0-a644e02a1498.jpg',
+  '2a69bf5c-fd1a-4e93-bd7d-ab6d24fff85f.jpg',
+  'fff2211e-b10d-4ccf-b384-07efbe410c34.jpg',
+  'cb6332ae-19ff-463c-9b43-692978f5b9bc.jpg',
+  '371f1a44-4104-448a-8942-1de5b7a72a21.jpg',
+  '76af6f36-e652-4617-a9e9-dc4d70c4c34f.jpg',
+  '807a6afc-4375-4b51-b4f3-95bb3f7a4566.jpg',
+  '993ac782-ad0a-415b-9306-99e49c979601.jpg',
+  '99c0410c-a705-4a9c-935b-48b5a5eb1c06.jpg',
+  'afd97f67-4b6b-4caf-b7f5-d8110dbf521f.jpg',
+  'ca33d482-b75f-4d08-b29b-bdfbd73b487f.jpg',
+  'fab90a92-90cd-4224-8572-4eb53d336da8.jpg',
+  '3f100c8c-177e-4873-a29a-12f3184d48f4.jpg',
+  '178cb830-e382-48c1-a65a-2a7db7ee2d2f.jpg',
+];
+let lightboxSrc = null;
 const unsub = cur.subscribe(v => { active = v; });
 
 // ── Compact URL state (base64url binary pack) ────────────────────────────────
@@ -721,6 +743,26 @@ twistCoeff = 0.5 + progress × 1.5
 // at progress=1: 7.25π — ribbon spirals into bridge</code></pre>
   </article>
 </div>
+
+<div class="notes-section">
+  <div class="writeup-hdr">PROCESS NOTES</div>
+  <div class="notes-grid">
+    {#each NOTE_IMGS as img}
+      <button class="note-thumb" on:click={() => lightboxSrc = `/notes/${img}`}>
+        <img src="/notes/{img}" alt="process note" loading="lazy">
+      </button>
+    {/each}
+  </div>
+</div>
+
+{#if lightboxSrc}
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
+  <!-- svelte-ignore a11y-no-static-element-interactions -->
+  <div class="lightbox" on:click={() => lightboxSrc = null}>
+    <img src={lightboxSrc} alt="note" on:click|stopPropagation>
+    <button class="lb-close" on:click={() => lightboxSrc = null}>✕</button>
+  </div>
+{/if}
 
 <div class="footer">
   <a href="mailto:oliver42@fib896.com">oliver42@fib896.com</a>
