@@ -158,8 +158,10 @@ btn, .btn {
     <span class="sub">{1,2,4,8,7,5} × 55 Hz &nbsp;·&nbsp; step sequencer &nbsp;·&nbsp; complement {3,6} as bass</span>
   </div>
   <div class="transport">
-    <span id="bpmVal" style="font-size:9px;color:var(--muted)">60 BPM</span>
-    <input type="range" id="bpmSlider" min="10" max="120" value="60" style="width:80px">
+    <button class="btn" id="bpmDn" style="padding:2px 7px">−</button>
+    <span id="bpmVal" style="font-size:9px;color:var(--muted);min-width:42px;text-align:center">60 BPM</span>
+    <button class="btn" id="bpmUp" style="padding:2px 7px">+</button>
+    <input type="range" id="bpmSlider" min="10" max="120" value="60" style="width:70px">
     <button class="btn play" id="playBtn">▶ PLAY</button>
   </div>
 </header>
@@ -560,7 +562,8 @@ let W=0,H=0;
 function resize(){
   W=canvas.parentElement.clientWidth; H=canvas.parentElement.clientHeight;
   canvas.width=W; canvas.height=H;
-  OR=Math.min(W,H)*0.09; OX=W*0.58; OY=H*0.26;
+  // Vertical stack: C60 upper, orbit ring lower — both centered horizontally
+  OR=Math.min(W,H*0.38)*0.14; OX=W*0.50; OY=H*0.74;
 }
 resize(); window.addEventListener('resize',resize);
 
@@ -581,7 +584,7 @@ function drawFrame(ts) {
   ctx.clearRect(0,0,W,H);
 
   // ── C60 (left half) ─────────────────────────────────────────────────
-  const C60X=W*0.30, C60Y=H*0.50, C60R=Math.min(W*0.12,H*0.19)*0.33;
+  const C60X=W*0.50, C60Y=H*0.30, C60R=Math.min(W*0.30,H*0.28)*0.33;
   c60Ang=(c60Ang+dt*0.25)%(Math.PI*2);
 
   // Target hue from active orbit step (rows that are active in curStep)
@@ -888,9 +891,15 @@ document.getElementById('playBtn').addEventListener('click',function(){
   else{startPlay();this.textContent='■ STOP';this.classList.add('lit');}
 });
 
-document.getElementById('bpmSlider').addEventListener('input',function(){
-  bpm=+this.value; document.getElementById('bpmVal').textContent=bpm+' BPM';
-});
+function setBpm(v) {
+  const sl = document.getElementById('bpmSlider');
+  bpm = Math.min(Math.max(10, Math.round(v)), 120);
+  sl.value = bpm;
+  document.getElementById('bpmVal').textContent = bpm + ' BPM';
+}
+document.getElementById('bpmSlider').addEventListener('input', function(){ setBpm(+this.value); });
+document.getElementById('bpmDn').addEventListener('click', () => setBpm(bpm - 1));
+document.getElementById('bpmUp').addEventListener('click', () => setBpm(bpm + 1));
 
 document.getElementById('reverbSlider').addEventListener('input',function(){
   reverbAmt=+this.value;
