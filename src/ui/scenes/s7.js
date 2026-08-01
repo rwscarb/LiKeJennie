@@ -508,19 +508,19 @@ export function buildS7() {
     );
   }
 
-  // Möbius lemniscate — full 2π path with a half-twist baked in.
-  // The cross-section rotates 180° over one traversal: inside of the upper chamber
-  // connects to the outside of the lower chamber — no boundary, just the void at 9.
+  // Möbius lemniscate — flat ribbon (not a round tube) following the full 2π path
+  // with a 180° half-twist. A circular tube can't show a Möbius twist (looks the same
+  // rotated 180°); a ribbon makes the twist unmistakably visible.
+  // At t=2π the ribbon's "top" edge meets the "bottom" edge of t=0 — one surface, no boundary.
   const OLV_SEGS = 256;
-  const OLV_RSEG = 8;
+  const OLV_W    = 0.28;  // ribbon half-width (full width = 0.56)
   let olvMobius;
   {
-    const nV  = (OLV_SEGS + 1) * (OLV_RSEG + 1);
+    const nV  = (OLV_SEGS + 1) * 2; // two edges: top (even indices) + bottom (odd indices)
     const pos = new Float32Array(nV * 3);
     const col = new Float32Array(nV * 3);
     const idx = [];
     const c3  = new THREE.Color(OLV_C3), c6 = new THREE.Color(OLV_C6), tc = new THREE.Color();
-    let vi = 0;
     for (let i = 0; i <= OLV_SEGS; i++) {
       const t   = (i / OLV_SEGS) * Math.PI * 2;
       const pt  = olvPt(t);
@@ -532,27 +532,23 @@ export function buildS7() {
       if (Math.abs(tang.dot(up)) > 0.98) up.set(1, 0, 0);
       const right = new THREE.Vector3().crossVectors(tang, up).normalize();
       const nrm   = new THREE.Vector3().crossVectors(right, tang).normalize();
-      // Möbius half-twist: cross-section rotates π over the full 2π path
+      // half-twist: ribbon normal rotates π over the full path
       const cosT = Math.cos(t * 0.5), sinT = Math.sin(t * 0.5);
-      // vertex color: violet at node 3 (t=0), rose at node 6 (t=π), back to violet
+      const tnx  = nrm.x * cosT + right.x * sinT;
+      const tny  = nrm.y * cosT + right.y * sinT;
+      const tnz  = nrm.z * cosT + right.z * sinT;
+      // vertex color: violet→rose→violet over the cycle
       tc.copy(c3).lerp(c6, 0.5 - 0.5 * Math.cos(t));
-      for (let j = 0; j <= OLV_RSEG; j++) {
-        const phi  = (j / OLV_RSEG) * Math.PI * 2;
-        const cosP = Math.cos(phi), sinP = Math.sin(phi);
-        const ru   = cosP * cosT - sinP * sinT;
-        const rv   = cosP * sinT + sinP * cosT;
-        pos[vi*3]   = pt.x + 0.052 * (ru * nrm.x + rv * right.x);
-        pos[vi*3+1] = pt.y + 0.052 * (ru * nrm.y + rv * right.y);
-        pos[vi*3+2] = pt.z + 0.052 * (ru * nrm.z + rv * right.z);
-        col[vi*3] = tc.r; col[vi*3+1] = tc.g; col[vi*3+2] = tc.b;
-        vi++;
-      }
+      const ti = i * 2, bi = ti + 1;
+      pos[ti*3]   = pt.x + OLV_W * tnx;  pos[ti*3+1] = pt.y + OLV_W * tny;  pos[ti*3+2] = pt.z + OLV_W * tnz;
+      pos[bi*3]   = pt.x - OLV_W * tnx;  pos[bi*3+1] = pt.y - OLV_W * tny;  pos[bi*3+2] = pt.z - OLV_W * tnz;
+      col[ti*3] = tc.r; col[ti*3+1] = tc.g; col[ti*3+2] = tc.b;
+      col[bi*3] = tc.r; col[bi*3+1] = tc.g; col[bi*3+2] = tc.b;
     }
+    // Quads along the ribbon (two triangles each)
     for (let i = 0; i < OLV_SEGS; i++) {
-      for (let j = 0; j < OLV_RSEG; j++) {
-        const a = i * (OLV_RSEG+1) + j, b = a + (OLV_RSEG+1);
-        idx.push(a, b, a+1, b, b+1, a+1);
-      }
+      const t0 = i*2, t1 = (i+1)*2, b0 = t0+1, b1 = t1+1;
+      idx.push(t0, b0, t1,  b0, b1, t1);
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
@@ -560,8 +556,8 @@ export function buildS7() {
     geo.setIndex(idx);
     geo.computeVertexNormals();
     const mat = new THREE.MeshPhongMaterial({
-      vertexColors: true, emissive: new THREE.Color(0x220033), emissiveIntensity: 0.28,
-      transparent: true, opacity: 0.78, shininess: 60, side: THREE.DoubleSide,
+      vertexColors: true, emissive: new THREE.Color(0x220033), emissiveIntensity: 0.32,
+      transparent: true, opacity: 0.76, shininess: 55, side: THREE.DoubleSide,
     });
     R.disposables.push(geo, mat);
     olvMobius = new THREE.Mesh(geo, mat);
