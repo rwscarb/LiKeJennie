@@ -254,11 +254,14 @@ onMount(async () => {
   addEventListener('resize', resize);
   addEventListener('keydown', onKey);
   document.addEventListener('fullscreenchange', resize);
+  const onOrbitBack = e => { if (e.data === 'orbit:back') goTo(get(cur) - 1); };
+  addEventListener('message', onOrbitBack);
   return () => {
     stopRain();
     cancelAnimationFrame(rafId);
     removeEventListener('resize', resize);
     removeEventListener('keydown', onKey);
+    removeEventListener('message', onOrbitBack);
     document.removeEventListener('fullscreenchange', resize);
     disposeScene();
     renderer.dispose();
@@ -527,8 +530,15 @@ afterUpdate(() => {
     src="/orbit_music_v2.html"
     title="Orbit Music Sequencer"
     allow="autoplay"
-    style="position:fixed;top:0;left:0;width:100%;height:100%;border:none;background:#020c08;z-index:50;"
+    style="position:fixed;top:0;left:0;width:100%;height:100%;border:none;background:#040408;z-index:50;"
   ></iframe>
+  <button
+    class="nav-arr"
+    on:click={() => goTo(active - 1)}
+    style="position:fixed;bottom:18px;left:18px;z-index:51;opacity:.65;font-size:.6rem;padding:.22rem .7rem;"
+    on:mouseenter={e => e.currentTarget.style.opacity='1'}
+    on:mouseleave={e => e.currentTarget.style.opacity='.7'}
+  >← BACK</button>
 {/if}
 
 <div class="hint">&larr; &rarr; arrow keys &nbsp;&middot;&nbsp; tabs or dots &nbsp;&middot;&nbsp; keys 1&ndash;9</div>

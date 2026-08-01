@@ -582,6 +582,11 @@ document.getElementById('presets').addEventListener('click',function(e){
   if(playing){stopPlay();startPlay();}
 });
 
+// Escape → signal parent to navigate back
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') window.parent.postMessage('orbit:back', '*');
+});
+
 // Load ZEN preset by default
 applyPreset('zen');
 </script>
