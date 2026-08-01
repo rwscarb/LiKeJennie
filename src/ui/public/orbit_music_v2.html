@@ -210,7 +210,7 @@ btn, .btn {
   <!-- Visualizer -->
   <div class="section" id="vizSection" style="padding:8px 14px 10px;flex-shrink:0">
     <div class="section-title" style="margin-bottom:5px">VISUALIZER</div>
-    <canvas id="vizCanvas" style="width:100%;height:72px;display:block;border-radius:2px;background:#020608"></canvas>
+    <canvas id="vizCanvas" style="width:100%;height:110px;display:block;border-radius:2px;background:#020608"></canvas>
   </div>
 </div>
 
@@ -596,58 +596,86 @@ function drawFrame(ts) {
 }
 requestAnimationFrame(drawFrame);
 
-// ── Visualizer canvas (under sequencer) ─────────────────────────────────────
+// ── Visualizer canvas — 3D tunnel (persist, zoom, rotate, dissipate) ─────────
 const vizCanvas = document.getElementById('vizCanvas');
 const vctx = vizCanvas.getContext('2d');
+// Offscreen ping-pong buffer so we can drawImage-transform without artifacts
+const vizOff = document.createElement('canvas');
+let voffCtx = vizOff.getContext('2d');
 let VW=0, VH=0;
+
 function resizeViz() {
-  VW = vizCanvas.offsetWidth * devicePixelRatio;
-  VH = vizCanvas.offsetHeight * devicePixelRatio;
+  VW = Math.round(vizCanvas.offsetWidth * devicePixelRatio);
+  VH = Math.round(vizCanvas.offsetHeight * devicePixelRatio);
   vizCanvas.width = VW; vizCanvas.height = VH;
+  vizOff.width = VW; vizOff.height = VH;
 }
 resizeViz();
 new ResizeObserver(resizeViz).observe(vizCanvas);
 
-// Feedback buffer for Geiss-style trails
+let vizRot = 0; // cumulative tunnel rotation (radians)
+
 function drawViz() {
   requestAnimationFrame(drawViz);
   if (!VW || !VH) return;
-  if (!analyser || !freqData) {
-    vctx.clearRect(0,0,VW,VH); return;
-  }
+  if (!analyser || !freqData) { vctx.clearRect(0,0,VW,VH); return; }
+
   analyser.getByteFrequencyData(freqData);
   analyser.getByteTimeDomainData(waveData);
 
-  // Feedback trail
-  vctx.fillStyle='rgba(2,6,8,0.28)';
-  vctx.fillRect(0,0,VW,VH);
+  vizRot += 0.006; // ~21°/s — slow enough to feel 3D, fast enough to feel alive
 
-  const BARS = VW;
-  const maxBin = Math.floor(freqData.length * 0.72);
-  // Frequency bars
-  for (let i=0; i<BARS; i++) {
-    const t = i/BARS;
+  // ── 1. Copy current frame to offscreen buffer
+  voffCtx.clearRect(0,0,VW,VH);
+  voffCtx.drawImage(vizCanvas,0,0);
+
+  // ── 2. Clear canvas then draw transformed (zoom + rotate) copy = "tunnel" motion
+  vctx.clearRect(0,0,VW,VH);
+  const cx=VW/2, cy=VH/2;
+  vctx.save();
+  vctx.globalAlpha = 0.80;        // dissipation: ~0.80^60 ≈ gone in ~1s at 60fps
+  vctx.translate(cx, cy);
+  vctx.scale(1.024, 1.024);       // zoom: content "flies toward viewer"
+  vctx.rotate(0.006);             // slight spiral twist
+  vctx.translate(-cx, -cy);
+  vctx.drawImage(vizOff,0,0);
+  vctx.restore();
+
+  // ── 3. Inject new spectrum at the tunnel's focal point (center ring)
+  const maxBin = Math.floor(freqData.length * 0.70);
+  const SPOKES = 128;             // radial spokes for the ring injected each frame
+  const R_INNER = Math.min(VW,VH)*0.08;
+  const R_OUTER_MAX = Math.min(VW,VH)*0.28;
+  vctx.save();
+  vctx.translate(cx, cy);
+  for (let i=0; i<SPOKES; i++) {
+    const t = i/SPOKES;
+    const angle = t * Math.PI*2 - Math.PI/2 + vizRot*0.15;
     const bin = Math.floor(t * maxBin);
-    const v = freqData[bin] / 255;
-    if (v < 0.01) continue;
-    const barH = v * VH * 0.88;
-    // Color: cycle through orbit hues by frequency position
-    const hue = (c60Hue * 360 + t * 120) % 360;
-    vctx.fillStyle = `hsla(${hue|0},85%,${45+v*30|0}%,${(0.55+v*0.4).toFixed(2)})`;
-    vctx.fillRect(i, VH - barH, 1, barH);
+    const v = freqData[bin]/255;
+    if (v<0.015) continue;
+    const r1 = R_INNER;
+    const r2 = R_INNER + v*R_OUTER_MAX;
+    const hue = (c60Hue*360 + t*120 + vizRot*8)%360;
+    vctx.beginPath();
+    vctx.moveTo(Math.cos(angle)*r1, Math.sin(angle)*r1);
+    vctx.lineTo(Math.cos(angle)*r2, Math.sin(angle)*r2);
+    vctx.strokeStyle=`hsla(${hue|0},90%,${50+v*28|0}%,${(0.6+v*0.35).toFixed(2)})`;
+    vctx.lineWidth=1.6;
+    vctx.stroke();
   }
-
-  // Waveform overlay
+  // Waveform ring at injection point
   vctx.beginPath();
-  const wStep = VW / waveData.length;
-  for (let i=0; i<waveData.length; i++) {
-    const x = i * wStep;
-    const y = (waveData[i] / 128 - 1) * (VH * 0.35) + VH * 0.5;
-    i===0 ? vctx.moveTo(x,y) : vctx.lineTo(x,y);
+  for (let i=0; i<=waveData.length; i++) {
+    const t = i/waveData.length;
+    const angle = t*Math.PI*2 - Math.PI/2 + vizRot*0.15;
+    const r = R_INNER + (waveData[i%waveData.length]/128-1)*R_INNER*0.55;
+    i===0?vctx.moveTo(Math.cos(angle)*r,Math.sin(angle)*r)
+         :vctx.lineTo(Math.cos(angle)*r,Math.sin(angle)*r);
   }
-  vctx.strokeStyle = `hsla(${c60Hue*360|0},60%,75%,0.45)`;
-  vctx.lineWidth = devicePixelRatio;
-  vctx.stroke();
+  vctx.strokeStyle=`hsla(${c60Hue*360|0},55%,80%,0.30)`;
+  vctx.lineWidth=devicePixelRatio; vctx.stroke();
+  vctx.restore();
 }
 drawViz();
 
