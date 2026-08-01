@@ -54,7 +54,15 @@ canvas { display:block; }
 }
 .resize-handle:hover, .resize-handle.dragging { background:#00ff8828; border-left-color:#00ff8860; }
 .section { padding:12px 14px; border-bottom:1px solid var(--dim); }
-.section-title { font-size:var(--panel-fs); color:var(--muted); letter-spacing:.15em; margin-bottom:8px; }
+.section-title {
+  font-size:var(--panel-fs); color:var(--muted); letter-spacing:.15em; margin-bottom:8px;
+  cursor:pointer; user-select:none; display:flex; align-items:center; gap:5px;
+}
+.section-title::before { content:'▾'; font-size:.7em; opacity:.55; transition:transform .15s; }
+.section.collapsed .section-title::before { transform:rotate(-90deg); }
+.section.collapsed .section-title { margin-bottom:0; }
+.section-body { overflow:hidden; }
+.section.collapsed .section-body { display:none; }
 /* ── Controls ── */
 .row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
 .row label { font-size:var(--panel-fs); color:var(--muted); width:58px; flex-shrink:0; }
@@ -148,7 +156,7 @@ btn, .btn {
   </div>
   <div class="transport">
     <span id="bpmVal" style="font-size:9px;color:var(--muted)">60 BPM</span>
-    <input type="range" id="bpmSlider" min="20" max="240" value="60" style="width:80px">
+    <input type="range" id="bpmSlider" min="10" max="120" value="60" style="width:80px">
     <button class="btn play" id="playBtn">▶ PLAY</button>
   </div>
 </header>
@@ -162,77 +170,97 @@ btn, .btn {
   <!-- Waveform -->
   <div class="section">
     <div class="section-title">WAVEFORM</div>
-    <div class="wave-row" id="waveRow">
-      <button class="btn lit" data-wave="triangle">TRI</button>
-      <button class="btn" data-wave="sine">SINE</button>
-      <button class="btn" data-wave="sawtooth">SAW</button>
-      <button class="btn" data-wave="square">SQ</button>
+    <div class="section-body">
+      <div class="wave-row" id="waveRow">
+        <button class="btn lit" data-wave="triangle">TRI</button>
+        <button class="btn" data-wave="sine">SINE</button>
+        <button class="btn" data-wave="sawtooth">SAW</button>
+        <button class="btn" data-wave="square">SQ</button>
+      </div>
     </div>
   </div>
   <!-- Synth controls -->
   <div class="section">
     <div class="section-title">SYNTH</div>
-    <div class="row"><label>octave</label>
-      <button class="btn" id="octDn">−</button>
-      <span id="octVal" style="font-size:10px;color:var(--fg);width:24px;text-align:center">0</span>
-      <button class="btn" id="octUp">+</button>
-    </div>
-    <div class="row"><label>reverb</label>
-      <input type="range" id="reverbSlider" min="0" max="1" step=".01" value=".59">
-      <span class="val" id="reverbVal">59%</span>
-    </div>
-    <div class="row"><label>bass</label>
-      <input type="range" id="bassSlider" min="0" max="1" step=".01" value=".51">
-      <span class="val" id="bassVal">51%</span>
-    </div>
-    <div class="row"><label>detune</label>
-      <input type="range" id="detuneSlider" min="0" max="20" step=".5" value="3">
-      <span class="val" id="detuneVal">3¢</span>
+    <div class="section-body">
+      <div class="row"><label>octave</label>
+        <button class="btn" id="octDn">−</button>
+        <span id="octVal" style="font-size:10px;color:var(--fg);width:24px;text-align:center">0</span>
+        <button class="btn" id="octUp">+</button>
+      </div>
+      <div class="row"><label>reverb</label>
+        <input type="range" id="reverbSlider" min="0" max="1" step=".01" value=".59">
+        <span class="val" id="reverbVal">59%</span>
+      </div>
+      <div class="row"><label>bass</label>
+        <input type="range" id="bassSlider" min="0" max="1" step=".01" value=".51">
+        <span class="val" id="bassVal">51%</span>
+      </div>
+      <div class="row"><label>detune</label>
+        <input type="range" id="detuneSlider" min="0" max="20" step=".5" value="3">
+        <span class="val" id="detuneVal">3¢</span>
+      </div>
     </div>
   </div>
   <!-- Freq display -->
-  <div class="section">
+  <div class="section collapsed">
     <div class="section-title">HARMONICS</div>
-    <div class="freq-bars" id="freqBars"></div>
-    <div class="note-names" id="noteNames"></div>
+    <div class="section-body">
+      <div class="freq-bars" id="freqBars"></div>
+      <div class="note-names" id="noteNames"></div>
+    </div>
   </div>
   <!-- Presets -->
   <div class="section">
     <div class="section-title">PRESETS</div>
-    <div class="preset-row" id="presets">
-      <button class="btn" data-preset="zen">ZEN</button>
-      <button class="btn" data-preset="orbit">ORBIT</button>
-      <button class="btn" data-preset="bass">BASS</button>
-      <button class="btn" data-preset="scatter">SCATTER</button>
-      <button class="btn" data-preset="ce">CE</button>
-      <button class="btn" data-preset="clear">CLEAR</button>
-    </div>
-    <div class="preset-row" id="userPresets" style="margin-top:5px;min-height:0"></div>
-    <div class="row" style="margin-top:6px;margin-bottom:0;gap:5px">
-      <input id="presetNameInput" type="text" maxlength="12" placeholder="name…"
-        style="flex:1;font-family:'Courier New',monospace;font-size:var(--panel-fs);background:#020c08;border:1px solid var(--dim);color:#00ffcc;padding:2px 6px;border-radius:2px;letter-spacing:.06em;text-transform:uppercase" spellcheck="false">
-      <button class="btn" id="savePresetBtn">SAVE</button>
+    <div class="section-body">
+      <div class="preset-row" id="presets">
+        <button class="btn" data-preset="zen">ZEN</button>
+        <button class="btn" data-preset="orbit">ORBIT</button>
+        <button class="btn" data-preset="bass">BASS</button>
+        <button class="btn" data-preset="scatter">SCATTER</button>
+        <button class="btn" data-preset="ce">CE</button>
+        <button class="btn" data-preset="clear">CLEAR</button>
+      </div>
+      <div class="preset-row" id="userPresets" style="margin-top:5px;min-height:0"></div>
+      <div class="row" style="margin-top:6px;margin-bottom:0;gap:5px">
+        <input id="presetNameInput" type="text" maxlength="12" placeholder="name…"
+          style="flex:1;font-family:'Courier New',monospace;font-size:var(--panel-fs);background:#020c08;border:1px solid var(--dim);color:#00ffcc;padding:2px 6px;border-radius:2px;letter-spacing:.06em;text-transform:uppercase" spellcheck="false">
+        <button class="btn" id="savePresetBtn">SAVE</button>
+      </div>
     </div>
   </div>
   <!-- Sequencer grid -->
   <div class="section" style="flex:1">
-    <div class="section-title">STEP SEQUENCER &nbsp;<span style="color:#1a3a1a">16 steps · 6 orbit notes</span></div>
-    <div style="display:grid;grid-template-columns:36px 1fr;gap:4px;align-items:center">
-      <div></div>
-      <div style="display:grid;grid-template-columns:repeat(16,1fr);gap:2px;margin-bottom:3px">
-        <!-- beat markers -->
+    <div class="section-title">STEP SEQUENCER &nbsp;<span style="color:#1a3a1a;font-size:.8em">16 steps · 6 orbit notes</span></div>
+    <div class="section-body">
+      <div style="display:grid;grid-template-columns:36px 1fr;gap:4px;align-items:center">
+        <div></div>
+        <div style="display:grid;grid-template-columns:repeat(16,1fr);gap:2px;margin-bottom:3px">
+          <!-- beat markers -->
+        </div>
       </div>
-    </div>
-    <div style="display:grid;grid-template-columns:36px 1fr;gap:4px">
-      <div id="rowLabels" style="display:flex;flex-direction:column;gap:2px"></div>
-      <div class="seq-grid" id="seqGrid"></div>
+      <div style="display:grid;grid-template-columns:36px 1fr;gap:4px">
+        <div id="rowLabels" style="display:flex;flex-direction:column;gap:2px"></div>
+        <div class="seq-grid" id="seqGrid"></div>
+      </div>
     </div>
   </div>
   <!-- Visualizer -->
   <div class="section" id="vizSection" style="padding:0 14px 10px;flex-shrink:0;position:relative">
     <div id="vizResizeHandle" title="Drag to resize"></div>
-    <div class="section-title" style="margin-bottom:5px;padding-top:8px">VISUALIZER <span style="opacity:.4;font-size:.8em">scroll·zoom · drag·pan · dbl·reset</span></div>
-    <canvas id="vizCanvas" style="width:100%;display:block;border-radius:2px;background:#020608;cursor:grab"></canvas>
+    <div class="section-title" style="padding-top:8px">VISUALIZER</div>
+    <div class="section-body">
+      <div class="preset-row" id="vizModes" style="margin-bottom:5px">
+        <button class="btn lit" data-viz="tunnel">TUNNEL</button>
+        <button class="btn" data-viz="bars">BARS</button>
+        <button class="btn" data-viz="mirror">MIRROR</button>
+        <button class="btn" data-viz="scope">SCOPE</button>
+        <button class="btn" data-viz="spiral">SPIRAL</button>
+      </div>
+      <canvas id="vizCanvas" style="width:100%;display:block;border-radius:2px;background:#020608;cursor:grab"></canvas>
+      <div style="font-size:calc(var(--panel-fs)*0.85);color:var(--muted);opacity:.45;margin-top:3px;letter-spacing:.08em">scroll·zoom · drag·pan · dbl·reset</div>
+    </div>
   </div>
 </div>
 
@@ -735,58 +763,117 @@ function drawViz() {
 
   analyser.getByteFrequencyData(freqData);
   analyser.getByteTimeDomainData(waveData);
-
   vizRot += 0.006;
 
-  // 1. Copy current frame to offscreen buffer
-  voffCtx.clearRect(0,0,VW,VH);
-  voffCtx.drawImage(vizCanvas,0,0);
-
-  // 2. Feedback: zoom + rotate from the user's focal point → tunnel motion
-  vctx.clearRect(0,0,VW,VH);
   const cx = VW/2 + vizPanX, cy = VH/2 + vizPanY;
-  vctx.save();
-  vctx.globalAlpha = 0.80;
-  vctx.translate(cx, cy);
-  vctx.scale(1.024 * vizUserScale*0.004 + 1.018, 1.024 * vizUserScale*0.004 + 1.018);
-  vctx.rotate(0.006);
-  vctx.translate(-cx, -cy);
-  vctx.drawImage(vizOff,0,0);
-  vctx.restore();
-
-  // 3. Inject new spectrum at focal point
   const maxBin = Math.floor(freqData.length * 0.70);
-  const SPOKES = 128;
-  const baseR = Math.min(VW,VH) * 0.08 * vizUserScale;
-  const R_INNER = Math.max(4, Math.min(baseR, Math.min(VW,VH)*0.35));
-  const R_OUTER_MAX = R_INNER * 3.5;
-  vctx.save();
-  vctx.translate(cx, cy);
-  for (let i=0; i<SPOKES; i++) {
-    const t = i/SPOKES;
-    const angle = t*Math.PI*2 - Math.PI/2 + vizRot*0.15;
-    const bin = Math.floor(t * maxBin);
-    const v = freqData[bin]/255;
-    if (v<0.015) continue;
-    const hue = (c60Hue*360 + t*120 + vizRot*8)%360;
+  const hueBase = c60Hue * 360;
+
+  if (vizMode === 'tunnel') {
+    // ── TUNNEL: radial spokes zoom+rotate from focal point ──────────────
+    voffCtx.clearRect(0,0,VW,VH);
+    voffCtx.drawImage(vizCanvas,0,0);
+    vctx.clearRect(0,0,VW,VH);
+    vctx.save(); vctx.globalAlpha=0.80;
+    vctx.translate(cx,cy);
+    vctx.scale(1.024*vizUserScale*0.004+1.018, 1.024*vizUserScale*0.004+1.018);
+    vctx.rotate(0.006); vctx.translate(-cx,-cy);
+    vctx.drawImage(vizOff,0,0); vctx.restore();
+    const R_INNER=Math.max(4,Math.min(Math.min(VW,VH)*0.08*vizUserScale,Math.min(VW,VH)*0.35));
+    const R_MAX=R_INNER*3.5;
+    vctx.save(); vctx.translate(cx,cy);
+    for(let i=0;i<128;i++){
+      const t=i/128, angle=t*Math.PI*2-Math.PI/2+vizRot*0.15;
+      const v=freqData[Math.floor(t*maxBin)]/255; if(v<0.015) continue;
+      const hue=(hueBase+t*120+vizRot*8)%360;
+      vctx.beginPath();
+      vctx.moveTo(Math.cos(angle)*R_INNER,Math.sin(angle)*R_INNER);
+      vctx.lineTo(Math.cos(angle)*(R_INNER+v*R_MAX),Math.sin(angle)*(R_INNER+v*R_MAX));
+      vctx.strokeStyle=`hsla(${hue|0},90%,${50+v*28|0}%,${(0.6+v*0.35).toFixed(2)})`;
+      vctx.lineWidth=1.6; vctx.stroke();
+    }
     vctx.beginPath();
-    vctx.moveTo(Math.cos(angle)*R_INNER, Math.sin(angle)*R_INNER);
-    vctx.lineTo(Math.cos(angle)*(R_INNER+v*R_OUTER_MAX), Math.sin(angle)*(R_INNER+v*R_OUTER_MAX));
-    vctx.strokeStyle=`hsla(${hue|0},90%,${50+v*28|0}%,${(0.6+v*0.35).toFixed(2)})`;
-    vctx.lineWidth=1.6; vctx.stroke();
+    for(let i=0;i<=waveData.length;i++){
+      const t=i/waveData.length, angle=t*Math.PI*2-Math.PI/2+vizRot*0.15;
+      const r=R_INNER+(waveData[i%waveData.length]/128-1)*R_INNER*0.55;
+      i===0?vctx.moveTo(Math.cos(angle)*r,Math.sin(angle)*r):vctx.lineTo(Math.cos(angle)*r,Math.sin(angle)*r);
+    }
+    vctx.strokeStyle=`hsla(${hueBase|0},55%,80%,0.28)`; vctx.lineWidth=devicePixelRatio; vctx.stroke();
+    vctx.restore();
+
+  } else if (vizMode === 'bars') {
+    // ── BARS: classic spectrum bars with feedback ─────────────────────────
+    vctx.fillStyle='rgba(2,6,8,0.30)'; vctx.fillRect(0,0,VW,VH);
+    const bw=VW/maxBin;
+    for(let i=0;i<maxBin;i++){
+      const v=freqData[i]/255; if(v<0.01) continue;
+      const x=i*bw, h=v*VH*0.92;
+      const hue=(hueBase+i/maxBin*120)%360;
+      vctx.fillStyle=`hsla(${hue|0},88%,${45+v*32|0}%,${(0.55+v*0.4).toFixed(2)})`;
+      vctx.fillRect(x,VH-h,Math.max(1,bw-0.5),h);
+    }
+
+  } else if (vizMode === 'mirror') {
+    // ── MIRROR: symmetric bars from vertical center ───────────────────────
+    vctx.fillStyle='rgba(2,6,8,0.28)'; vctx.fillRect(0,0,VW,VH);
+    const bw=VW/maxBin, half=VH/2;
+    for(let i=0;i<maxBin;i++){
+      const v=freqData[i]/255; if(v<0.01) continue;
+      const x=i*bw, h=v*half*0.95;
+      const hue=(hueBase+i/maxBin*180+vizRot*20)%360;
+      vctx.fillStyle=`hsla(${hue|0},90%,${48+v*30|0}%,${(0.5+v*0.45).toFixed(2)})`;
+      vctx.fillRect(x,half-h,Math.max(1,bw-0.5),h*2);
+    }
+    // Waveform center line
+    vctx.beginPath();
+    for(let i=0;i<waveData.length;i++){
+      const x=i/waveData.length*VW;
+      const y=half+(waveData[i]/128-1)*half*0.38;
+      i===0?vctx.moveTo(x,y):vctx.lineTo(x,y);
+    }
+    vctx.strokeStyle=`hsla(${hueBase|0},55%,80%,0.35)`; vctx.lineWidth=devicePixelRatio; vctx.stroke();
+
+  } else if (vizMode === 'scope') {
+    // ── SCOPE: XY Lissajous using L channel vs shifted phase ─────────────
+    voffCtx.clearRect(0,0,VW,VH);
+    voffCtx.drawImage(vizCanvas,0,0);
+    vctx.clearRect(0,0,VW,VH);
+    vctx.save(); vctx.globalAlpha=0.75;
+    vctx.translate(cx,cy); vctx.scale(1.018,1.018); vctx.translate(-cx,-cy);
+    vctx.drawImage(vizOff,0,0); vctx.restore();
+    const R=Math.min(VW,VH)*0.42*vizUserScale;
+    vctx.save(); vctx.translate(cx,cy);
+    vctx.beginPath();
+    const shift=Math.floor(waveData.length/4);
+    for(let i=0;i<waveData.length;i++){
+      const x=(waveData[i]/128-1)*R;
+      const y=(waveData[(i+shift)%waveData.length]/128-1)*R;
+      const hue=(hueBase+i/waveData.length*60+vizRot*15)%360;
+      if(i===0){vctx.moveTo(x,y);}else{vctx.lineTo(x,y);}
+    }
+    vctx.strokeStyle=`hsla(${hueBase|0},80%,65%,0.70)`; vctx.lineWidth=1.2; vctx.stroke();
+    vctx.restore();
+
+  } else if (vizMode === 'spiral') {
+    // ── SPIRAL: frequency data mapped along Archimedean spiral ───────────
+    vctx.fillStyle='rgba(2,6,8,0.22)'; vctx.fillRect(0,0,VW,VH);
+    const turns=3, rMax=Math.min(VW,VH)*0.46*vizUserScale;
+    vctx.save(); vctx.translate(cx,cy);
+    for(let i=0;i<maxBin;i++){
+      const t=i/maxBin;
+      const angle=t*turns*Math.PI*2+vizRot;
+      const r=t*rMax;
+      const v=freqData[i]/255;
+      const x=Math.cos(angle)*r, y=Math.sin(angle)*r;
+      const size=Math.max(1, v*5*vizUserScale);
+      const hue=(hueBase+t*180+vizRot*30)%360;
+      vctx.beginPath();
+      vctx.arc(x,y,size,0,Math.PI*2);
+      vctx.fillStyle=`hsla(${hue|0},88%,${50+v*28|0}%,${(0.4+v*0.55).toFixed(2)})`;
+      vctx.fill();
+    }
+    vctx.restore();
   }
-  // Waveform ring
-  vctx.beginPath();
-  for (let i=0; i<=waveData.length; i++) {
-    const t = i/waveData.length;
-    const angle = t*Math.PI*2 - Math.PI/2 + vizRot*0.15;
-    const r = R_INNER + (waveData[i%waveData.length]/128-1)*R_INNER*0.55;
-    i===0?vctx.moveTo(Math.cos(angle)*r,Math.sin(angle)*r)
-         :vctx.lineTo(Math.cos(angle)*r,Math.sin(angle)*r);
-  }
-  vctx.strokeStyle=`hsla(${c60Hue*360|0},55%,80%,0.30)`;
-  vctx.lineWidth=devicePixelRatio; vctx.stroke();
-  vctx.restore();
 }
 drawViz();
 
@@ -848,6 +935,22 @@ document.getElementById('savePresetBtn').addEventListener('click',function(){
 });
 document.getElementById('presetNameInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('savePresetBtn').click();
+});
+
+// ── Collapsible sections ─────────────────────────────────────────────────────
+document.querySelectorAll('.section').forEach(sec => {
+  const title = sec.querySelector('.section-title');
+  if (!title) return;
+  title.addEventListener('click', () => sec.classList.toggle('collapsed'));
+});
+
+// ── Visualizer mode switching ─────────────────────────────────────────────────
+let vizMode = 'tunnel';
+document.getElementById('vizModes').addEventListener('click', function(e){
+  const btn = e.target.closest('[data-viz]'); if(!btn) return;
+  vizMode = btn.dataset.viz;
+  this.querySelectorAll('[data-viz]').forEach(b => b.classList.toggle('lit', b===btn));
+  resetVizNav();
 });
 
 // Escape → signal parent to navigate back
