@@ -286,14 +286,13 @@ export function buildS13() {
       mat.opacity = active ? 1.0 : 0.82;
     }
 
-    // Layer counter + mirror flash at step 0 return
-    const isReturn = (oStep === 0 && oFrac < 0.20);
+    // Layer counter + mirror flash — stay visible through full dwell at step 0
+    const isReturn = (oStep === 0 && oFrac < 0.82);
     mirrorAlpha = isReturn
-      ? Math.min(mirrorAlpha + dt * 2.5, 1.0)
-      : Math.max(mirrorAlpha - dt * 1.8, 0.0);
+      ? Math.min(mirrorAlpha + dt * 1.8, 1.0)
+      : Math.max(mirrorAlpha - dt * 0.9, 0.0);
     mirrorDiv.style.opacity = mirrorAlpha.toFixed(3);
     layerDiv.textContent = isReturn ? 'L6 → L0' : `LAYER ${oStep + 1}`;
-    layerDiv.style.color = isReturn ? CS_LAYER : CS_LAYER;
     layerDiv.style.opacity = isReturn ? '1' : '0.70';
 
     // ── Complement pulse ──
