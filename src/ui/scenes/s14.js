@@ -9,6 +9,11 @@ import { THREE, CSS2DObject, R, mkCamera, mkControls } from './shared.js';
 const C_ORB  = 0x00ff88;  const CS_ORB  = '#00ff88';
 const C_CYAN = 0x00e5ff;  const CS_CYAN = '#00e5ff';
 
+// Six orbit-step hues (HSL, 0–1) cycling the spectrum: green → cyan → blue → pink → amber → lime
+const STEP_HUES   = [0.33, 0.50, 0.62, 0.83, 0.10, 0.23];
+const STEP_COLORS = STEP_HUES.map(h => new THREE.Color().setHSL(h, 0.9, 0.60));
+const _tmpColor   = new THREE.Color();
+
 // ── Truncated icosahedron geometry ────────────────────────────────────────────
 const phi = (1 + Math.sqrt(5)) / 2;
 
@@ -135,18 +140,18 @@ export function buildS14() {
         mt*mt*from.y + 2*mt*t*ctrl.y + t*t*to.y, 0));
     }
     const eg = new THREE.BufferGeometry().setFromPoints(pts);
-    const em = new THREE.LineBasicMaterial({ color: C_ORB, transparent: true, opacity: 0.32 });
+    const em = new THREE.LineBasicMaterial({ color: STEP_COLORS[i], transparent: true, opacity: 0.35 });
     R.disposables.push(eg, em);
     scene.add(new THREE.Line(eg, em));
     orbitEdgeMats.push(em);
   }
 
-  // Orbit nodes + labels
+  // Orbit nodes + labels — each step gets its own hue
   const orbitNodeMats = [];
   for (let i = 0; i < 6; i++) {
     const pos = orbitPos(i);
     const ng  = new THREE.SphereGeometry(0.13, 12, 8);
-    const nm  = new THREE.MeshBasicMaterial({ color: C_ORB, transparent: true, opacity: 0.50 });
+    const nm  = new THREE.MeshBasicMaterial({ color: STEP_COLORS[i], transparent: true, opacity: 0.55 });
     R.disposables.push(ng, nm);
     const mesh = new THREE.Mesh(ng, nm);
     mesh.position.copy(pos);
@@ -211,11 +216,12 @@ export function buildS14() {
     `</div>`;
 
   // ── Animation ─────────────────────────────────────────────────────────────
-  let lastT    = null;
-  let c60Angle = 0;
-  let oPhase   = 0;
-  const ROT_X  = 0.38;   // fixed x tilt (radians)
-  const cosRX  = Math.cos(ROT_X), sinRX = Math.sin(ROT_X);
+  let lastT      = null;
+  let c60Angle   = 0;
+  let oPhase     = 0;
+  let c60Hue     = STEP_HUES[0];   // current C60 iridescent base hue (lerps toward active step)
+  const ROT_X    = 0.38;
+  const cosRX    = Math.cos(ROT_X), sinRX = Math.sin(ROT_X);
 
   R.animFn = (t) => {
     const dt = lastT === null ? 0 : Math.min(t - lastT, 0.08);
@@ -223,9 +229,19 @@ export function buildS14() {
     c60Angle = (c60Angle + dt * 0.27) % (Math.PI * 2);
     oPhase   = (oPhase   + dt / 1.6) % 6;
 
-    const cosY = Math.cos(c60Angle), sinY = Math.sin(c60Angle);
+    const oStep  = Math.floor(oPhase) % 6;
+    const oFrac  = oPhase - Math.floor(oPhase);
+    const cosY   = Math.cos(c60Angle), sinY = Math.sin(c60Angle);
 
-    // Rotate all 60 vertices
+    // Lerp C60 hue toward active step's hue
+    const targetHue = STEP_HUES[oStep];
+    let dh = targetHue - c60Hue;
+    // Shortest path around the hue circle
+    if (dh >  0.5) dh -= 1.0;
+    if (dh < -0.5) dh += 1.0;
+    c60Hue = (c60Hue + dh * Math.min(1, dt * 2.5) + 1.0) % 1.0;
+
+    // Rotate all 60 vertices once
     const rotV = C60_VERTS.map(([vx,vy,vz]) => {
       const y1 = vy*cosRX - vz*sinRX;
       const z1 = vy*sinRX + vz*cosRX;
@@ -238,37 +254,53 @@ export function buildS14() {
     for (const [,,z] of rotV) { if (z < zMin) zMin = z; if (z > zMax) zMax = z; }
     const zR = zMax - zMin || 1;
 
-    // Update LineSegments geometry
+    // Pulse: when orbit step transitions (oFrac < 0.25), a brightness wave
+    const pulse = Math.max(0, 1 - oFrac * 5) * 0.35;
+
+    // Update C60 edge positions + iridescent colors
     C60_EDGES.forEach(([i,j], ei) => {
       const [xi,yi,zi] = rotV[i], [xj,yj,zj] = rotV[j];
       const base = ei * 6;
       posArr[base]   = xi*C60_S; posArr[base+1] = yi*C60_S; posArr[base+2] = zi*C60_S;
       posArr[base+3] = xj*C60_S; posArr[base+4] = yj*C60_S; posArr[base+5] = zj*C60_S;
+
+      // Iridescent: depth varies hue ±0.10 around the step-driven base
       const depth = ((zi+zj)/2 - zMin) / zR;
-      const a = 0.04 + depth * 0.83;
-      // #00ff88 = rgb(0, 1, 136/255)
-      colArr[base]   = 0;        colArr[base+1] = a;                colArr[base+2] = a*(136/255);
-      colArr[base+3] = 0;        colArr[base+4] = a;                colArr[base+5] = a*(136/255);
+      const hue   = (c60Hue + depth * 0.18 - 0.09 + 1.0) % 1.0;
+      const lum   = 0.05 + depth * 0.50 + pulse * depth;
+      _tmpColor.setHSL(hue, 0.95, lum);
+
+      colArr[base]   = _tmpColor.r; colArr[base+1] = _tmpColor.g; colArr[base+2] = _tmpColor.b;
+      colArr[base+3] = _tmpColor.r; colArr[base+4] = _tmpColor.g; colArr[base+5] = _tmpColor.b;
     });
     geo.attributes.position.needsUpdate = true;
     geo.attributes.color.needsUpdate    = true;
 
-    // Update node sphere positions + opacity
+    // Update node sphere positions + depth-fade + step-color
     for (let i = 0; i < 60; i++) {
       const [rx,ry,rz] = rotV[i];
       const depth = (rz - zMin) / zR;
       nodeMeshes[i].position.set(rx*C60_S + C60_OFF.x, ry*C60_S, rz*C60_S);
-      nodeMats[i].opacity = depth < 0.28 ? 0 : 0.08 + depth * 0.58;
+      const nOpacity = depth < 0.28 ? 0 : 0.06 + depth * 0.55;
+      nodeMats[i].opacity = nOpacity;
+      // Tint nodes toward active step color
+      nodeMats[i].color.copy(STEP_COLORS[oStep]).lerp(new THREE.Color(0xffffff), depth * 0.3);
     }
 
-    // Orbit ring step
-    const oStep = Math.floor(oPhase) % 6;
+    // Orbit ring: per-step hue; active arc → white + glow
     for (let i = 0; i < 6; i++) {
       const active = (i === oStep);
-      orbitEdgeMats[i].color.setHex(active ? 0xffffff : C_ORB);
-      orbitEdgeMats[i].opacity   = active ? 0.88 : 0.28;
-      orbitNodeMats[i].color.setHex(active ? 0xffffff : C_ORB);
-      orbitNodeMats[i].opacity   = active ? 1.0  : 0.42;
+      if (active) {
+        orbitEdgeMats[i].color.set(0xffffff);
+        orbitEdgeMats[i].opacity   = 0.90;
+        orbitNodeMats[i].color.set(0xffffff);
+        orbitNodeMats[i].opacity   = 1.0;
+      } else {
+        orbitEdgeMats[i].color.copy(STEP_COLORS[i]);
+        orbitEdgeMats[i].opacity   = 0.38;
+        orbitNodeMats[i].color.copy(STEP_COLORS[i]);
+        orbitNodeMats[i].opacity   = 0.52;
+      }
     }
   };
 }

@@ -14,6 +14,12 @@ let renderer, labelRenderer, rafId = 0;
 let active = 7;
 let p8adv = false;
 
+// ── CSS2D label scaling ───────────────────────────────────────────────────────
+// Labels stay screen-space fixed by default; this scales them with camera distance
+// so text grows when you zoom in. Reference distance ≈ typical initial camera dist.
+const _LABEL_REF = 9.0;
+const _labelTgt  = new THREE.Vector3();
+
 // ── Notes gallery ─────────────────────────────────────────────────────────────
 const NOTE_IMGS = [
   '2026-07-28_page15_960-757-bt-table.jpg',
@@ -94,6 +100,19 @@ function loop(t) {
   if (R.scene && R.camera) {
     renderer.render(R.scene, R.camera);
     labelRenderer.render(R.scene, R.camera);
+    // Scale CSS2D labels so text grows when zooming in
+    if (R.css2dObjects?.length) {
+      if (R.controls?.target) _labelTgt.copy(R.controls.target);
+      else _labelTgt.set(0, 0, 0);
+      const dist = R.camera.position.distanceTo(_labelTgt);
+      const s = Math.max(0.5, Math.min(3.5, _LABEL_REF / Math.max(0.1, dist)));
+      for (const obj of R.css2dObjects) {
+        const el = obj.element;
+        if (el?.style?.transform) {
+          el.style.transform = el.style.transform.replace(/ scale\([^)]+\)$/, '') + ` scale(${s.toFixed(3)})`;
+        }
+      }
+    }
     if (camCoords && ++_loopFrame % 4 === 0) {
       const p = R.camera.position;
       camCoords.textContent = `x ${p.x.toFixed(1)}\ny ${p.y.toFixed(1)}\nz ${p.z.toFixed(1)}`;
