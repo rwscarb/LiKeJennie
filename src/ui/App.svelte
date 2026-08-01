@@ -494,6 +494,9 @@ afterUpdate(() => {
     <div class="cset" class:on={active === 12}>
       <span class="stat">drag to rotate &nbsp;&middot;&nbsp; orbit graph = GNN computation graph &nbsp;&middot;&nbsp; layer 6 = identity</span>
     </div>
+    <div class="cset" class:on={active === 13}>
+      <span class="stat">drag to rotate C₆₀ &nbsp;&middot;&nbsp; 60 vertices · 90 edges · 12 pentagons + 20 hexagons</span>
+    </div>
   </div>
 </div>
 
@@ -828,6 +831,37 @@ Layer 6:  [1, 2, 4, 8, 7, 5]   ← identity: back to layer 0</code></pre>
     </ul>
     <p>Period 6 contains period 2 contains period 1. Each is the same structure — a directed cycle — at a different scale. A GNN on the outer ring completes in 6 layers; on the middle ring in 2 layers; on the center in 1 layer. The fractal ratio is 1/3: the complement enters by multiplying by 3 (3×1=3, 3×2=6), and exits back by ×2 mod 9.</p>
     <p>In the visualization, the two pulses run simultaneously — orbit at full speed, complement at 1/3 speed — showing that one full orbit traversal contains three complete complement traversals. The pulse periods are in ratio 3:1, mirroring the structural ratio between the worlds.</p>
+
+    <hr>
+
+    <h1>BUCKMINSTER</h1>
+
+    <h2>60 ≡ 6 (mod 9) — the Container Molecule</h2>
+    <p>Buckminsterfullerene (C₆₀) is a carbon molecule: 60 atoms arranged as a truncated icosahedron, the same geometry as a football. It is the most symmetric stable molecule ever synthesized.</p>
+    <p>60 mod 9 = 6. The digital root of 60 is 6. C₆₀ sits at the nil coordinate — the container, the boundary, the thing-that-holds. And C₆₀ is literally a container: it is hollow, and it traps other molecules, noble gases, and single metal atoms inside it.</p>
+    <pre><code>60 = 6×9 + 6  →  60 ≡ 6 (mod 9)  →  dr(60) = 6  →  nil element</code></pre>
+    <p>The archetypal container molecule is mod 9's container number.</p>
+
+    <hr>
+
+    <h2>Diameter 5 / Period 6</h2>
+    <p>The graph diameter of C₆₀ is 5: any two carbon atoms are connected by a path of at most 5 bonds. After 5 GNN message-passing steps on the C₆₀ graph, every atom has received information from every other atom in the molecule.</p>
+    <p>The orbit {1,2,4,8,7,5} has period 6. After 6 GNN layers on the orbit graph, the identity is recovered. The orbit is <em>one step longer</em> than the diameter — it propagates fully in 5, then returns to itself at 6. The extra step is the return.</p>
+
+    <hr>
+
+    <h2>One Automorphic Orbit — the Narcissus Property</h2>
+    <p>The symmetry group of C₆₀ is the icosahedral group I<sub>h</sub>, order 120. This group acts transitively on all 60 carbon atoms: given any two atoms, there is a symmetry rotation that maps one to the other. There is exactly one orbit of vertices under the automorphism group.</p>
+    <p>This means every atom IS every other atom. GNN message passing on C₆₀ has no distinguished nodes — the topology alone carries all the information. This is the Narcissus property at molecular scale: the graph looks identical from every vertex. The network sees only itself.</p>
+    <p>This is the same property the Narcissus PoC exploited: an orbit-structured permutation that makes every position equivalent forces the network to learn from structure alone.</p>
+
+    <hr>
+
+    <h2>Onion Fullerenes — the Nested Rings Made Physical</h2>
+    <p>C₆₀ can be nested inside larger fullerene cages: C₆₀ ⊂ C₂₄₀ ⊂ C₅₄₀ ⊂ C₉₆₀ &hellip; These are the <em>onion fullerenes</em> — each outer shell has the same icosahedral symmetry, at a larger scale.</p>
+    <p>The atom counts follow 60×n² for n = 1, 2, 3, 4. Radii scale as √n: the n=2 shell has √2 ≈ 1.41× the radius of C₆₀, and n=3 gives √3 ≈ 1.73×.</p>
+    <p>The GNN MIRROR scene showed three nested copies of the orbit ring at scales 1, ⅓, ¹⁄₉ — self-similar directed cycles at decreasing radii, with the same structure at every level. The onion fullerenes are the physical realization of that nested structure: the same icosahedral directed graph at each scale, carbon atoms where the orbit nodes would be.</p>
+    <p><strong>|I<sub>h</sub>| = 120 = 20 × 6.</strong> Twenty hexagonal faces, six-step orbit period. The symmetry group order factors as the product of the two key numbers in this visualization.</p>
   </article>
 </div>
 
