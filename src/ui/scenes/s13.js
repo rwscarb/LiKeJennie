@@ -217,17 +217,7 @@ export function buildS13() {
   // ── Pulse: outer ring only; inner scales use edge highlighting ──
   const outerPulse = mkPulse(scene, C_ORBIT, 0.15);
 
-  // ── Layer counter label ──
-  const layerDiv = document.createElement('div');
-  layerDiv.style.cssText = [
-    `font-family:'Courier New',monospace;font-size:20px;font-weight:bold;text-align:center`,
-    `color:${CS_LAYER};letter-spacing:.12em;text-shadow:0 0 10px ${CS_LAYER}`,
-    `pointer-events:none;user-select:none`,
-  ].join(';');
-  const layerLbl = new CSS2DObject(layerDiv);
-  layerLbl.position.set(0, -0.55, 0);
-  scene.add(layerLbl);
-  R.css2dObjects.push(layerLbl);
+  // Layer counter lives in the HUD overlay (updated each frame via getElementById)
 
   // ── Mirror flash label ──
   const mirrorDiv = document.createElement('div');
@@ -251,7 +241,10 @@ export function buildS13() {
       `<span style="color:#00ff88;opacity:.5">·</span> each ring = ×⅓ of previous<br>` +
       `<span style="color:#888">·</span> same directed 6-cycle at every scale` +
     `</div>` +
-    `<div style="color:#1a3a2a;font-size:11px;margin-top:6px">each layer = one ×2 mod 9 step</div>`;
+    `<div style="color:#1a3a2a;font-size:11px;margin-top:6px">each layer = one ×2 mod 9 step</div>` +
+    `<div style="margin-top:8px;padding-top:6px;border-top:1px solid #0d2a1a">` +
+      `<span id="s13_layer" style="font-family:'Courier New',monospace;font-size:18px;font-weight:bold;color:${CS_LAYER};letter-spacing:.12em;text-shadow:0 0 8px ${CS_LAYER}">LAYER 1</span>` +
+    `</div>`;
 
   // ── Animation ──
   const TRAVEL = 0.50, DWELL = 1.4, STEP = TRAVEL + DWELL;
@@ -302,7 +295,10 @@ export function buildS13() {
       ? Math.min(mirrorAlpha + dt * 1.8, 1.0)
       : Math.max(mirrorAlpha - dt * 0.9, 0.0);
     mirrorDiv.style.opacity = mirrorAlpha.toFixed(3);
-    layerDiv.textContent    = isReturn ? 'L6 → L0' : `LAYER ${oStep + 1}`;
-    layerDiv.style.opacity  = isReturn ? '1' : '0.70';
+    const layerEl = document.getElementById('s13_layer');
+    if (layerEl) {
+      layerEl.textContent = isReturn ? 'L6 → L0' : `LAYER ${oStep + 1}`;
+      layerEl.style.opacity = isReturn ? '1' : '0.70';
+    }
   };
 }
