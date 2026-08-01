@@ -5,7 +5,7 @@ import { scenes } from './scenes/index.js';
 import { cur, goTo } from './lib/state.js';
 import {
   THREE, CSS2DRenderer,
-  R, disposeScene, resetTip,
+  R, disposeScene, resetTip, pinTip,
 } from './scenes/shared.js';
 import { setS12Mode } from './scenes/s12.js';
 
@@ -385,7 +385,7 @@ afterUpdate(() => {
 <div class="pw" id="panelwrap" bind:this={panelwrap}>
   <div id="tt" bind:this={tt}></div>
   <div class="canvaswrap" bind:this={labelHost}>
-    <canvas id="glc" bind:this={glc}></canvas>
+    <canvas id="glc" bind:this={glc} on:click={e => pinTip(e)}></canvas>
     <div id="camCoords" bind:this={camCoords}></div>
     <div class="ov" bind:this={ov}></div>
     <div id="clkDisplay" bind:this={clkDisplay}></div>
