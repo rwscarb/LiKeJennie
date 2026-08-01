@@ -185,7 +185,7 @@ onMount(async () => {
     const tgt = R.controls?.target   ?? {x:0,y:0,z:0};
     const sliders = {}; _SKEYS.forEach(k => { const el = document.getElementById(`p8_${k}`); sliders[k] = el?.value ?? _SRANGE[k][0]; });
     const flags = {};
-    for (const id of ['inv','shade','comp']) { const btn = document.getElementById(`p8${id}`); flags[id] = btn?.classList.contains('lit') ?? false; }
+    for (const id of ['shade','comp']) { const btn = document.getElementById(`p8${id}`); flags[id] = btn?.classList.contains('lit') ?? false; }
     const v = packState(R.cur, pos, tgt, sliders, flags);
     const url = `${location.origin}${location.pathname}?v=${v}`;
     navigator.clipboard.writeText(url).then(() => {
@@ -372,7 +372,6 @@ afterUpdate(() => {
       <button class="btn" id="p8v_fibo">ORBIT</button>
       <input type="text" id="p8msg" maxlength="21" placeholder="encode · 21 chars" style="font-family:monospace;font-size:.52rem;background:#020c08;border:1px solid #1a3a2a;color:#00ffcc;padding:2px 5px;border-radius:2px;width:108px;letter-spacing:.06em" spellcheck="false">
       <button class="btn" id="p8men">MENISCUS</button>
-      <button class="btn" id="p8inv">INVERSION</button>
       <button class="btn" id="p8shade">SHADING</button>
       <button class="btn" id="p8oliver">OLIVER 42</button>
       <button class="btn" id="p8wave">WAVE</button>

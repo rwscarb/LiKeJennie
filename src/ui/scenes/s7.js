@@ -105,15 +105,11 @@ export function buildS7() {
   const rungData    = []; // { attr, arr, mat, s }
   const nilRingData = []; // { attr, arr, s, N }
 
-  let showInversion = false;
   let showShading   = false;
   let showDecimal   = true;
   let showGreek     = false;
   let showOliver    = false;
 
-  const invMeshes    = []; // { mesh, s } — strand A positions, counter-phase Y
-  const invLabelData = []; // { lbl, val, bt, cs, s }
-  const invLineData  = []; // { attr, arr, s, line }
 
   // ── Build one helix strand ───────────────────────────────────────────────
   const buildStrand = (φ, isEcho) => {
@@ -230,64 +226,9 @@ export function buildS7() {
   R.disposables.push(envGeo, envMat);
   scene.add(new THREE.Line(envGeo, envMat));
 
-  // ── Driver helix (inverse) — grows downward from clock base (y=-2) ─────────
-  // Colored amber to represent 13 / {2,4,7} as external driver (Wife's framing).
-  const DRIV_C  = 0xC08800;
   const CLK_R   = 2.6;  // hoisted — also used in clock section below
-  const CLK_GAP = 1.0;  // gap between clock face and each helix (main above, driver below)
+  const CLK_GAP = 1.0;
   const CLK_Y   = -CLK_GAP; // clock base world Y
-  const INV_Y0  = CLK_Y - CLK_GAP; // driver helix origin — same gap below clock as main helix above
-  for (let s = 0; s < STEPS; s++) {
-    const val = ORBIT[s % M];
-
-    const geo = new THREE.SphereGeometry(0.11, 14, 9);
-    const mat = new THREE.MeshPhongMaterial({
-      color: DRIV_C, emissive: DRIV_C, emissiveIntensity: 0.28,
-      transparent: true, opacity: 0.60, shininess: 80,
-    });
-    R.disposables.push(geo, mat);
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(nodeX(s, 0, rotA), INV_Y0 - baseY(s), nodeZ(s, 0, rotA));
-    mesh.visible = false;
-    mesh.userData = { s, baseEI: 0.28 };
-    scene.add(mesh);
-    invMeshes.push(mesh);
-
-    const div = document.createElement('div');
-    div.className = 'node-lbl';
-    div.textContent = String(val);
-    div.style.cssText = 'font-size:10px;color:#C08800;opacity:0.72;letter-spacing:.02em;';
-    const lbl = new CSS2DObject(div);
-    lbl.visible = false;
-    scene.add(lbl);
-    R.css2dObjects.push(lbl);
-    invLabelData.push({ lbl, val, bt: BT[val], cs: '#C08800', s });
-
-    // Spine line: main node above → through clock → driver node below
-    const pArr  = new Float32Array(6);
-    const pGeo  = new THREE.BufferGeometry();
-    const pAttr = new THREE.BufferAttribute(pArr, 3);
-    pAttr.setUsage(THREE.DynamicDrawUsage);
-    pGeo.setAttribute('position', pAttr);
-    const pMat  = new THREE.LineBasicMaterial({ color: DRIV_C, transparent: true, opacity: 0.18 });
-    R.disposables.push(pGeo, pMat);
-    const pLine = new THREE.Line(pGeo, pMat);
-    pLine.visible = false;
-    scene.add(pLine);
-    invLineData.push({ attr: pAttr, arr: pArr, s, line: pLine });
-  }
-
-  // Driver backbone
-  const invBBArr  = new Float32Array(STEPS * 3);
-  const invBBGeo  = new THREE.BufferGeometry();
-  const invBBAttr = new THREE.BufferAttribute(invBBArr, 3);
-  invBBAttr.setUsage(THREE.DynamicDrawUsage);
-  invBBGeo.setAttribute('position', invBBAttr);
-  const invBBMat = new THREE.LineBasicMaterial({ color: DRIV_C, transparent: true, opacity: 0.28 });
-  R.disposables.push(invBBGeo, invBBMat);
-  const invBackbone = new THREE.Line(invBBGeo, invBBMat);
-  invBackbone.visible = false;
-  scene.add(invBackbone);
 
   // Anchor ring at step 20 (F₈ = count 21)
   const ANCHOR_S = STEPS - 1;
@@ -305,7 +246,7 @@ export function buildS7() {
   const ancMat  = new THREE.LineBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.65 });
   R.disposables.push(ancGeo, ancMat);
   const anchorLine = new THREE.Line(ancGeo, ancMat);
-  anchorLine.visible = false;
+  anchorLine.visible = true;
   scene.add(anchorLine);
 
   // ── Meniscus — curved surface at clock level, dipping toward driver ─────────
@@ -636,7 +577,9 @@ export function buildS7() {
   const olvNode3Pos = olvPt(0);        // (0, OLV_Y+OLV_DOME, 0) — top
   const olvNode6Pos = olvPt(Math.PI);  // (0, OLV_Y-OLV_DOME, 0) — bottom
   const olvNode3    = makeOlvNode(olvNode3Pos, OLV_C3);
+  Object.assign(olvNode3.userData, { olvType: 'apex', olvVal: 3 });
   const olvNode6    = makeOlvNode(olvNode6Pos, OLV_C6);
+  Object.assign(olvNode6.userData, { olvType: 'apex', olvVal: 6 });
 
   // Bridge — prominent horizontal ring at CLK_Y (the absent 9, void at the waist)
   const olvBridgeGeo = new THREE.TorusGeometry(OLV_A * 0.62, 0.085, 8, 48);
@@ -760,6 +703,7 @@ export function buildS7() {
     R.disposables.push(geo, mat);
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(nodeX(s, 0, rotA), compY(s), nodeZ(s, 0, rotA));
+    mesh.userData = { baseEI: 0.35, olvType: 'comp', olvVal: val, olvS: s };
     mesh.visible = false;
     scene.add(mesh);
     compMeshes.push(mesh);
@@ -774,6 +718,9 @@ export function buildS7() {
     R.css2dObjects.push(lbl);
     compLbls.push(lbl);
   }
+
+  const oliverHoverMeshes = [olvNode3, olvNode6, ...compMeshes];
+  let   lastOlvHl         = -1;
 
   const olvAllObjs = [olvUpper, olvLower, olvChamber3, olvChamber6, olvNode3, olvNode6,
                       olvBridge, olvTrav, olvTailLine, olvLbl3, olvLbl6, olvLblVoid,
@@ -840,41 +787,15 @@ export function buildS7() {
 
   let showMeniscus = false;
 
-  const setInvVisible = v => {
-    invMeshes.forEach(m => { m.visible = v; });
-    invLabelData.forEach(({ lbl }) => { lbl.visible = v; });
-    invLineData.forEach(({ line }) => { line.visible = v; });
-    invBackbone.visible = v;
-    anchorLine.visible  = v;
-    if (v && showMeniscus) menMesh.visible = true;
-    else if (!v) menMesh.visible = showMeniscus;
-  };
-
   const setMeniscus = on => {
     showMeniscus = on;
     menMesh.visible = on;
     document.getElementById('p8men').classList.toggle('lit', on);
   };
 
-  document.getElementById('p8inv').onclick = () => {
-    showInversion = !showInversion;
-    document.getElementById('p8inv').classList.toggle('lit', showInversion);
-    setInvVisible(showInversion);
-    if (!showInversion && showShading) {
-      showShading = false;
-      document.getElementById('p8shade').classList.remove('lit');
-      shadeMesh.visible = false;
-    }
-  };
-
   document.getElementById('p8shade').onclick = () => {
     showShading = !showShading;
     document.getElementById('p8shade').classList.toggle('lit', showShading);
-    if (showShading && !showInversion) {
-      showInversion = true;
-      document.getElementById('p8inv').classList.add('lit');
-      setInvVisible(true);
-    }
     shadeMesh.visible = showShading;
   };
 
@@ -1133,19 +1054,26 @@ export function buildS7() {
     mouse.x =  ((e.clientX - rect.left) / rect.width)  * 2 - 1;
     mouse.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
     raycaster.setFromCamera(mouse, camera);
+
+    // Main helix nodes
     const hits = raycaster.intersectObjects(allMeshes);
     const idx  = hits.length > 0 ? allMeshes.indexOf(hits[0].object) : -1;
-
     if (idx !== lastHl) {
-      if (lastHl >= 0) {
-        allMeshes[lastHl].material.emissiveIntensity = allMeshes[lastHl].userData.baseEI;
-        allMeshes[lastHl].scale.setScalar(1);
-      }
-      if (idx >= 0) {
-        allMeshes[idx].material.emissiveIntensity = 0.95;
-        allMeshes[idx].scale.setScalar(2.2);
-      }
+      if (lastHl >= 0) { allMeshes[lastHl].material.emissiveIntensity = allMeshes[lastHl].userData.baseEI; allMeshes[lastHl].scale.setScalar(1); }
+      if (idx >= 0)    { allMeshes[idx].material.emissiveIntensity = 0.95; allMeshes[idx].scale.setScalar(2.2); }
       lastHl = idx;
+    }
+
+    // Oliver 42 nodes (only when visible)
+    let olvHl = -1;
+    if (showOliver) {
+      const olvHits = raycaster.intersectObjects(oliverHoverMeshes);
+      olvHl = olvHits.length > 0 ? oliverHoverMeshes.indexOf(olvHits[0].object) : -1;
+    }
+    if (lastOlvHl !== olvHl) {
+      if (lastOlvHl >= 0) { oliverHoverMeshes[lastOlvHl].material.emissiveIntensity = oliverHoverMeshes[lastOlvHl].userData.baseEI; oliverHoverMeshes[lastOlvHl].scale.setScalar(1); }
+      if (olvHl >= 0)     { oliverHoverMeshes[olvHl].material.emissiveIntensity = 1.2; oliverHoverMeshes[olvHl].scale.setScalar(1.8); }
+      lastOlvHl = olvHl;
     }
 
     if (idx >= 0) {
@@ -1164,6 +1092,25 @@ export function buildS7() {
       tip(e, h);
       statEl.textContent = `${val} [${bt}]`;
       tmv(e);
+    } else if (olvHl >= 0) {
+      const om = oliverHoverMeshes[olvHl];
+      const { olvType, olvVal, olvS } = om.userData;
+      const cs = olvVal === 3 ? OLV_CS3 : OLV_CS6;
+      let h = `<div class="th" style="color:${cs}">${olvVal}</div>`;
+      h += `<p class="tr">BT: <b>${toBT(olvVal)}</b></p>`;
+      if (olvType === 'apex') {
+        const gates = ORBIT.filter(v => (v * 3) % 9 === olvVal);
+        h += `<p class="tr">×3 mod 9 → <b>${olvVal}</b></p>`;
+        h += `<p class="tr" style="color:#888aaa">orbit: {${gates.join(', ')}} × 3</p>`;
+      } else {
+        const orbitVal = ORBIT[olvS % M];
+        h += `<p class="tr">step ${olvS} · orbit[${olvS % M}] = <b>${orbitVal}</b></p>`;
+        h += `<p class="tr">${orbitVal} × 3 = <b>${olvVal}</b> (mod 9)</p>`;
+      }
+      h += `<p class="tr" style="color:#888aaa">complement · {3,6} under ×2 mod 9</p>`;
+      tip(e, h);
+      statEl.textContent = String(olvVal);
+      tmv(e);
     } else {
       htip();
       statEl.textContent = '';
@@ -1176,6 +1123,11 @@ export function buildS7() {
       allMeshes[lastHl].scale.setScalar(1);
     }
     lastHl = -1;
+    if (lastOlvHl >= 0) {
+      oliverHoverMeshes[lastOlvHl].material.emissiveIntensity = oliverHoverMeshes[lastOlvHl].userData.baseEI;
+      oliverHoverMeshes[lastOlvHl].scale.setScalar(1);
+    }
+    lastOlvHl = -1;
     htip();
   });
 
@@ -1277,51 +1229,18 @@ export function buildS7() {
     envAttr.needsUpdate = true;
     if (showSpec) { drawSpec(t); updateDecoder(); }
 
-    // ── Driver helix updates (inverse, below clock) ───────────────────────
-    if (showInversion) {
-      invMeshes.forEach(m => {
-        const s = m.userData.s;
-        m.position.x = nodeX(s, 0, rotA);
-        m.position.y = INV_Y0 - baseY(s) * breathInv;
-        m.position.z = nodeZ(s, 0, rotA);
-        m.material.emissiveIntensity = m.userData.baseEI
-          + 0.12 * Math.abs(Math.sin(t * 1.1 + s * 0.42 + Math.PI));
-      });
-
-      invLabelData.forEach(l => {
-        const { lx, lz } = labelEnd(l.s, 0, rotA, LEADER_INV);
-        l.lbl.position.set(lx, INV_Y0 - baseY(l.s) * breathInv - 0.10, lz);
-        l.lbl.element.textContent = nodeLabel(l);
-      });
-
-      invLineData.forEach(({ attr, arr, s }) => {
-        const x = nodeX(s, 0, rotA), z = nodeZ(s, 0, rotA);
-        arr[0] = x; arr[1] = baseY(s) * breath;           arr[2] = z; // main (above)
-        arr[3] = x; arr[4] = INV_Y0 - baseY(s) * breathInv; arr[5] = z; // driver (below)
-        attr.needsUpdate = true;
-      });
-
-      for (let s = 0; s < STEPS; s++) {
-        invBBArr[s * 3]     = nodeX(s, 0, rotA);
-        invBBArr[s * 3 + 1] = INV_Y0 - baseY(s) * breathInv;
-        invBBArr[s * 3 + 2] = nodeZ(s, 0, rotA);
-      }
-      invBBAttr.needsUpdate = true;
-
-      const ancRcur = helixR(ANCHOR_S) + 0.55;
-      const ancY    = CLK_Y; // gold ring sits at clock level — the dividing boundary
+    // ── Anchor ring — always-on gold ring at F₈ step (step 20 = count 21) ─────
+    { const ancRcur = helixR(ANCHOR_S) + 0.55;
       for (let i = 0; i <= ancN; i++) {
         const θ = (i / ancN) * Math.PI * 2;
         ancArr[i * 3]     = ancRcur * Math.cos(θ);
-        ancArr[i * 3 + 1] = ancY;
+        ancArr[i * 3 + 1] = CLK_Y;
         ancArr[i * 3 + 2] = ancRcur * Math.sin(θ);
       }
       ancAttr.needsUpdate = true;
       ancMat.opacity = 0.45 + 0.25 * Math.abs(Math.sin(t * 0.5 + Math.PI));
-
-      // Meniscus dips deeper as driver breathes out (breathInv at max)
-      updateMeniscus(MEN_DIP * breathInv);
     }
+    if (showMeniscus) updateMeniscus(MEN_DIP * breathInv);
 
     // ── Shading membrane ──────────────────────────────────────────────────
     if (showShading) {
