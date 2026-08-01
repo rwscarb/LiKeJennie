@@ -83,6 +83,7 @@ btn, .btn {
   grid-template-rows:repeat(6,var(--cell-h,28px));
   grid-template-columns:repeat(16,1fr);
   gap:2px;
+  user-select:none;
 }
 .seq-cell {
   border-radius:2px; cursor:pointer;
@@ -295,11 +296,24 @@ for (let r=0; r<ROWS; r++) {
     cell.className='seq-cell';
     cell.style.setProperty('--on-col', stepColor(r,.55));
     cell.dataset.r=r; cell.dataset.s=s;
-    cell.addEventListener('click',()=>{ grid[r][s]=!grid[r][s]; renderGrid(); });
+    cell.addEventListener('mousedown', e => {
+      if (e.button !== 0) return;
+      paintState = !grid[r][s];
+      painting = true;
+      grid[r][s] = paintState; renderGrid();
+    });
+    cell.addEventListener('mouseover', () => {
+      if (!painting) return;
+      grid[r][s] = paintState; renderGrid();
+    });
     seqGrid.appendChild(cell);
     cells[r].push(cell);
   }
 }
+
+let painting = false, paintState = false;
+document.addEventListener('mouseup', () => { painting = false; });
+document.addEventListener('mouseleave', () => { painting = false; });
 
 function renderGrid() {
   for (let r=0; r<ROWS; r++)
