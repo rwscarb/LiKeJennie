@@ -508,29 +508,66 @@ export function buildS7() {
     );
   }
 
-  const OLV_SEGS = 256, OLV_HALF = OLV_SEGS / 2;
-  const olvUpperPts = [], olvLowerPts = [];
-  for (let i = 0; i <= OLV_HALF; i++) {
-    olvUpperPts.push(olvPt(-Math.PI / 2 + (i / OLV_HALF) * Math.PI)); // t: -π/2→π/2  (upper, node 3)
-    olvLowerPts.push(olvPt( Math.PI / 2 + (i / OLV_HALF) * Math.PI)); // t:  π/2→3π/2 (lower, node 6)
-  }
-
-  const makeLemTube = (pts, color) => {
-    const curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.5);
-    const geo   = new THREE.TubeGeometry(curve, OLV_HALF, 0.052, 6, false);
-    const mat   = new THREE.MeshPhongMaterial({
-      color, emissive: color, emissiveIntensity: 0.35,
-      transparent: true, opacity: 0.78, shininess: 60,
+  // Möbius lemniscate — full 2π path with a half-twist baked in.
+  // The cross-section rotates 180° over one traversal: inside of the upper chamber
+  // connects to the outside of the lower chamber — no boundary, just the void at 9.
+  const OLV_SEGS = 256;
+  const OLV_RSEG = 8;
+  let olvMobius;
+  {
+    const nV  = (OLV_SEGS + 1) * (OLV_RSEG + 1);
+    const pos = new Float32Array(nV * 3);
+    const col = new Float32Array(nV * 3);
+    const idx = [];
+    const c3  = new THREE.Color(OLV_C3), c6 = new THREE.Color(OLV_C6), tc = new THREE.Color();
+    let vi = 0;
+    for (let i = 0; i <= OLV_SEGS; i++) {
+      const t   = (i / OLV_SEGS) * Math.PI * 2;
+      const pt  = olvPt(t);
+      const pt1 = olvPt(t + Math.PI * 2 / OLV_SEGS);
+      const tang = new THREE.Vector3().subVectors(pt1, pt);
+      if (tang.lengthSq() < 1e-10) tang.set(0, 0.001, 0);
+      tang.normalize();
+      let up = new THREE.Vector3(0, 1, 0);
+      if (Math.abs(tang.dot(up)) > 0.98) up.set(1, 0, 0);
+      const right = new THREE.Vector3().crossVectors(tang, up).normalize();
+      const nrm   = new THREE.Vector3().crossVectors(right, tang).normalize();
+      // Möbius half-twist: cross-section rotates π over the full 2π path
+      const cosT = Math.cos(t * 0.5), sinT = Math.sin(t * 0.5);
+      // vertex color: violet at node 3 (t=0), rose at node 6 (t=π), back to violet
+      tc.copy(c3).lerp(c6, 0.5 - 0.5 * Math.cos(t));
+      for (let j = 0; j <= OLV_RSEG; j++) {
+        const phi  = (j / OLV_RSEG) * Math.PI * 2;
+        const cosP = Math.cos(phi), sinP = Math.sin(phi);
+        const ru   = cosP * cosT - sinP * sinT;
+        const rv   = cosP * sinT + sinP * cosT;
+        pos[vi*3]   = pt.x + 0.052 * (ru * nrm.x + rv * right.x);
+        pos[vi*3+1] = pt.y + 0.052 * (ru * nrm.y + rv * right.y);
+        pos[vi*3+2] = pt.z + 0.052 * (ru * nrm.z + rv * right.z);
+        col[vi*3] = tc.r; col[vi*3+1] = tc.g; col[vi*3+2] = tc.b;
+        vi++;
+      }
+    }
+    for (let i = 0; i < OLV_SEGS; i++) {
+      for (let j = 0; j < OLV_RSEG; j++) {
+        const a = i * (OLV_RSEG+1) + j, b = a + (OLV_RSEG+1);
+        idx.push(a, b, a+1, b, b+1, a+1);
+      }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('color',    new THREE.BufferAttribute(col, 3));
+    geo.setIndex(idx);
+    geo.computeVertexNormals();
+    const mat = new THREE.MeshPhongMaterial({
+      vertexColors: true, emissive: new THREE.Color(0x220033), emissiveIntensity: 0.28,
+      transparent: true, opacity: 0.78, shininess: 60, side: THREE.DoubleSide,
     });
     R.disposables.push(geo, mat);
-    const m = new THREE.Mesh(geo, mat);
-    m.visible = false;
-    scene.add(m);
-    return m;
-  };
-
-  const olvUpper = makeLemTube(olvUpperPts, OLV_C3);  // node 3 (upper, violet)
-  const olvLower = makeLemTube(olvLowerPts, OLV_C6);  // node 6 (lower, rose)
+    olvMobius = new THREE.Mesh(geo, mat);
+    olvMobius.visible = false;
+    scene.add(olvMobius);
+  }
 
   // Outer resonant chamber walls — truncated cones (frustums) meeting at the bridge.
   // Upper: wide at top, narrow at bridge. Lower: narrow at bridge, wide at bottom.
@@ -719,13 +756,86 @@ export function buildS7() {
     compLbls.push(lbl);
   }
 
-  const oliverHoverMeshes = [olvNode3, olvNode6, ...compMeshes];
+  // Complement helix Strand B — second {6,3} strand at φ=π (phase-shifted by half revolution).
+  // Mirrors the double-helix structure of jennie21: the two complement strands interweave.
+  const compMeshesB = [];
+  const compLblsB   = [];
+
+  const compBBBArr  = new Float32Array(STEPS * 3);
+  const compBBBGeo  = new THREE.BufferGeometry();
+  const compBBBAttr = new THREE.BufferAttribute(compBBBArr, 3);
+  compBBBAttr.setUsage(THREE.DynamicDrawUsage);
+  compBBBGeo.setAttribute('position', compBBBAttr);
+  const compBBBMat  = new THREE.LineBasicMaterial({ color: 0xff44cc, transparent: true, opacity: 0.28 });
+  R.disposables.push(compBBBGeo, compBBBMat);
+  const compBackboneB = new THREE.Line(compBBBGeo, compBBBMat);
+  compBackboneB.visible = false;
+  scene.add(compBackboneB);
+
+  // Rungs connecting Strand A ↔ Strand B of complement (internal double-helix rungs)
+  const compRungsABArr  = new Float32Array(STEPS * 6);
+  const compRungsABGeo  = new THREE.BufferGeometry();
+  const compRungsABAttr = new THREE.BufferAttribute(compRungsABArr, 3);
+  compRungsABAttr.setUsage(THREE.DynamicDrawUsage);
+  compRungsABGeo.setAttribute('position', compRungsABAttr);
+  const compRungsABMat  = new THREE.LineBasicMaterial({ color: 0x882299, transparent: true, opacity: 0.20 });
+  R.disposables.push(compRungsABGeo, compRungsABMat);
+  const compRungsAB = new THREE.LineSegments(compRungsABGeo, compRungsABMat);
+  compRungsAB.visible = false;
+  scene.add(compRungsAB);
+
+  for (let s = 0; s < STEPS; s++) {
+    const val = COMP_SEQ[(s + 1) % 2]; // phase-shifted: starts on 6
+    const col = val === 3 ? OLV_C3 : OLV_C6;
+    const cs  = val === 3 ? OLV_CS3 : OLV_CS6;
+    const geo = new THREE.SphereGeometry(0.10, 14, 9);
+    const mat = new THREE.MeshPhongMaterial({
+      color: col, emissive: col, emissiveIntensity: 0.28,
+      transparent: true, opacity: 0.62, shininess: 70,
+    });
+    R.disposables.push(geo, mat);
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(nodeX(s, Math.PI, rotA), compY(s), nodeZ(s, Math.PI, rotA));
+    mesh.userData = { baseEI: 0.28, olvType: 'compB', olvVal: val, olvS: s };
+    mesh.visible = false;
+    scene.add(mesh);
+    compMeshesB.push(mesh);
+
+    const div = document.createElement('div');
+    div.className = 'node-lbl';
+    div.textContent = String(val);
+    div.style.cssText = `font-size:10px;color:${cs};opacity:0.60;`;
+    const lbl = new CSS2DObject(div);
+    lbl.visible = false;
+    scene.add(lbl);
+    R.css2dObjects.push(lbl);
+    compLblsB.push(lbl);
+  }
+
+  // 640 axis — central vertical spine running through the full structure.
+  // 640 (dr=1) is the anti-matter ground: 640×3→dr=3, 896×3→dr=6; ×3/2 is the bridge ratio.
+  const olv640TopY = baseY(STEPS - 1) + 1.2;
+  const olv640BotY = CLK_Y - (STEPS - 1) * H_STEP - 1.2;
+  const olv640Geo  = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0, olv640BotY, 0),
+    new THREE.Vector3(0, olv640TopY, 0),
+  ]);
+  const olv640Mat  = new THREE.LineBasicMaterial({ color: 0x440066, transparent: true, opacity: 0.20 });
+  R.disposables.push(olv640Geo, olv640Mat);
+  const olv640Line = new THREE.Line(olv640Geo, olv640Mat);
+  olv640Line.visible = false;
+  scene.add(olv640Line);
+  const olv640Lbl = makeOlvLbl('640', new THREE.Vector3(0.38, OLV_Y + 0.60, 0), '#660088', '12px');
+
+  const oliverHoverMeshes = [olvNode3, olvNode6, ...compMeshes, ...compMeshesB];
   let   lastOlvHl         = -1;
 
-  const olvAllObjs = [olvUpper, olvLower, olvChamber3, olvChamber6, olvNode3, olvNode6,
+  const olvAllObjs = [olvMobius, olvChamber3, olvChamber6, olvNode3, olvNode6,
                       olvBridge, olvTrav, olvTailLine, olvLbl3, olvLbl6, olvLblVoid,
                       olvStr1, olvStr2, olvStr3,
-                      compBackbone, compRungs, ...compMeshes, ...compLbls];
+                      compBackbone, compRungs, ...compMeshes, ...compLbls,
+                      compBackboneB, compRungsAB, ...compMeshesB, ...compLblsB,
+                      olv640Line, olv640Lbl];
   const setOliver = on => {
     showOliver = on;
     olvAllObjs.forEach(o => { o.visible = on; });
@@ -1335,22 +1445,40 @@ export function buildS7() {
       olvTailAttr.needsUpdate = true;
       olvTailGeo.setDrawRange(0, olvTailHistory.length);
 
-      // Complement helix: positions follow rotA (same angular alignment as Strand A)
+      // Complement helix Strand A + B: positions follow rotA
       for (let s = 0; s < STEPS; s++) {
-        const cx = nodeX(s, 0, rotA), cz = nodeZ(s, 0, rotA), cy = compY(s);
+        const cx  = nodeX(s, 0,        rotA), cz  = nodeZ(s, 0,        rotA), cy = compY(s);
+        const cxB = nodeX(s, Math.PI,  rotA), czB = nodeZ(s, Math.PI,  rotA);
+        // Strand A
         compMeshes[s].position.set(cx, cy, cz);
         const { lx, lz } = labelEnd(s, 0, rotA, LEADER);
         compLbls[s].position.set(lx, cy - 0.10, lz);
         compBBArr[s * 3]     = cx;
         compBBArr[s * 3 + 1] = cy;
         compBBArr[s * 3 + 2] = cz;
-        // ×3 rung: orbit node (above) → complement node (below)
+        // ×3 rung: orbit node (above) → Strand A complement node (below)
         const base = s * 6;
         compRungArr[base]     = cx; compRungArr[base + 1] = baseY(s) * breath; compRungArr[base + 2] = cz;
         compRungArr[base + 3] = cx; compRungArr[base + 4] = cy;               compRungArr[base + 5] = cz;
+        // Strand B
+        compMeshesB[s].position.set(cxB, cy, czB);
+        const lb = labelEnd(s, Math.PI, rotA, LEADER);
+        compLblsB[s].position.set(lb.lx, cy - 0.10, lb.lz);
+        compBBBArr[s * 3]     = cxB;
+        compBBBArr[s * 3 + 1] = cy;
+        compBBBArr[s * 3 + 2] = czB;
+        // A↔B rungs
+        compRungsABArr[base]     = cx;  compRungsABArr[base + 1] = cy; compRungsABArr[base + 2] = cz;
+        compRungsABArr[base + 3] = cxB; compRungsABArr[base + 4] = cy; compRungsABArr[base + 5] = czB;
       }
-      compBBAttr.needsUpdate   = true;
-      compRungAttr.needsUpdate = true;
+      compBBAttr.needsUpdate    = true;
+      compRungAttr.needsUpdate  = true;
+      compBBBAttr.needsUpdate   = true;
+      compRungsABAttr.needsUpdate = true;
+      // 640 axis: pulse opacity when wave is active
+      olv640Mat.opacity = showWave
+        ? 0.14 + 0.18 * (0.5 + 0.5 * Math.sin(waveT * 1.5))
+        : 0.20;
     }
 
     R.labelRenderer.render(scene, camera);
