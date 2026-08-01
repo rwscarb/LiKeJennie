@@ -90,7 +90,7 @@ export function buildS13() {
   R.camera = mkCamera();
   R.camera.position.set(0, 7.5, 4.5);
   R.camera.lookAt(0, 0, 0);
-  mkControls();
+  R.controls = mkControls(R.camera);
 
   scene.add(new THREE.AmbientLight(0xffffff, 0.4));
   const dl = new THREE.DirectionalLight(0xffffff, 0.6);
