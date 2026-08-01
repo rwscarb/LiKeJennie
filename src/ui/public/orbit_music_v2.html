@@ -41,7 +41,7 @@ canvas { display:block; }
 .panel {
   background:var(--panel); border-left:1px solid var(--dim);
   display:flex; flex-direction:column; gap:0; overflow-y:hidden;
-  position:relative; width:320px;
+  position:relative; width:680px;
   /* CSS custom properties — updated by resize drag */
   --panel-fs:9px; --cell-h:28px;
 }
@@ -970,9 +970,13 @@ document.getElementById('vizModes').addEventListener('click', function(e){
   resetVizNav();
 });
 
-// Escape → signal parent to navigate back
+// Escape → signal parent to navigate back; Space → play/pause
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') window.parent.postMessage('orbit:back', '*');
+  if (e.key === 'Escape') { window.parent.postMessage('orbit:back', '*'); return; }
+  if (e.key === ' ' && document.activeElement?.tagName !== 'INPUT') {
+    e.preventDefault();
+    document.getElementById('playBtn').click();
+  }
 });
 
 // ── Resizable panel ──────────────────────────────────────────────────────────
@@ -981,10 +985,10 @@ const resizeHdl = document.getElementById('resizeHandle');
 let _rDragging=false, _rStartX=0, _rStartW=320;
 
 function applyPanelWidth(w) {
-  w = Math.round(Math.min(Math.max(260, w), window.innerWidth * 0.65));
+  w = Math.round(Math.min(Math.max(260, w), window.innerWidth * 0.85));
   panelEl.style.width = w + 'px';
-  // Scale: 0 at 260px → 1 at 580px
-  const t = Math.max(0, Math.min(1, (w - 260) / 320));
+  // Scale: 0 at 260px → 1 at 800px
+  const t = Math.max(0, Math.min(1, (w - 260) / 540));
   const fs = (9 + t * 5).toFixed(1);          // 9px → 14px
   const ch = Math.round(28 + t * 14);          // 28px → 42px
   panelEl.style.setProperty('--panel-fs', fs + 'px');
@@ -1026,7 +1030,7 @@ document.addEventListener('touchend', _stopResize);
 // Restore last saved panel width
 try {
   const saved = parseInt(localStorage.getItem('orbitPanelW'));
-  if (saved >= 260) applyPanelWidth(saved);
+  applyPanelWidth(saved >= 260 ? saved : Math.round(window.innerWidth * 0.68));
 } catch(e){}
 
 // Load ZEN preset by default
