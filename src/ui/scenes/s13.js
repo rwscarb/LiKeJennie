@@ -36,6 +36,7 @@ function makeArc(from, to, lift) {
   return pts;
 }
 
+// Returns { lineMat, coneMat } so the caller can animate them
 function addEdge(scene, pts, col, opacity) {
   const g = new THREE.BufferGeometry().setFromPoints(pts);
   const m = new THREE.LineBasicMaterial({ color: col, transparent: true, opacity });
@@ -52,6 +53,7 @@ function addEdge(scene, pts, col, opacity) {
     new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d)
   );
   scene.add(cone);
+  return { lineMat: m, coneMat: cm, baseOpacity: opacity };
 }
 
 function mkPulse(scene, col, r) {
@@ -117,6 +119,7 @@ export function buildS13() {
 
   // ── Build three fractal rings ──
   const allArcs     = [];   // allArcs[si][edgeIdx] = pts[]
+  const allEdgeMats = [];   // allEdgeMats[si][edgeIdx] = { lineMat, coneMat, baseOpacity }
   const allMeshes   = [];   // allMeshes[si][nodeIdx] = {mesh, mat}
 
   for (let si = 0; si < SCALES.length; si++) {
@@ -132,15 +135,17 @@ export function buildS13() {
     scene.add(new THREE.Mesh(rg, rm));
 
     // Edges
-    const arcs = [];
+    const arcs = [], edgeMats = [];
     for (let i = 0; i < ORBIT_SEQ.length; i++) {
       const from = ringPos(i, r);
       const to   = ringPos((i + 1) % ORBIT_SEQ.length, r);
       const pts  = makeArc(from, to, lift);
-      addEdge(scene, pts, C_ORBIT, opacity);
+      const mats = addEdge(scene, pts, C_ORBIT, opacity);
       arcs.push(pts);
+      edgeMats.push(mats);
     }
     allArcs.push(arcs);
+    allEdgeMats.push(edgeMats);
 
     // Nodes
     const meshes = [];
@@ -209,12 +214,8 @@ export function buildS13() {
     R.css2dObjects.push(lbl);
   }
 
-  // ── Pulses: one per scale ──
-  const pulses = [
-    mkPulse(scene, C_ORBIT, 0.15),   // outer
-    mkPulse(scene, C_ORBIT, 0.060),  // mid
-    mkPulse(scene, C_ORBIT, 0.024),  // inner
-  ];
+  // ── Pulse: outer ring only; inner scales use edge highlighting ──
+  const outerPulse = mkPulse(scene, C_ORBIT, 0.15);
 
   // ── Layer counter label ──
   const layerDiv = document.createElement('div');
@@ -269,11 +270,21 @@ export function buildS13() {
     const oPct  = Math.min(oFrac / tFrac, 1.0);
     const interp = oFrac < tFrac ? easeInOut(oPct) : 1.0;
 
-    // Move all three scale pulses in sync along their respective rings
-    for (let si = 0; si < SCALES.length; si++) {
-      const pos = arcLerp(allArcs[si][oStep], interp);
-      pulses[si].mesh.position.copy(pos);
-      pulses[si].glow.position.copy(pos);
+    // Outer ring: sphere+glow pulse
+    const outerPos = arcLerp(allArcs[0][oStep], interp);
+    outerPulse.mesh.position.copy(outerPos);
+    outerPulse.glow.position.copy(outerPos);
+
+    // Inner two scales: edge highlight — active arc brightens to white, others dim
+    for (const si of [1, 2]) {
+      for (let i = 0; i < ORBIT_SEQ.length; i++) {
+        const { lineMat, coneMat, baseOpacity } = allEdgeMats[si][i];
+        const active = (i === oStep);
+        lineMat.color.setHex(active ? 0xffffff : C_ORBIT);
+        lineMat.opacity = active ? 0.85 : baseOpacity * 0.6;
+        coneMat.color.setHex(active ? 0xffffff : C_ORBIT);
+        coneMat.opacity = active ? 0.90 : Math.min(baseOpacity * 1.0, 0.35);
+      }
     }
 
     // Highlight active node at all three scales
