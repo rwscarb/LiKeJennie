@@ -1627,4 +1627,9 @@ export function buildS7() {
 
     R.labelRenderer.render(scene, camera);
   };
+
+  // Default state: OLIVER42 + WAVE + COLLAPSE on at load
+  setOliver(true);
+  showWave     = true; document.getElementById('p8wave')?.classList.add('lit');
+  showCollapse = true; document.getElementById('p8collapse')?.classList.add('lit');
 }

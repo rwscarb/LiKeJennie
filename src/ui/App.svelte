@@ -429,7 +429,7 @@ afterUpdate(() => {
       <input type="text" id="p8msg" maxlength="21" placeholder="encode · 21 chars" style="font-family:monospace;font-size:.52rem;background:#020c08;border:1px solid #1a3a2a;color:#00ffcc;padding:2px 5px;border-radius:2px;width:108px;letter-spacing:.06em" spellcheck="false">
       <button class="btn" id="p8men">MENISCUS</button>
       <button class="btn" id="p8shade">SHADING</button>
-      <button class="btn" id="p8oliver">OLIVER 42</button>
+      <button class="btn" id="p8oliver">OLIVER42</button>
       <button class="btn" id="p8wave">WAVE</button>
       <button class="btn" id="p8collapse">COLLAPSE</button>
       <span class="clbl">A</span>
