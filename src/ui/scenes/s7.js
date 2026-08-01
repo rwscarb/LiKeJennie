@@ -514,7 +514,7 @@ export function buildS7() {
   // At t=2π the ribbon's "top" edge meets the "bottom" edge of t=0 — one surface, no boundary.
   const OLV_SEGS = 256;
   const OLV_W    = 0.28;  // ribbon half-width (full width = 0.56)
-  let olvMobius;
+  let olvMobius, olvEdge3, olvEdge6;
   {
     const nV  = (OLV_SEGS + 1) * 2; // two edges: top (even indices) + bottom (odd indices)
     const pos = new Float32Array(nV * 3);
@@ -563,6 +563,26 @@ export function buildS7() {
     olvMobius = new THREE.Mesh(geo, mat);
     olvMobius.visible = false;
     scene.add(olvMobius);
+
+    // Edge lines: trace the top and bottom ribbon edges with bright colored lines.
+    // These are ALWAYS visible regardless of viewing angle and make the half-twist
+    // explicit — watch the violet/rose line swap from "top" to "bottom" as it orbits.
+    const edgePts3 = [], edgePts6 = [];
+    for (let i = 0; i <= OLV_SEGS; i++) {
+      edgePts3.push(new THREE.Vector3(pos[i*6],   pos[i*6+1],   pos[i*6+2]));   // top edge
+      edgePts6.push(new THREE.Vector3(pos[i*6+3], pos[i*6+4],   pos[i*6+5]));   // bottom edge
+    }
+    const makeEdge = (pts, color) => {
+      const eg  = new THREE.BufferGeometry().setFromPoints(pts);
+      const em  = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.90 });
+      R.disposables.push(eg, em);
+      const el  = new THREE.Line(eg, em);
+      el.visible = false;
+      scene.add(el);
+      return el;
+    };
+    olvEdge3 = makeEdge(edgePts3, OLV_C3);   // violet edge (node 3 side)
+    olvEdge6 = makeEdge(edgePts6, OLV_C6);   // rose edge   (node 6 side)
   }
 
   // Outer resonant chamber walls — truncated cones (frustums) meeting at the bridge.
@@ -826,7 +846,7 @@ export function buildS7() {
   const oliverHoverMeshes = [olvNode3, olvNode6, ...compMeshes, ...compMeshesB];
   let   lastOlvHl         = -1;
 
-  const olvAllObjs = [olvMobius, olvChamber3, olvChamber6, olvNode3, olvNode6,
+  const olvAllObjs = [olvMobius, olvEdge3, olvEdge6, olvChamber3, olvChamber6, olvNode3, olvNode6,
                       olvBridge, olvTrav, olvTailLine, olvLbl3, olvLbl6, olvLblVoid,
                       olvStr1, olvStr2, olvStr3,
                       compBackbone, compRungs, ...compMeshes, ...compLbls,
