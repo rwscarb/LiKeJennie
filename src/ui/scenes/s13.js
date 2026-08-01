@@ -105,12 +105,12 @@ export function buildS13() {
     const div = document.createElement('div');
     div.textContent = scaleLabels[si];
     div.style.cssText = [
-      `font-family:'Courier New',monospace;font-size:${10 - si * 1.5}px`,
-      `color:${CS_ORBIT};opacity:${0.45 - si * 0.05};letter-spacing:.07em`,
+      `font-family:'Courier New',monospace;font-size:${13 - si}px;font-weight:bold`,
+      `color:${CS_ORBIT};opacity:${0.75 - si * 0.08};letter-spacing:.09em`,
       `pointer-events:none;user-select:none`,
     ].join(';');
     const lbl = new CSS2DObject(div);
-    lbl.position.set(r + NODE_R[si] + 0.12, 0, 0);
+    lbl.position.set(r + NODE_R[si] + 0.18, 0, 0);
     scene.add(lbl);
     R.css2dObjects.push(lbl);
   }
