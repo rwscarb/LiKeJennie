@@ -120,7 +120,7 @@ build:
 	cd $(UI_DIR) && npm run build
 
 deploy: build
-	aws s3 cp --recursive $(UI_DIR)/dist/ $(S3_BUCKET)/
+	aws s3 sync $(UI_DIR)/dist/ $(S3_BUCKET)/
 	aws cloudfront create-invalidation --distribution-id $(CF_DIST_ID) --paths '/*'
 
 # ── Cleanup ────────────────────────────────────────────────────────────────────
