@@ -7,6 +7,7 @@ import {
   THREE, CSS2DRenderer,
   R, disposeScene, resetTip,
 } from './scenes/shared.js';
+import { setS12Mode } from './scenes/s12.js';
 
 let glc, ov, tt, rain, labelHost, panelwrap, camCoords, clkDisplay;
 let renderer, labelRenderer, rafId = 0;
@@ -484,6 +485,11 @@ afterUpdate(() => {
     <div class="cset" class:on={active === 10}>
       <button class="btn lit" id="p11rot">AUTO-ROTATE</button>
       <span class="stat">drag to rotate &nbsp;&middot;&nbsp; hover a node &nbsp;&middot;&nbsp; {3,6,9} complement</span>
+    </div>
+    <div class="cset" class:on={active === 11}>
+      <button class="btn lit" id="s12_sgd" on:click={() => setS12Mode('sgd')}>SGD × ORBIT</button>
+      <button class="btn" id="s12_trib" on:click={() => setS12Mode('trib')}>TRIB BALANCE</button>
+      <span class="stat">drag to rotate &nbsp;&middot;&nbsp; Z/9Z gradient descent &nbsp;&middot;&nbsp; 3-layer ternary weights</span>
     </div>
   </div>
 </div>
