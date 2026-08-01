@@ -998,7 +998,7 @@ export function buildS7() {
     document.getElementById('p8comp').classList.toggle('lit', showDecimal);
     document.getElementById('p8greek').classList.remove('lit');
     setGreekTitle(false);
-    invLabelData.forEach(l => { l.lbl.element.textContent = nodeLabel(l); });
+    allLabels.forEach(l => { l.lbl.element.textContent = nodeLabel(l); });
     syncOrbitLabels();
   };
 
@@ -1010,7 +1010,7 @@ export function buildS7() {
       document.getElementById('p8comp').classList.remove('lit');
     }
     setGreekTitle(showGreek);
-    invLabelData.forEach(l => { l.lbl.element.textContent = nodeLabel(l); });
+    allLabels.forEach(l => { l.lbl.element.textContent = nodeLabel(l); });
     syncOrbitLabels();
   };
 
