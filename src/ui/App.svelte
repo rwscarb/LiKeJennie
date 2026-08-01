@@ -195,6 +195,18 @@ onMount(async () => {
     });
   });
 
+  // Easter egg — click the title to reveal Jennie Zen lyrics
+  document.getElementById('site-title').addEventListener('click', () => {
+    document.getElementById('zen-overlay').classList.toggle('vis');
+  });
+  document.getElementById('zen-overlay').addEventListener('click', () => {
+    document.getElementById('zen-overlay').classList.remove('vis');
+  });
+  document.getElementById('zen-lyrics-body').addEventListener('click', e => e.stopPropagation());
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.getElementById('zen-overlay').classList.remove('vis');
+  });
+
   const stopRain = startRain();
   rafId = requestAnimationFrame(loop);
   addEventListener('resize', resize);
@@ -273,8 +285,52 @@ afterUpdate(() => {
 
 <canvas id="rain" bind:this={rain}></canvas>
 
+<div id="zen-overlay">
+  <div id="zen-lyrics-body">
+    <p>I tell 'em, "Down, now"</p>
+    <p>On that energy, yes</p>
+    <p>I am what you think about me</p>
+    <p>Cross me, please</p>
+    <p>I'ma keep it Z, Zen</p>
+    <p>Presence, bless</p>
+    <p>Money can't buy sixth sense</p>
+    <p>Bad bitch, 'kay, so make me better</p>
+    <p>Fire aura quiets chatter</p>
+    <p>Shoo, shoo, shoo, I make 'em scatter</p>
+    <p>They can't move my matter</p>
+    <p class="zen-chorus">Nobody gon' move my soul, gon' move my aura, my matter</p>
+    <p class="zen-chorus">Nobody gon' move my light, gon' touch my glow, my matter</p>
+    <p class="zen-chorus">Nobody gon', all this power make them scatter</p>
+    <p class="zen-chorus">No, nobody gon' touch my soul, gon' match my glow, like</p>
+    <p class="zen-chorus">I dare you (hey)</p>
+    <p>(Ah, ah) shake me</p>
+    <p>(Ah, ah) hey</p>
+    <p>Thick skin layered like chains on chains on chains</p>
+    <p>Wear the pressure on my neck and rings</p>
+    <p>Rain, midnight bloom</p>
+    <p class="zen-anchor">In the dark, I grew</p>
+    <p>Shoo, shoo, shoo, shoo, shoo, shoo, freeze</p>
+    <p>Shoo, shoo, shoo, shoo, shoo, shoo, gleam</p>
+    <p>Shoo, shoo, shoo, shoo, shoo, shoo (one hunnid, one hunnid), ten</p>
+    <p>Shoo, shoo, shoo, shoo (one hunnid), money cannot buy no real friends</p>
+    <p>Baddest, they can't make me badder</p>
+    <p>Fire aura quiets chatter</p>
+    <p>Shoo, shoo, shoo, I make 'em scatter</p>
+    <p>They can't move my matter</p>
+    <p class="zen-chorus">Nobody gon' move my soul, gon' move my aura, my matter</p>
+    <p class="zen-chorus">Nobody gon' move my light, gon' touch my glow, my matter</p>
+    <p class="zen-chorus">Nobody gon', all this power make them scatter</p>
+    <p class="zen-chorus">No, nobody gon' touch my soul, gon' match my glow, like</p>
+    <p class="zen-chorus">I dare you (hey)</p>
+    <p>(Ah, ah) shake me</p>
+    <p>(Ah, ah) hey</p>
+    <p class="zen-title">Jennie — ZEN</p>
+  </div>
+</div>
+
 <div class="hdr">
   <h1 id="site-title">JENNIE 21</h1>
+  <div id="zen-tagline">in the dark, i grew</div>
   <div class="sub">2<sup>7</sup> &times; 7 &nbsp;&middot;&nbsp; Lucas<sub>4</sub>=7 &nbsp;&middot;&nbsp; &tau;(896)=16 active experts &nbsp;&middot;&nbsp; Kimi K3 MoE &nbsp;&middot;&nbsp; 1/89=&Sigma;F(n)/10<sup>n+1</sup> &nbsp;&middot;&nbsp; dr(896)=5, dr(897)=6</div>
   <div class="gleg">
     <span style="color:#00ff88">&#9679; Fibonacci</span>
@@ -565,41 +621,4 @@ const h = CLK_Y - dip * (1 - (r / R_MAX) ** 2);
     <p>Three values never enter the main orbit: 3, 6, and 9.</p>
     <ul>
       <li><strong>3 and 6</strong> form their own 2-cycle: 3 × 2 = 6, and 6 × 2 = 12 → 3. They loop between each other and cannot reach 1.</li>
-      <li><strong>9 ≡ 0 mod 9</strong>: once you hit 9, doubling gives 18 mod 9 = 0, and 0 stays at 0. It is a fixed point — an absorbing state.</li>
-    </ul>
-    <p>So 9 divides the integers into three separate worlds: the main orbit {1,2,4,8,7,5}, the sub-orbit {3,6}, and the collapsed fixed point {9/0}.</p>
-
-    <hr>
-
-    <h2>Echo Pairs and the Number 9</h2>
-    <p>Each value in the orbit has exactly one partner that sums to 9:</p>
-    <ul>
-      <li>1 + 8 = 9</li>
-      <li>2 + 7 = 9</li>
-      <li>4 + 5 = 9</li>
-    </ul>
-    <p>These are called echo pairs. In the cycle diagram, each pair sits directly opposite each other across the circle. The symmetry is exact: if you travel halfway around the orbit from any value, you reach its echo.</p>
-    <p>Adding the full orbit: 1 + 2 + 4 + 8 + 7 + 5 = 27 = 3³. The orbit sums to a power of 3.</p>
-
-    <hr>
-
-    <h2>The Driver Group</h2>
-    <p>The six orbit values split into two groups of three, each summing to 13:</p>
-    <ul>
-      <li>&#123;2, 4, 7&#125;: sum = 13 — the <em>driver</em></li>
-      <li>&#123;1, 5, 8&#125;: sum = 14 — wait, 1+5+8 = 14</li>
-    </ul>
-    <p>The driver group {2, 4, 7} is special for a different reason: these are the three values whose echo partners {7, 5, 2} are also in the driver group. The driver is self-echoing — its echoes stay within the group.</p>
-    <p>13 is not in the orbit. It is the sum of the driver group, sitting just outside — the number that the driver points toward but never reaches.</p>
-
-    <hr>
-
-    <h2>Connection to the Helix</h2>
-    <p>The orbit cycle is the hidden rhythm inside the helix. The 21 nodes of the helix repeat the sequence 1→2→4→8→7→5 three and a half times (21 ÷ 6 = 3.5). Each node inherits the properties of its orbit value: color, echo relationship, driver status.</p>
-    <p>The clock at the helix midpoint sits at step 10-11 of the 21-node sequence — at the transition between orbit values 7 and 5. The driver group is below the clock. The echo group is above it.</p>
-  </article>
-</div>
-
-<div class="footer">
-  <a href="mailto:oliver42@fib896.com">oliver42@fib896.com</a>
-</div>
+      <li><strong>9 ≡ 0 mod 9</strong>: once you hit 9, doubling gives 18 mod 9 = 0, and 0 stay
