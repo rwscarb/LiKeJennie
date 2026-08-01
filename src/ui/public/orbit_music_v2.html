@@ -34,12 +34,23 @@ canvas { display:block; }
 .panel {
   background:var(--panel); border-left:1px solid var(--dim);
   display:flex; flex-direction:column; gap:0; overflow-y:auto;
+  position:relative;
+  /* CSS custom properties — updated by resize drag */
+  --panel-fs:9px; --cell-h:28px;
 }
+/* ── Resize handle ── */
+.resize-handle {
+  position:absolute; left:0; top:0; bottom:0; width:6px;
+  cursor:col-resize; z-index:20;
+  background:transparent; transition:background .15s;
+  border-left:1px solid var(--dim);
+}
+.resize-handle:hover, .resize-handle.dragging { background:#00ff8828; border-left-color:#00ff8860; }
 .section { padding:12px 14px; border-bottom:1px solid var(--dim); }
-.section-title { font-size:9px; color:var(--muted); letter-spacing:.15em; margin-bottom:8px; }
+.section-title { font-size:var(--panel-fs); color:var(--muted); letter-spacing:.15em; margin-bottom:8px; }
 /* ── Controls ── */
 .row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
-.row label { font-size:9px; color:var(--muted); width:58px; flex-shrink:0; }
+.row label { font-size:var(--panel-fs); color:var(--muted); width:58px; flex-shrink:0; }
 .row input[type=range] {
   flex:1; accent-color:var(--fg);
   height:3px; background:var(--dim); appearance:none;
@@ -48,21 +59,21 @@ canvas { display:block; }
   -webkit-appearance:none; width:10px; height:10px;
   border-radius:50%; background:var(--fg);
 }
-.row .val { font-size:9px; color:var(--fg); width:36px; text-align:right; }
+.row .val { font-size:var(--panel-fs); color:var(--fg); width:36px; text-align:right; }
 /* ── Buttons ── */
 btn, .btn {
-  font-family:'Courier New',monospace; font-size:9px; letter-spacing:.07em; text-transform:uppercase;
+  font-family:'Courier New',monospace; font-size:var(--panel-fs); letter-spacing:.07em; text-transform:uppercase;
   background:var(--bg); border:1px solid var(--dim); color:var(--muted);
   padding:3px 10px; cursor:pointer; transition:all .12s; border-radius:2px;
 }
 .btn:hover { border-color:var(--cyan); color:var(--cyan); box-shadow:0 0 8px #00e5ff18; }
 .btn.lit   { border-color:var(--fg); color:var(--fg); box-shadow:0 0 5px #00ff8815; }
-.btn.play  { border-color:var(--fg); color:var(--fg); font-size:10px; padding:5px 16px; }
+.btn.play  { border-color:var(--fg); color:var(--fg); padding:5px 16px; }
 .btn.play.lit { background:#00ff8820; color:#fff; }
 /* ── Step sequencer grid ── */
 .seq-grid {
   display:grid;
-  grid-template-rows:repeat(6,28px);
+  grid-template-rows:repeat(6,var(--cell-h,28px));
   grid-template-columns:repeat(16,1fr);
   gap:2px;
 }
@@ -76,7 +87,7 @@ btn, .btn {
 .seq-cell.cursor { outline:1px solid #fff; }
 .seq-cell.on.cursor { outline:2px solid #fff; }
 .row-label {
-  font-size:8px; color:var(--muted); text-align:right;
+  font-size:calc(var(--panel-fs,9px) * 0.9); color:var(--muted); text-align:right;
   padding-right:6px; display:flex; align-items:center; justify-content:flex-end;
 }
 /* ── Waveform buttons ── */
@@ -96,7 +107,7 @@ btn, .btn {
 /* ── Note labels ── */
 .note-names { display:flex; gap:2px; }
 .note-name {
-  flex:1; font-size:7px; color:var(--muted); text-align:center;
+  flex:1; font-size:calc(var(--panel-fs,9px) * 0.8); color:var(--muted); text-align:center;
   border-top:1px solid var(--dim); padding-top:2px;
 }
 .note-name.active { color:var(--fg); }
@@ -118,6 +129,7 @@ btn, .btn {
 </div>
 
 <div class="panel">
+  <div class="resize-handle" id="resizeHandle" title="Drag to resize panel"></div>
   <!-- Waveform -->
   <div class="section">
     <div class="section-title">WAVEFORM</div>
@@ -247,7 +259,7 @@ const cells     = [];
 
 for (let r=0; r<ROWS; r++) {
   const lbl = document.createElement('div');
-  lbl.style.cssText=`height:28px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:8px;color:${stepColor(r,.55)}`;
+  lbl.style.cssText=`height:var(--cell-h,28px);display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:calc(var(--panel-fs,9px)*0.9);color:${stepColor(r,.55)}`;
   lbl.textContent = `${ORBIT[r]}×`;
   rowLabels.appendChild(lbl);
 
@@ -586,6 +598,60 @@ document.getElementById('presets').addEventListener('click',function(e){
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') window.parent.postMessage('orbit:back', '*');
 });
+
+// ── Resizable panel ──────────────────────────────────────────────────────────
+const panelEl   = document.querySelector('.panel');
+const resizeHdl = document.getElementById('resizeHandle');
+let _rDragging=false, _rStartX=0, _rStartW=320;
+
+function applyPanelWidth(w) {
+  w = Math.round(Math.min(Math.max(260, w), window.innerWidth * 0.65));
+  document.body.style.gridTemplateColumns = `1fr ${w}px`;
+  // Scale: 0 at 260px → 1 at 580px
+  const t = Math.max(0, Math.min(1, (w - 260) / 320));
+  const fs = (9 + t * 5).toFixed(1);          // 9px → 14px
+  const ch = Math.round(28 + t * 14);          // 28px → 42px
+  panelEl.style.setProperty('--panel-fs', fs + 'px');
+  panelEl.style.setProperty('--cell-h',   ch  + 'px');
+  resize(); // recompute canvas + orbit ring positions
+  try { localStorage.setItem('orbitPanelW', w); } catch(e){}
+}
+
+resizeHdl.addEventListener('mousedown', e => {
+  _rDragging=true; _rStartX=e.clientX; _rStartW=panelEl.offsetWidth;
+  resizeHdl.classList.add('dragging');
+  document.body.style.userSelect='none';
+  e.preventDefault();
+});
+resizeHdl.addEventListener('touchstart', e => {
+  _rDragging=true; _rStartX=e.touches[0].clientX; _rStartW=panelEl.offsetWidth;
+  resizeHdl.classList.add('dragging');
+  e.preventDefault();
+}, {passive:false});
+
+document.addEventListener('mousemove', e => {
+  if (!_rDragging) return;
+  applyPanelWidth(_rStartW + (_rStartX - e.clientX));
+});
+document.addEventListener('touchmove', e => {
+  if (!_rDragging) return;
+  applyPanelWidth(_rStartW + (_rStartX - e.touches[0].clientX));
+}, {passive:false});
+
+const _stopResize = () => {
+  if (!_rDragging) return;
+  _rDragging=false;
+  resizeHdl.classList.remove('dragging');
+  document.body.style.userSelect='';
+};
+document.addEventListener('mouseup',  _stopResize);
+document.addEventListener('touchend', _stopResize);
+
+// Restore last saved panel width
+try {
+  const saved = parseInt(localStorage.getItem('orbitPanelW'));
+  if (saved >= 260) applyPanelWidth(saved);
+} catch(e){}
 
 // Load ZEN preset by default
 applyPreset('zen');
