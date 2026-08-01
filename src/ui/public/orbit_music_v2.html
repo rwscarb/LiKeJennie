@@ -205,6 +205,23 @@ btn, .btn {
         <input type="range" id="detuneSlider" min="0" max="20" step=".5" value="3">
         <span class="val" id="detuneVal">3¢</span>
       </div>
+      <div class="row"><label>transp</label>
+        <button class="btn" id="trDn" style="padding:2px 7px">−</button>
+        <span id="trVal" style="font-size:10px;color:var(--fg);width:36px;text-align:center">0 st</span>
+        <button class="btn" id="trUp" style="padding:2px 7px">+</button>
+      </div>
+      <div class="row"><label>attack</label>
+        <input type="range" id="atkSlider" min="1" max="300" step="1" value="15">
+        <span class="val" id="atkVal">15ms</span>
+      </div>
+      <div class="row"><label>vol</label>
+        <input type="range" id="volSlider" min="0" max="1" step=".01" value=".60">
+        <span class="val" id="volVal">60%</span>
+      </div>
+      <div class="row"><label>filter</label>
+        <input type="range" id="filtSlider" min="200" max="20000" step="100" value="20000">
+        <span class="val" id="filtVal">OFF</span>
+      </div>
     </div>
   </div>
   <!-- Freq display -->
@@ -433,12 +450,16 @@ const barLevels = Array(ROWS).fill(0);
 let audioCtx=null, masterGain, wetGain, dryGain, delayL, delayR;
 let analyser=null, freqData=null, waveData=null;
 let waveform='triangle', reverbAmt=0.59, bassAmt=0.51, detuneAmt=3;
+let transpose=0, attackMs=15, volAmt=0.60;
+let filterNode=null;
 
 function initAudio() {
   if (audioCtx) { if (audioCtx.state==='suspended') audioCtx.resume(); return; }
   audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-  masterGain = audioCtx.createGain(); masterGain.gain.value=0.60;
-  masterGain.connect(audioCtx.destination);
+  masterGain = audioCtx.createGain(); masterGain.gain.value=volAmt;
+  filterNode = audioCtx.createBiquadFilter();
+  filterNode.type = 'lowpass'; filterNode.frequency.value = 20000;
+  masterGain.connect(filterNode); filterNode.connect(audioCtx.destination);
   analyser = audioCtx.createAnalyser();
   analyser.fftSize = 2048; analyser.smoothingTimeConstant = 0.82;
   masterGain.connect(analyser);
@@ -467,9 +488,10 @@ function playNote(freq, startTime, dur, vol=0.28, wt=waveform) {
     osc2.start(startTime); osc2.stop(startTime+dur+0.1);
   }
   osc.connect(env); env.connect(dryGain); env.connect(wetGain);
+  const atk = Math.min(attackMs/1000, dur*0.5);
   env.gain.setValueAtTime(0,startTime);
-  env.gain.linearRampToValueAtTime(vol,startTime+0.015);
-  env.gain.setValueAtTime(vol*0.80,startTime+dur*0.30);
+  env.gain.linearRampToValueAtTime(vol,startTime+atk);
+  env.gain.setValueAtTime(vol*0.80,startTime+Math.max(atk, dur*0.30));
   env.gain.linearRampToValueAtTime(0,startTime+dur);
   osc.start(startTime); osc.stop(startTime+dur+0.1);
 }
@@ -496,7 +518,7 @@ function scheduleStep(step, time) {
   let hasNote=false;
   for (let r=0; r<ROWS; r++) {
     if (!grid[r][step]) continue;
-    const mult = Math.pow(2, octave);
+    const mult = Math.pow(2, octave) * Math.pow(2, transpose/12);
     playNote(FREQS[r]*mult, time, dur*0.85);
     barLevels[r]=1.0;
     hasNote=true;
@@ -504,7 +526,7 @@ function scheduleStep(step, time) {
   // Bass every 4 steps (quarter note)
   if (step%4===0) {
     const bassFreq=(step<8)?[3*BASE,6*BASE][Math.floor(step/4)%2]:[6*BASE,3*BASE][Math.floor((step-8)/4)%2];
-    playBass(bassFreq*Math.pow(2,octave-1), time, dur*4);
+    playBass(bassFreq*Math.pow(2,octave-1)*Math.pow(2,transpose/12), time, dur*4);
   }
 }
 
@@ -918,6 +940,28 @@ document.getElementById('bassSlider').addEventListener('input',function(){
 document.getElementById('detuneSlider').addEventListener('input',function(){
   detuneAmt=+this.value;
   document.getElementById('detuneVal').textContent=this.value+'¢';
+});
+
+function setTranspose(v) {
+  transpose = Math.min(Math.max(-12, Math.round(v)), 12);
+  document.getElementById('trVal').textContent = (transpose>0?'+':'')+transpose+' st';
+}
+document.getElementById('trDn').addEventListener('click', () => setTranspose(transpose-1));
+document.getElementById('trUp').addEventListener('click', () => setTranspose(transpose+1));
+
+document.getElementById('atkSlider').addEventListener('input',function(){
+  attackMs=+this.value;
+  document.getElementById('atkVal').textContent=this.value+'ms';
+});
+document.getElementById('volSlider').addEventListener('input',function(){
+  volAmt=+this.value;
+  document.getElementById('volVal').textContent=Math.round(volAmt*100)+'%';
+  if(masterGain) masterGain.gain.value=volAmt;
+});
+document.getElementById('filtSlider').addEventListener('input',function(){
+  const v=+this.value;
+  document.getElementById('filtVal').textContent=v>=20000?'OFF':v<1000?v+'Hz':(Math.round(v/100)/10)+'kHz';
+  if(filterNode) filterNode.frequency.value=v;
 });
 
 document.getElementById('waveRow').addEventListener('click',function(e){
