@@ -14,7 +14,7 @@ body {
   font-family:'Courier New',monospace;
   display:grid;
   grid-template-rows:auto 1fr auto;
-  grid-template-columns:1fr 320px;
+  grid-template-columns:1fr auto;
   height:100vh; overflow:hidden; gap:0;
 }
 /* ── Header ── */
@@ -28,13 +28,13 @@ header {
 header h1 { font-size:10px; letter-spacing:.22em; color:var(--cyan); opacity:.75; }
 .transport { display:flex; gap:8px; margin-left:auto; align-items:center; }
 /* ── Main canvas area ── */
-.stage { position:relative; background:var(--bg); }
+.stage { position:relative; background:var(--bg); min-width:0; }
 canvas { display:block; }
 /* ── Right panel ── */
 .panel {
   background:var(--panel); border-left:1px solid var(--dim);
   display:flex; flex-direction:column; gap:0; overflow-y:auto;
-  position:relative;
+  position:relative; width:320px;
   /* CSS custom properties — updated by resize drag */
   --panel-fs:9px; --cell-h:28px;
 }
@@ -118,8 +118,8 @@ btn, .btn {
 <header>
   <h1>ORBIT SEQUENCER &nbsp;·&nbsp; {1,2,4,8,7,5} × 55 Hz</h1>
   <div class="transport">
-    <span id="bpmVal" style="font-size:9px;color:var(--muted)">120 BPM</span>
-    <input type="range" id="bpmSlider" min="60" max="240" value="120" style="width:80px">
+    <span id="bpmVal" style="font-size:9px;color:var(--muted)">60 BPM</span>
+    <input type="range" id="bpmSlider" min="60" max="240" value="60" style="width:80px">
     <button class="btn play" id="playBtn">▶ PLAY</button>
   </div>
 </header>
@@ -149,12 +149,12 @@ btn, .btn {
       <button class="btn" id="octUp">+</button>
     </div>
     <div class="row"><label>reverb</label>
-      <input type="range" id="reverbSlider" min="0" max="1" step=".01" value=".25">
-      <span class="val" id="reverbVal">25%</span>
+      <input type="range" id="reverbSlider" min="0" max="1" step=".01" value=".59">
+      <span class="val" id="reverbVal">59%</span>
     </div>
     <div class="row"><label>bass</label>
-      <input type="range" id="bassSlider" min="0" max="1" step=".01" value=".18">
-      <span class="val" id="bassVal">18%</span>
+      <input type="range" id="bassSlider" min="0" max="1" step=".01" value=".51">
+      <span class="val" id="bassVal">51%</span>
     </div>
     <div class="row"><label>detune</label>
       <input type="range" id="detuneSlider" min="0" max="20" step=".5" value="3">
@@ -301,7 +301,7 @@ const barLevels = Array(ROWS).fill(0);
 
 // ── Web Audio ────────────────────────────────────────────────────────────────
 let audioCtx=null, masterGain, wetGain, dryGain, delayL, delayR;
-let waveform='triangle', reverbAmt=0.25, bassAmt=0.18, detuneAmt=3;
+let waveform='triangle', reverbAmt=0.59, bassAmt=0.51, detuneAmt=3;
 
 function initAudio() {
   if (audioCtx) { if (audioCtx.state==='suspended') audioCtx.resume(); return; }
@@ -350,7 +350,7 @@ function playBass(freq, startTime, dur) {
 }
 
 // ── Scheduler ────────────────────────────────────────────────────────────────
-let bpm=120, playing=false, schedTimer=null, nextAt=0, schedStepN=0;
+let bpm=60, playing=false, schedTimer=null, nextAt=0, schedStepN=0;
 const LOOK=0.12;
 
 function stepDur() { return 60/(bpm*4); } // 16th note duration
@@ -606,7 +606,7 @@ let _rDragging=false, _rStartX=0, _rStartW=320;
 
 function applyPanelWidth(w) {
   w = Math.round(Math.min(Math.max(260, w), window.innerWidth * 0.65));
-  document.body.style.gridTemplateColumns = `1fr ${w}px`;
+  panelEl.style.width = w + 'px';
   // Scale: 0 at 260px → 1 at 580px
   const t = Math.max(0, Math.min(1, (w - 260) / 320));
   const fs = (9 + t * 5).toFixed(1);          // 9px → 14px
