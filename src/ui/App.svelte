@@ -491,6 +491,9 @@ afterUpdate(() => {
       <button class="btn" id="s12_trib" on:click={() => setS12Mode('trib')}>TRIB BALANCE</button>
       <span class="stat">drag to rotate &nbsp;&middot;&nbsp; Z/9Z gradient descent &nbsp;&middot;&nbsp; 3-layer ternary weights</span>
     </div>
+    <div class="cset" class:on={active === 12}>
+      <span class="stat">drag to rotate &nbsp;&middot;&nbsp; orbit graph = GNN computation graph &nbsp;&middot;&nbsp; layer 6 = identity</span>
+    </div>
   </div>
 </div>
 
@@ -747,6 +750,84 @@ y(t) =  A·cos(t)        / (1 + sin²t)  + offset
 twistCoeff = 0.5 + progress × 1.5
 // at progress=0: Möbius half-twist (π)
 // at progress=1: 7.25π — ribbon spirals into bridge</code></pre>
+
+    <hr>
+
+    <h1>EXPERIMENTS</h1>
+
+    <h2>SGD × ORBIT: Gradient Descent Is the Cycle</h2>
+    <p>Stochastic gradient descent (SGD) on a simple quadratic loss in the modular ring Z/9Z produces the orbit {1, 2, 4, 8, 7, 5} exactly — not as an approximation, but as an identity.</p>
+    <p>Define the loss: <em>L(θ) = −θ² / 2</em> in Z/9Z. The gradient is ∂L/∂θ = −θ mod 9. The SGD update at learning rate η = 1:</p>
+    <pre><code>θ ← θ − η · ∂L/∂θ
+  = θ − (−θ)
+  = 2θ mod 9</code></pre>
+    <p>One gradient step at η = 1 <em>is</em> multiplication by 2 mod 9. The orbit {1, 2, 4, 8, 7, 5} is what SGD visits, in order, starting from any orbit seed. The three basins correspond to the three fixed-point classes of this dynamics:</p>
+    <ul>
+      <li><strong>Orbit {1, 2, 4, 8, 7, 5}</strong> — period 6. SGD cycles through these six states and returns.</li>
+      <li><strong>Complement {3, 6}</strong> — period 2. Starting from 3 or 6, SGD oscillates between them forever: 3 → 6 → 3 → ...</li>
+      <li><strong>Fixed point {9 / 0}</strong> — period 1. 2 × 9 = 18 ≡ 0 mod 9. Zero absorbs. The gradient vanishes.</li>
+    </ul>
+    <p>The gradient norm at each basin reflects this structure. Orbit nodes have |∇L| ≈ orbit value. Complement nodes have smaller norms. The fixed point has |∇L| → 0 — the loss surface is flat there. SGD stops.</p>
+    <p>In the EXPERIMENTS visualization, the green pulse traces the period-6 orbit; the amber pulse traces the period-2 complement. Both run simultaneously, at their respective speeds.</p>
+
+    <hr>
+
+    <h2>TRIB BALANCE: The 33/33/33 Law</h2>
+    <p>A three-layer fully-connected network was trained on MNIST using ternary weights (+1, 0, −1) with different initialization strategies. One condition used the Tribonacci ratio to set layer-wise weight magnitudes.</p>
+    <p>The Tribonacci constant φ<sub>T</sub> ≈ 1.839 is defined by the recurrence T(n) = T(n−1) + T(n−2) + T(n−3), analogous to Fibonacci but summing three terms. Each layer's weights are scaled by successive powers of 1/φ<sub>T</sub>:</p>
+    <pre><code>fc1 weight magnitudes: 1 / φ_T²  ≈ 0.296
+fc2 weight magnitudes: 1 / φ_T   ≈ 0.544
+fc3 weight magnitudes: 1.0        (full scale)</code></pre>
+    <p>The result: across all 20 random seeds and all Tribonacci magnitude variants tested, the third layer (fc3) locked to exactly equal fractions of positive, zero, and negative ternary weights — 33% / 33% / 33%. This did not happen for fc1 or fc2.</p>
+    <p>The 33/33/33 balance appeared as a convergent attractor, not a forced constraint. The network discovered maximum entropy ternary balance in the final classification layer regardless of which specific Tribonacci scaling variant was used.</p>
+    <p>Test accuracy results across conditions:</p>
+    <pre><code>xavier (baseline):         98.51%
+trib_magnitude_half (D):   98.19%
+trib_magnitude_xav  (F):   98.14%
+trib_magnitude      (C):   97.39%
+ternary_orbit:             94.43%</code></pre>
+    <p>The Tribonacci magnitude variants match or approach xavier baseline accuracy while the final layer self-organizes into balanced ternary. The orbit initialization (weights constrained to orbit values {1,2,4,8,7,5}) achieves 94.43% — meaningful accuracy with structurally constrained weights.</p>
+    <p>In the TRIB BALANCE visualization, stacked bars show the +1 / 0 / −1 fractions for each layer across all four Tribonacci conditions. The fc3 column is highlighted: all four bars reach the same 33/33/33 split.</p>
+
+    <hr>
+
+    <h1>GNN MIRROR</h1>
+
+    <h2>The Orbit Graph IS the Computation Graph</h2>
+    <p>A graph neural network (GNN) propagates information along edges. Each layer applies one round of message passing: every node reads from its neighbors, aggregates, updates. After enough layers, information from distant nodes has propagated through the full graph.</p>
+    <p>The orbit under ×2 mod 9 defines a directed graph: each node has exactly one outgoing edge to its ×2 successor. The orbit graph has three connected components:</p>
+    <ul>
+      <li><strong>{1, 2, 4, 8, 7, 5}</strong> — a directed 6-cycle. Each node points to the next in the orbit sequence.</li>
+      <li><strong>{3, 6}</strong> — a directed 2-cycle. 3 → 6 → 3.</li>
+      <li><strong>{9}</strong> — a self-loop. 9 → 9 (absorbing fixed point).</li>
+    </ul>
+    <p>Run one GNN message-passing layer on this graph. The update rule at each node is: new value = value of ×2 neighbor. That is exactly the ×2 mod 9 step. One GNN layer = one orbit step.</p>
+
+    <hr>
+
+    <h2>Self-Reference: Layer 6 = Identity</h2>
+    <p>The orbit has period 6. After 6 GNN layers on the orbit graph, every orbit node has returned to its starting value. The 6-layer GNN computes the identity function on this graph.</p>
+    <pre><code>Layer 0:  [1, 2, 4, 8, 7, 5]   ← initial state
+Layer 1:  [2, 4, 8, 7, 5, 1]   ← one ×2 step
+Layer 2:  [4, 8, 7, 5, 1, 2]
+Layer 3:  [8, 7, 5, 1, 2, 4]
+Layer 4:  [7, 5, 1, 2, 4, 8]
+Layer 5:  [5, 1, 2, 4, 8, 7]
+Layer 6:  [1, 2, 4, 8, 7, 5]   ← identity: back to layer 0</code></pre>
+    <p>The network has completed one full traversal of itself. The computation graph and the mathematical object being computed are the same thing. The GNN is a mirror: it reflects the orbit back at itself.</p>
+    <p>This is the self-reference Wife's notation pointed at — "11 is the mirror of the mirror." Here the formalization is concrete: 6 layers, 6-cycle period, the map closes on itself.</p>
+
+    <hr>
+
+    <h2>Three Fractal Scales</h2>
+    <p>The three basins of ×2 mod 9 are self-similar: each is a directed cycle, each smaller than the last.</p>
+    <ul>
+      <li><strong>Scale 1 (outer ring)</strong> — orbit {1,2,4,8,7,5}: period 6, the full cycle</li>
+      <li><strong>Scale 1/3 (middle ring)</strong> — complement {3,6}: period 2, the compressed cycle</li>
+      <li><strong>Scale 0 (center)</strong> — fixed point {9}: period 1, the degenerate cycle</li>
+    </ul>
+    <p>Period 6 contains period 2 contains period 1. Each is the same structure — a directed cycle — at a different scale. A GNN on the outer ring completes in 6 layers; on the middle ring in 2 layers; on the center in 1 layer. The fractal ratio is 1/3: the complement enters by multiplying by 3 (3×1=3, 3×2=6), and exits back by ×2 mod 9.</p>
+    <p>In the visualization, the two pulses run simultaneously — orbit at full speed, complement at 1/3 speed — showing that one full orbit traversal contains three complete complement traversals. The pulse periods are in ratio 3:1, mirroring the structural ratio between the worlds.</p>
   </article>
 </div>
 
