@@ -536,12 +536,12 @@ function playNote(freq, startTime, dur, vol=0.28, wt=waveform) {
     osc2.start(startTime); osc2.stop(startTime+dur+0.1);
   }
   osc.connect(env); env.connect(dryGain); env.connect(wetGain);
-  const atk = Math.min(attackMs/1000, dur*0.5);
-  env.gain.setValueAtTime(0,startTime);
-  env.gain.linearRampToValueAtTime(vol,startTime+atk);
-  env.gain.setValueAtTime(vol*0.80,startTime+Math.max(atk, dur*0.30));
-  env.gain.linearRampToValueAtTime(0,startTime+dur);
-  osc.start(startTime); osc.stop(startTime+dur+0.1);
+  const atk = Math.min(attackMs/1000, dur*0.4);
+  env.gain.setValueAtTime(0, startTime);
+  env.gain.linearRampToValueAtTime(vol, startTime + atk);
+  env.gain.linearRampToValueAtTime(vol * 0.65, startTime + dur * 0.80);
+  env.gain.linearRampToValueAtTime(0, startTime + dur);
+  osc.start(startTime); osc.stop(startTime + dur + 0.05);
 }
 
 function playBass(freq, startTime, dur) {
