@@ -183,6 +183,7 @@ btn, .btn {
     <button class="btn" id="bpmUp" style="padding:2px 7px">+</button>
     <input type="range" id="bpmSlider" min="10" max="120" value="60" style="width:200px">
     <button class="btn play" id="playBtn">▶ PLAY</button>
+    <button class="btn" id="evolveBtn" style="margin-left:8px;opacity:0.55">⟳ EVOLVE</button>
   </div>
 </header>
 
@@ -227,9 +228,11 @@ btn, .btn {
         <span class="val" id="detuneVal">3¢</span>
       </div>
       <div class="row"><label>transp</label>
+        <button class="btn" id="trDn2" style="padding:2px 5px;font-size:9px">−−</button>
         <button class="btn" id="trDn" style="padding:2px 7px">−</button>
         <span id="trVal" style="font-size:10px;color:var(--fg);width:36px;text-align:center">0 st</span>
         <button class="btn" id="trUp" style="padding:2px 7px">+</button>
+        <button class="btn" id="trUp2" style="padding:2px 5px;font-size:9px">++</button>
       </div>
       <div class="row"><label>attack</label>
         <input type="range" id="atkSlider" min="1" max="300" step="1" value="15">
@@ -601,6 +604,7 @@ let audioCtx=null, masterGain, wetGain, dryGain, delayL, delayR;
 let analyser=null, freqData=null, waveData=null;
 let waveform='triangle', reverbAmt=0.59, bassAmt=0.51, detuneAmt=3;
 let transpose=0, attackMs=15, volAmt=0.60, bassEnabled=true;
+let evolveMode=false, evolveStepCount=0;
 let filterNode=null;
 
 function initAudio() {
@@ -663,7 +667,32 @@ const LOOK=0.12;
 
 function stepDur() { return 60/(bpm*4); } // 16th note duration
 
+function evolveTick() {
+  evolveStepCount++;
+  // mutate roughly every 8 steps (half bar), with randomness
+  if (evolveStepCount % 8 !== 0) return;
+  const roll = Math.random();
+  if (roll < 0.55) {
+    // flip a random cell — bias: if dense col, lean toward removal; else toward add
+    const s = Math.floor(Math.random() * STEPS);
+    const r = Math.floor(Math.random() * ROWS);
+    grid[r][s] = !grid[r][s];
+    renderGrid();
+  } else if (roll < 0.78) {
+    // shift a random step's oct lane by ±1
+    const s = Math.floor(Math.random() * STEPS);
+    const delta = Math.random() < 0.5 ? 1 : -1;
+    stepOctave[s] = Math.min(2, Math.max(-2, stepOctave[s] + delta));
+    renderOctLane();
+  } else if (roll < 0.88) {
+    // nudge transpose ±1 semitone (slow drift)
+    setTranspose(transpose + (Math.random() < 0.5 ? 1 : -1));
+  }
+  // remaining ~12%: do nothing (silence moment)
+}
+
 function scheduleStep(step, time) {
+  if (evolveMode) evolveTick();
   const dur = stepDur();
   const totalOct = octave + stepOctave[step];
   let hasNote=false;
@@ -674,8 +703,9 @@ function scheduleStep(step, time) {
     barLevels[r]=1.0;
     hasNote=true;
   }
-  // Bass every 4 steps (quarter note)
-  if (bassEnabled && step%4===0) {
+  // Bass every 4 steps (quarter note) — only when sequencer has any active cells
+  const gridHasNotes = grid.some(row => row.some(Boolean));
+  if (bassEnabled && gridHasNotes && step%4===0) {
     const bassFreq=(step<8)?[3*BASE,6*BASE][Math.floor(step/4)%2]:[6*BASE,3*BASE][Math.floor((step-8)/4)%2];
     playBass(bassFreq*Math.pow(2,totalOct-1)*Math.pow(2,transpose/12), time, dur*4);
   }
@@ -1153,6 +1183,13 @@ document.getElementById('playBtn').addEventListener('click',function(){
   else{startPlay();this.textContent='■ STOP';this.classList.add('lit');}
 });
 
+document.getElementById('evolveBtn').addEventListener('click',function(){
+  evolveMode = !evolveMode;
+  evolveStepCount = 0;
+  this.style.opacity = evolveMode ? '1' : '0.55';
+  this.classList.toggle('lit', evolveMode);
+});
+
 function setBpm(v) {
   const sl = document.getElementById('bpmSlider');
   bpm = Math.min(Math.max(10, Math.round(v)), 120);
@@ -1188,6 +1225,8 @@ function setTranspose(v) {
 }
 document.getElementById('trDn').addEventListener('click', () => setTranspose(transpose-1));
 document.getElementById('trUp').addEventListener('click', () => setTranspose(transpose+1));
+document.getElementById('trDn2').addEventListener('click', () => setTranspose(transpose-2));
+document.getElementById('trUp2').addEventListener('click', () => setTranspose(transpose+2));
 
 document.getElementById('atkSlider').addEventListener('input',function(){
   attackMs=+this.value;
