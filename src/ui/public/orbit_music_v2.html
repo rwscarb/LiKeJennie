@@ -344,21 +344,22 @@ const PRESETS = {
     [0,0],[1,2],[2,4],[3,6],[4,10],[5,12],
     [0,8],[1,10],[2,12],[3,14],
   ],
-  // ZEN (Jennie) — use transp=-3 to shift orbit to F# minor
-  // Opening: F#→E descending figure detected from jennie.webm
-  // At transp-3: row3=F#4(370Hz), row4≈E4(324Hz), rows0-2=F#1/2/3
+  // ZEN (Jennie) — orbit/complement split, transpose=-3
+  // transpose=-3: row2=F#3(185Hz exact), row4≈E4(324Hz/-27¢), complement bass=C#3/C#4
+  // Oct lane: row4 at oct-1 → E3(162Hz/≈E3); C# bass = F# minor dominant pedal
+  // Melody: F# A | E G# | D F# | E G# — orbit carries F# & E, complement carries C#
   zen: [
-    [0, 0],  // F#1 sub — downbeat
-    [1, 0],  // F#2 bass — downbeat
-    [1, 8],  // F#2 bass — beat 3
-    [3, 3],  // F#4 — phrase 1 opens
-    [3, 4],  // F#4 — hold
-    [4, 6],  // E4  — characteristic descend
-    [2, 7],  // F#3 — mid voice bridge
-    [3, 11], // F#4 — phrase 2 opens
-    [3, 12], // F#4 — hold
-    [4, 14], // E4  — descend again
-    [4, 15], // E4  — resolve into loop
+    // Phrase 1 (steps 0-7): F#3 → E3 descent
+    [2,  0], [2,  1],  // F#3 — downbeat
+    [4,  4], [4,  5],  // E3  — descent (oct-1 in stepOctave)
+    [2,  7],           // F#3 — brief return
+    // Phrase 2 (steps 8-15): repeat with F#4 resolve
+    [2,  8], [2,  9],  // F#3 — beat 3
+    [4, 12], [4, 13],  // E3  — descent again (oct-1)
+    [3, 15],           // F#4 — high resolve at bar end
+    // Sub bass texture
+    [1,  0],           // F#2 sub — downbeat
+    [1,  8],           // F#2 sub — phrase 2
   ],
   bass: [
     [0,0],[0,4],[0,8],[0,12],
@@ -383,6 +384,12 @@ const PRESETS = {
 // Synth settings bundled with named presets
 const PRESET_SYNTH = {
   zen: { transpose:-3, waveform:'sine', reverbAmt:0.85, attackMs:80, bassAmt:0.30, detuneAmt:1, filterFreq:4000 },
+};
+
+// Per-step octave lane bundled with named presets (16 values, range -2..+2)
+const PRESET_OCT = {
+  // ZEN: row4 at oct-1 on steps 4,5,12,13 → E3 (orbit/complement split)
+  zen: [ 0, 0,  0, 0, -1,-1, 0, 0,  0, 0, 0, 0, -1,-1, 0, 0 ],
 };
 
 function applySynthSettings(s) {
@@ -432,7 +439,9 @@ function applyPreset(name) {
   const data = PRESETS[name] || (loadUserPresets()[name]||[]);
   data.forEach(([r,s])=>{ if(r<ROWS&&s<STEPS) grid[r][s]=true; });
   applySynthSettings(PRESET_SYNTH[name]);
+  stepOctave = PRESET_OCT[name] ? [...PRESET_OCT[name]] : Array(STEPS).fill(0);
   renderGrid();
+  if (typeof renderOctLane === 'function') renderOctLane();
 }
 
 // ── User preset persistence ───────────────────────────────────────────────────
