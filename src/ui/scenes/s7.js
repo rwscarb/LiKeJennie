@@ -350,21 +350,26 @@ export function buildS7() {
 
   const tribarGroup = new THREE.Group();
   tribarGroup.visible = false;
-  const tribarLineData = []; // { attr, armIdx, fromIdx, toIdx } — updated per-frame
+  const tribarMeshData = []; // { mesh, fromIdx, toIdx } — updated per-frame
 
-  TRIBAR_ARMS.forEach((arm, armIdx) => {
+  const _yUp = new THREE.Vector3(0, 1, 0);
+  const _dir = new THREE.Vector3();
+
+  TRIBAR_ARMS.forEach(arm => {
     arm.pairs.forEach(([from, to]) => {
-      const arr  = new Float32Array(6);
-      const geo  = new THREE.BufferGeometry();
-      const attr = new THREE.BufferAttribute(arr, 3);
-      attr.setUsage(THREE.DynamicDrawUsage);
-      geo.setAttribute('position', attr);
-      const mat = new THREE.LineBasicMaterial({
-        color: arm.color, transparent: true, opacity: arm.opacity,
+      // Unit cylinder (height=1): position/scale.y/quaternion updated each frame
+      const geo = new THREE.CylinderGeometry(0.07, 0.07, 1, 10);
+      const mat = new THREE.MeshPhongMaterial({
+        color: arm.color,
+        emissive: arm.color,
+        emissiveIntensity: 0.18,
+        transparent: true, opacity: arm.opacity,
+        shininess: 80,
       });
       R.disposables.push(geo, mat);
-      tribarGroup.add(new THREE.Line(geo, mat));
-      tribarLineData.push({ attr, arr, armIdx, fromIdx: from, toIdx: to });
+      const mesh = new THREE.Mesh(geo, mat);
+      tribarGroup.add(mesh);
+      tribarMeshData.push({ mesh, fromIdx: from, toIdx: to });
     });
   });
 
@@ -1440,11 +1445,12 @@ export function buildS7() {
     });
 
     if (tribarGroup.visible) {
-      tribarLineData.forEach(({ attr, arr, fromIdx, toIdx }) => {
+      tribarMeshData.forEach(({ mesh, fromIdx, toIdx }) => {
         const fa = allMeshes[fromIdx].position, ta = allMeshes[toIdx].position;
-        arr[0] = fa.x; arr[1] = fa.y; arr[2] = fa.z;
-        arr[3] = ta.x; arr[4] = ta.y; arr[5] = ta.z;
-        attr.needsUpdate = true;
+        mesh.position.addVectors(fa, ta).multiplyScalar(0.5);
+        _dir.subVectors(ta, fa);
+        mesh.scale.y = _dir.length();
+        mesh.quaternion.setFromUnitVectors(_yUp, _dir.normalize());
       });
     }
 
