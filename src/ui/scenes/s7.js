@@ -330,49 +330,45 @@ export function buildS7() {
   shadeMesh.visible = false;
   scene.add(shadeMesh);
 
-  // ── Penrose Tribar ────────────────────────────────────────────────────────
-  // Three square-section arms along face diagonals of a virtual cube.
-  // Corners at (T,0,0), (0,T,0), (0,0,T) — all equal depth from origin along (1,1,1).
-  // From direction (1,1,1) the arms project as an impossible closed triangle.
-  const PEN_T  = R_BASE * 0.80;    // cube reach
-  const PEN_S  = PEN_T * 0.20;     // arm cross-section
-  const penOff = new THREE.Vector3(PEN_T / 3, PEN_T / 3, PEN_T / 3); // center the cube
-
-  const penGroup = new THREE.Group();
-  penGroup.visible = false;
-
-  const PEN_CORNERS = [
-    new THREE.Vector3(PEN_T, 0, 0).sub(penOff),
-    new THREE.Vector3(0, PEN_T, 0).sub(penOff),
-    new THREE.Vector3(0, 0, PEN_T).sub(penOff),
+  // ── Penrose Tribar — inter-cycle fold connections ─────────────────────────
+  // The orbit has period M=6 and runs for 3 cycles. Each orbit position p (0..5)
+  // appears at steps p, p+M, p+2M across the three cycles. Connecting these three
+  // nodes forms a triangle embedded in the helix. Three groups of 6 triangles
+  // produce the three arms of the Penrose tribar:
+  //
+  //   Arm A (gold):   step p   → step p+M    (cycle 0 → cycle 1 fold)
+  //   Arm B (cyan):   step p+M → step p+2M   (cycle 1 → cycle 2 fold)
+  //   Arm C (orange): step p+2M → step p     (cycle 2 → cycle 0 — the impossible return)
+  //
+  // Arm C is the "impossible" arm: it closes the triangle by leaping from the
+  // top of the helix back to its base, contradicting its own vertical structure.
+  const TRIBAR_ARMS = [
+    { color: 0xFFD700, opacity: 0.55, pairs: Array.from({ length: M }, (_, p) => [p,       p + M])     },
+    { color: 0x00E5FF, opacity: 0.55, pairs: Array.from({ length: M }, (_, p) => [p + M,   p + 2 * M]) },
+    { color: 0xFF6B35, opacity: 0.55, pairs: Array.from({ length: M }, (_, p) => [p + 2*M, p])          },
   ];
-  const PEN_COLORS = [0xFFD700, 0x00E5FF, 0xFF6B35];
 
-  PEN_CORNERS.forEach((from, i) => {
-    const to  = PEN_CORNERS[(i + 1) % 3];
-    const mid = from.clone().add(to).multiplyScalar(0.5);
-    const dir = to.clone().sub(from);
-    const len = dir.length();
+  const tribarGroup = new THREE.Group();
+  tribarGroup.visible = false;
+  const tribarLineData = []; // { attr, armIdx, fromIdx, toIdx } — updated per-frame
 
-    const geo = new THREE.BoxGeometry(PEN_S, PEN_S, len + PEN_S * 0.5);
-    const mat = new THREE.MeshPhongMaterial({
-      color: PEN_COLORS[i],
-      emissive: PEN_COLORS[i],
-      emissiveIntensity: 0.30,
-      transparent: true, opacity: 0.90,
-      shininess: 90,
+  TRIBAR_ARMS.forEach((arm, armIdx) => {
+    arm.pairs.forEach(([from, to]) => {
+      const arr  = new Float32Array(6);
+      const geo  = new THREE.BufferGeometry();
+      const attr = new THREE.BufferAttribute(arr, 3);
+      attr.setUsage(THREE.DynamicDrawUsage);
+      geo.setAttribute('position', attr);
+      const mat = new THREE.LineBasicMaterial({
+        color: arm.color, transparent: true, opacity: arm.opacity,
+      });
+      R.disposables.push(geo, mat);
+      tribarGroup.add(new THREE.Line(geo, mat));
+      tribarLineData.push({ attr, arr, armIdx, fromIdx: from, toIdx: to });
     });
-    R.disposables.push(geo, mat);
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.copy(mid);
-    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir.clone().normalize());
-    penGroup.add(mesh);
   });
 
-  // Float the tribar just above the helix apex (step 20 = F₈ closing point)
-  const PEN_Y = (STEPS - 1) * 0.68 + PEN_T + 1.2;
-  penGroup.position.set(0, PEN_Y, 0);
-  scene.add(penGroup);
+  scene.add(tribarGroup);
 
   // ── Lighting ─────────────────────────────────────────────────────────────
   scene.add(new THREE.AmbientLight(0xffffff, 0.1));
@@ -1031,12 +1027,9 @@ export function buildS7() {
   };
 
   document.getElementById('p8tribar').onclick = () => {
-    penGroup.visible = !penGroup.visible;
-    document.getElementById('p8tribar').classList.toggle('lit', penGroup.visible);
-    if (penGroup.visible) applyPreset('tribar');
+    tribarGroup.visible = !tribarGroup.visible;
+    document.getElementById('p8tribar').classList.toggle('lit', tribarGroup.visible);
   };
-
-  document.getElementById('p8v_tribar').onclick = () => applyPreset('tribar');
 
   const setGreekTitle = on => {
     const h1 = document.getElementById('site-title');
@@ -1278,7 +1271,6 @@ export function buildS7() {
     side:   { pos: [22, -0.5, 26],  tgt: [0, -0.5, 0] },
     top:    { pos: [ 0,  30,   0],  tgt: [0, -0.5, 0] },
     bottom: { pos: [ 0, -30,   0],  tgt: [0, -0.5, 0] },
-    tribar: { pos: [PEN_Y + 14, PEN_Y + 14, PEN_Y + 14], tgt: [0, PEN_Y, 0] },
   };
   const applyPreset = key => {
     const { pos, tgt } = PRESETS[key];
@@ -1446,6 +1438,15 @@ export function buildS7() {
           + 0.1 * Math.abs(Math.sin(t * 1.1 + s * 0.42));
       }
     });
+
+    if (tribarGroup.visible) {
+      tribarLineData.forEach(({ attr, arr, fromIdx, toIdx }) => {
+        const fa = allMeshes[fromIdx].position, ta = allMeshes[toIdx].position;
+        arr[0] = fa.x; arr[1] = fa.y; arr[2] = fa.z;
+        arr[3] = ta.x; arr[4] = ta.y; arr[5] = ta.z;
+        attr.needsUpdate = true;
+      });
+    }
 
     leaderData.forEach(({ attr, arr, s, φ }) => {
       const rot      = (φ === 0) ? rotA : rotB;
