@@ -692,8 +692,8 @@ function beatWindowStep(s) {
 
 function evolveTick() {
   evolveStepCount++;
-  // one decision per bar
-  if (evolveStepCount % 16 !== 0) return;
+  // one decision per 4 bars (64 steps)
+  if (evolveStepCount % 64 !== 0) return;
 
   // snapshot active cells
   const activeCells = [];
