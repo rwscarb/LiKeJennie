@@ -330,6 +330,58 @@ export function buildS7() {
   shadeMesh.visible = false;
   scene.add(shadeMesh);
 
+  // ── Great Stellated Dodecahedron overlay ────────────────────────────────
+  // The GSD {5/2, 3} shares the 20 vertices of a regular dodecahedron.
+  // Its 12 faces are pentagrams: skip-1 winding through each pentagon's vertices.
+  // The golden-angle helix has latent fivefold symmetry — viewing from the side
+  // reveals layered star-polygon structure that matches the GSD projection.
+  const gsdGroup = new THREE.Group();
+  gsdGroup.visible = false;
+
+  (() => {
+    const p = PHI, ip = 1 / PHI;
+
+    // 20 dodecahedron vertices (circumradius = √3):
+    const V = [
+      [ 1, 1, 1],[ 1, 1,-1],[ 1,-1, 1],[ 1,-1,-1], //  0-3
+      [-1, 1, 1],[-1, 1,-1],[-1,-1, 1],[-1,-1,-1], //  4-7
+      [ 0, ip, p],[ 0, ip,-p],[ 0,-ip, p],[ 0,-ip,-p], //  8-11
+      [ip, p, 0],[ip,-p, 0],[-ip, p, 0],[-ip,-p, 0], // 12-15
+      [ p, 0, ip],[ p, 0,-ip],[-p, 0, ip],[-p, 0,-ip], // 16-19
+    ];
+
+    // 12 pentagonal faces in cyclic vertex order:
+    const FACES = [
+      [ 0,  8,  4, 14, 12], [ 0,  8, 10,  2, 16],
+      [ 0, 12,  1, 17, 16], [ 1,  9,  5, 14, 12],
+      [ 1,  9, 11,  3, 17], [ 2, 10,  6, 15, 13],
+      [ 2, 13,  3, 17, 16], [ 3, 11,  7, 15, 13],
+      [ 4,  8, 10,  6, 18], [ 4, 14,  5, 19, 18],
+      [ 5,  9, 11,  7, 19], [ 6, 15,  7, 19, 18],
+    ];
+
+    // Pentagram edges: connect every-other vertex in each face (skip-1 = {5/2} winding)
+    const pts = [];
+    FACES.forEach(f => {
+      for (let k = 0; k < 5; k++) {
+        const a = V[f[k]], b = V[f[(k + 2) % 5]];
+        pts.push(...a, ...b);
+      }
+    });
+
+    const gsdGeo = new THREE.BufferGeometry();
+    gsdGeo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+    const gsdMat = new THREE.LineBasicMaterial({ color: 0xFFD700, transparent: true, opacity: 0.32 });
+    R.disposables.push(gsdGeo, gsdMat);
+    gsdGroup.add(new THREE.LineSegments(gsdGeo, gsdMat));
+  })();
+
+  // Center on helix midpoint at default H_STEP; scale circumradius (√3) to envelope
+  const GSD_MID_Y = (STEPS - 1) * 0.68 / 2;
+  gsdGroup.position.set(0, GSD_MID_Y, 0);
+  gsdGroup.scale.setScalar(helixR(STEPS / 2) * 2.4 / Math.sqrt(3));
+  scene.add(gsdGroup);
+
   // ── Lighting ─────────────────────────────────────────────────────────────
   scene.add(new THREE.AmbientLight(0xffffff, 0.1));
   const pl1 = new THREE.PointLight(0xFFD700, 1.1, 35); pl1.position.set( 0, 14,  7); scene.add(pl1);
@@ -984,6 +1036,11 @@ export function buildS7() {
   document.getElementById('p8rot').onclick = () => {
     controls.autoRotate = !controls.autoRotate;
     document.getElementById('p8rot').classList.toggle('lit', controls.autoRotate);
+  };
+
+  document.getElementById('p8gsd').onclick = () => {
+    gsdGroup.visible = !gsdGroup.visible;
+    document.getElementById('p8gsd').classList.toggle('lit', gsdGroup.visible);
   };
 
   const setGreekTitle = on => {
