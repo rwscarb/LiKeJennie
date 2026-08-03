@@ -374,12 +374,6 @@ export function buildS7() {
   penGroup.position.set(0, PEN_Y, 0);
   scene.add(penGroup);
 
-  // Magic viewpoint: (1,1,1) direction from tribar center — reveals the impossible triangle
-  PRESETS['tribar'] = {
-    pos: [penGroup.position.x + 14, penGroup.position.y + 14, penGroup.position.z + 14],
-    tgt: [penGroup.position.x, penGroup.position.y, penGroup.position.z],
-  };
-
   // ── Lighting ─────────────────────────────────────────────────────────────
   scene.add(new THREE.AmbientLight(0xffffff, 0.1));
   const pl1 = new THREE.PointLight(0xFFD700, 1.1, 35); pl1.position.set( 0, 14,  7); scene.add(pl1);
@@ -1284,6 +1278,7 @@ export function buildS7() {
     side:   { pos: [22, -0.5, 26],  tgt: [0, -0.5, 0] },
     top:    { pos: [ 0,  30,   0],  tgt: [0, -0.5, 0] },
     bottom: { pos: [ 0, -30,   0],  tgt: [0, -0.5, 0] },
+    tribar: { pos: [PEN_Y + 14, PEN_Y + 14, PEN_Y + 14], tgt: [0, PEN_Y, 0] },
   };
   const applyPreset = key => {
     const { pos, tgt } = PRESETS[key];
