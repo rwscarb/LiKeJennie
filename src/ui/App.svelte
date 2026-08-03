@@ -488,7 +488,7 @@ afterUpdate(() => {
       <button class="btn" id="p8wave">WAVE</button>
       <button class="btn" id="p8collapse">COLLAPSE</button>
       <button class="btn" id="p8tribar">TRIBAR</button>
-      <button class="btn" id="p8v_tribar">⟁ VIEW</button>
+      <button class="btn" id="p8v_tribar">MAGIC VIEW</button>
       <span class="clbl">A</span>
       <button class="btn" id="p8a_cw">CW</button>
       <button class="btn" id="p8a_ccw">CCW</button>
