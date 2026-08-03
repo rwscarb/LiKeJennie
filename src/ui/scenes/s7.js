@@ -1748,4 +1748,17 @@ export function buildS7() {
             }
             olvStrAttrs[si].needsUpdate = true;
           }
-          olvChamber3.material.op
+          olvChamber3.material.opacity = 0.11;
+          olvChamber6.material.opacity = 0.11;
+        }
+      }
+    }
+
+    R.labelRenderer.render(scene, camera);
+  };
+
+  // Default state: OLIVER42 + WAVE + COLLAPSE on at load
+  setOliver(true);
+  showWave     = true; document.getElementById('p8wave')?.classList.add('lit');
+  showCollapse = true; document.getElementById('p8collapse')?.classList.add('lit');
+}
