@@ -369,12 +369,16 @@ export function buildS7() {
     });
   });
 
-  // Filled faces: one triangle per orbit position p, vertices at steps p, p+M, p+2M.
-  // Each face is colored by the orbit value's palette, matching the helix shading style.
+  // Filled faces: arms A and B only — split each triangle via its centroid.
+  // For each orbit position p, two sub-triangles:
+  //   Arm A face: centroid → step p     → step p+M
+  //   Arm B face: centroid → step p+M   → step p+2M
+  // The Arm C section (step p+2M → step p) is left unfilled — line only.
+  // 18 floats = 2 triangles × 3 vertices × 3 coords per entry.
   for (let p = 0; p < M; p++) {
     const val   = ORBIT[p % M];
     const color = STYLE[val].c;
-    const arr   = new Float32Array(9); // 3 vertices × 3 coords
+    const arr   = new Float32Array(18);
     const geo   = new THREE.BufferGeometry();
     const attr  = new THREE.BufferAttribute(arr, 3);
     attr.setUsage(THREE.DynamicDrawUsage);
@@ -1467,9 +1471,16 @@ export function buildS7() {
       });
       tribarFaceData.forEach(({ attr, arr, i0, i1, i2 }) => {
         const a = allMeshes[i0].position, b = allMeshes[i1].position, c = allMeshes[i2].position;
-        arr[0] = a.x; arr[1] = a.y; arr[2] = a.z;
-        arr[3] = b.x; arr[4] = b.y; arr[5] = b.z;
-        arr[6] = c.x; arr[7] = c.y; arr[8] = c.z;
+        // centroid of the three nodes
+        const cx = (a.x + b.x + c.x) / 3, cy = (a.y + b.y + c.y) / 3, cz = (a.z + b.z + c.z) / 3;
+        // Arm A face: centroid → a → b
+        arr[0] = cx; arr[1] = cy; arr[2] = cz;
+        arr[3] = a.x; arr[4] = a.y; arr[5] = a.z;
+        arr[6] = b.x; arr[7] = b.y; arr[8] = b.z;
+        // Arm B face: centroid → b → c
+        arr[9]  = cx; arr[10] = cy; arr[11] = cz;
+        arr[12] = b.x; arr[13] = b.y; arr[14] = b.z;
+        arr[15] = c.x; arr[16] = c.y; arr[17] = c.z;
         attr.needsUpdate = true;
       });
     }
@@ -1737,17 +1748,4 @@ export function buildS7() {
             }
             olvStrAttrs[si].needsUpdate = true;
           }
-          olvChamber3.material.opacity = 0.11;
-          olvChamber6.material.opacity = 0.11;
-        }
-      }
-    }
-
-    R.labelRenderer.render(scene, camera);
-  };
-
-  // Default state: OLIVER42 + WAVE + COLLAPSE on at load
-  setOliver(true);
-  showWave     = true; document.getElementById('p8wave')?.classList.add('lit');
-  showCollapse = true; document.getElementById('p8collapse')?.classList.add('lit');
-}
+          olvChamber3.material.op
