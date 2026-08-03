@@ -14,9 +14,15 @@ Nodes at position p, p+M, p+2M across cycles form triangles. The triangle edges:
   Arm B (cyan)   : cycle 1 → cycle 2  (possible, forward) — fires at boundary 1→2
   Arm C (orange) : cycle 2 → cycle 0  (impossible, return) — fires after cycle 2
 
-Key fix from v1: each arm fires at its specific cycle boundary only, so D (Arm A)
-and E (Arm B) see different hidden states and produce genuinely different results.
-v1 applied all arms after every cycle, making D and E identical.
+Key fix from v1: each arm fires at its specific cycle boundary only.
+Key fix from v2: ReLU applied after each within-cycle permutation step.
+
+Root cause of D≡E in v1 and v2: PERM^M = I (the orbit permutation has period
+exactly M=6, so 6 linear permutation steps compose back to the identity). Without
+nonlinearity, h after cycle 0 = h after cycle 1 = h after cycle 2 = h_embed.
+Every arm fires on the same vector, making D and E structurally identical.
+ReLU(h @ PERM) breaks this: the reordering + zero-clamping accumulates across
+steps, so each cycle produces a genuinely different hidden state.
 
 Six conditions:
 
@@ -131,10 +137,15 @@ class TribarNet(nn.Module):
         self.clf  = nn.Sequential(nn.Linear(N, 64), nn.ReLU(), nn.Linear(64, 10))
 
     def forward(self, x):
-        h = self.relu(self.embed(x.view(x.size(0), -1)))
+        # No relu on initial embed: h has mixed signs.
+        # relu(h @ PERM) only fires when values go negative — which only happens when
+        # h has negatives to begin with. If we relu here, h is non-negative, permuting
+        # non-negative values stays non-negative, relu becomes a no-op, and PERM^6=I
+        # collapses every cycle back to the same state (D≡E again).
+        h = self.embed(x.view(x.size(0), -1))
         for cycle in range(CYCLES):
             for _ in range(M):
-                h = h @ self.perm
+                h = self.relu(h @ self.perm)
             # fire arms whose boundary matches this cycle
             for name in self.arm_names:
                 if self.arm_cycles[name] == cycle:
@@ -288,7 +299,7 @@ def main():
     ax.legend(fontsize=8, facecolor='#020c08', edgecolor='#1a3a2a', labelcolor='#aaaaaa')
 
     plt.tight_layout()
-    out = 'penrose_tribar_results_v2.png'
+    out = 'penrose_tribar_results_v3.png'
     plt.savefig(out, dpi=140, facecolor='#020c08')
     print(f'\nPlot saved: {out}')
 
