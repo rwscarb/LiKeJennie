@@ -110,6 +110,10 @@ btn, .btn {
 .seq-cell.on { background:var(--on-col,#00ff8880); border-color:var(--on-col,#00ff88); }
 .seq-cell.cursor { outline:1px solid #fff; }
 .seq-cell.on.cursor { outline:2px solid #fff; }
+/* EVOLVE preview: cell queued to be added (faint outline) */
+.seq-cell.queued-add { border-color:var(--on-col,#00ff8866); box-shadow:inset 0 0 0 1px var(--on-col,#00ff8844); }
+/* EVOLVE preview: cell queued to be removed (dimmed X mark) */
+.seq-cell.on.queued-remove { opacity:0.45; }
 /* ── Octave lane ── */
 .oct-lane {
   display:grid;
@@ -539,8 +543,12 @@ document.addEventListener('mouseleave', () => { painting = false; octPainting = 
 function renderGrid() {
   for (let r=0; r<ROWS; r++)
     for (let s=0; s<STEPS; s++) {
-      cells[r][s].classList.toggle('on', grid[r][s]);
+      const cur = grid[r][s];
+      const nxt = pendingEvolveGrid ? pendingEvolveGrid[r][s] : cur;
+      cells[r][s].classList.toggle('on', cur);
       cells[r][s].classList.toggle('cursor', s===curStep);
+      cells[r][s].classList.toggle('queued-add',    !cur && nxt);
+      cells[r][s].classList.toggle('queued-remove',  cur && !nxt);
     }
 }
 
@@ -669,6 +677,7 @@ function playBass(freq, startTime, dur) {
 // ── Scheduler ────────────────────────────────────────────────────────────────
 let bpm=60, playing=false, schedTimer=null, nextAt=0, schedStepN=0;
 let pendingEvolveMutations = [];
+let pendingEvolveGrid = null; // shadow of grid after pending mutations (for preview)
 const LOOK=0.12;
 
 function stepDur() { return 60/(bpm*4); } // 16th note duration
@@ -705,43 +714,45 @@ function evolveTick() {
 
   let mutation = null;
 
+  // Ensure shadow grid exists and clone current grid into it (first mutation per cycle)
+  if (!pendingEvolveGrid) {
+    pendingEvolveGrid = grid.map(row => [...row]);
+  }
+  const sg = pendingEvolveGrid; // alias
+
   if (density === 0) {
-    // reseed near orbit position 2-4 (mid-range, not jarring bass)
     const r = 2 + Math.floor(Math.random() * 3);
     const s = _BEAT_WIN[Math.floor(Math.random()*_BEAT_WIN.length)][0];
+    sg[r][s] = true;
     mutation = () => { grid[r][s] = true; renderGrid(); };
 
   } else if (density < evolveDensityTarget - 1 && roll < 0.80) {
-    // too sparse: add near an existing note, orbit-adjacent row, same beat window
     const [ar, as_] = activeCells[Math.floor(Math.random() * activeCells.length)];
     const nr = (Math.random() < 0.5) ? orbitAdjacentRow(ar) : ar;
     const ns = (Math.random() < 0.6) ? beatWindowStep(as_) : (as_+1)%STEPS;
-    if (!grid[nr][ns]) mutation = () => { grid[nr][ns] = true; renderGrid(); };
+    if (!grid[nr][ns]) { sg[nr][ns] = true; mutation = () => { grid[nr][ns] = true; renderGrid(); }; }
 
   } else if (density > evolveDensityTarget + 2 && roll < 0.75) {
-    // too dense: remove a note (avoid removing low anchor rows 0-1 if possible)
     const nonAnchor = activeCells.filter(([r])=>r>=2);
     const pool = nonAnchor.length > 0 ? nonAnchor : activeCells;
     const [r,s] = pool[Math.floor(Math.random() * pool.length)];
+    sg[r][s] = false;
     mutation = () => { grid[r][s] = false; renderGrid(); };
 
   } else if (roll < 0.60) {
-    // ORBIT MOVE — pick a note, migrate it along orbit axis OR within beat window (not both at once)
     const [r,s] = activeCells[Math.floor(Math.random() * activeCells.length)];
     const moveType = Math.random();
     let nr = r, ns = s;
     if (moveType < 0.45) {
-      // step drift: stay in beat window (max ±2 steps)
       ns = beatWindowStep(s);
     } else if (moveType < 0.80) {
-      // orbit row step: ±1 in [1,2,4,8,7,5] cycle
       nr = orbitAdjacentRow(r);
     } else {
-      // gentle diagonal: one orbit step + one beat-window step
       nr = orbitAdjacentRow(r);
       ns = beatWindowStep(s);
     }
     if (nr !== r || ns !== s) {
+      sg[r][s] = false; sg[nr][ns] = true;
       mutation = () => { grid[r][s] = false; grid[nr][ns] = true; renderGrid(); };
     }
 
@@ -781,6 +792,7 @@ function scheduleStep(step, time) {
     if (step === 0 && pendingEvolveMutations.length > 0) {
       pendingEvolveMutations.forEach(fn => fn());
       pendingEvolveMutations = [];
+      pendingEvolveGrid = null; // clear shadow; renderGrid() inside mutations already updated DOM
     }
   }
   const dur = stepDur();
@@ -1277,6 +1289,8 @@ document.getElementById('playBtn').addEventListener('click',function(){
 document.getElementById('evolveBtn').addEventListener('click',function(){
   evolveMode = !evolveMode;
   evolveStepCount = 0;
+  pendingEvolveMutations = [];
+  pendingEvolveGrid = null;
   if (evolveMode) {
     evolveBaseTranspose = transpose;
     evolveTransposeDir = 1;
@@ -1284,6 +1298,7 @@ document.getElementById('evolveBtn').addEventListener('click',function(){
     for (let r=0; r<ROWS; r++) for (let s=0; s<STEPS; s++) if (grid[r][s]) count++;
     evolveDensityTarget = Math.max(2, count);
   }
+  renderGrid();
   this.style.opacity = evolveMode ? '1' : '0.55';
   this.classList.toggle('lit', evolveMode);
 });
