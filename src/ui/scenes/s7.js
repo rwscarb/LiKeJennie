@@ -330,59 +330,55 @@ export function buildS7() {
   shadeMesh.visible = false;
   scene.add(shadeMesh);
 
-  // ── Great Stellated Dodecahedron overlay ────────────────────────────────
-  // The GSD {5/2, 3} shares the 20 vertices of a regular dodecahedron.
-  // Its 12 faces are pentagrams: skip-1 winding through each pentagon's vertices.
-  // The golden-angle helix has latent fivefold symmetry — viewing from the side
-  // reveals layered star-polygon structure that matches the GSD projection.
-  const gsdGroup = new THREE.Group();
-  gsdGroup.visible = false;
+  // ── Penrose Tribar ────────────────────────────────────────────────────────
+  // Three square-section arms along face diagonals of a virtual cube.
+  // Corners at (T,0,0), (0,T,0), (0,0,T) — all equal depth from origin along (1,1,1).
+  // From direction (1,1,1) the arms project as an impossible closed triangle.
+  const PEN_T  = R_BASE * 0.80;    // cube reach
+  const PEN_S  = PEN_T * 0.20;     // arm cross-section
+  const penOff = new THREE.Vector3(PEN_T / 3, PEN_T / 3, PEN_T / 3); // center the cube
 
-  (() => {
-    const p = PHI, ip = 1 / PHI;
+  const penGroup = new THREE.Group();
+  penGroup.visible = false;
 
-    // 20 dodecahedron vertices (circumradius = √3):
-    const V = [
-      [ 1, 1, 1],[ 1, 1,-1],[ 1,-1, 1],[ 1,-1,-1], //  0-3
-      [-1, 1, 1],[-1, 1,-1],[-1,-1, 1],[-1,-1,-1], //  4-7
-      [ 0, ip, p],[ 0, ip,-p],[ 0,-ip, p],[ 0,-ip,-p], //  8-11
-      [ip, p, 0],[ip,-p, 0],[-ip, p, 0],[-ip,-p, 0], // 12-15
-      [ p, 0, ip],[ p, 0,-ip],[-p, 0, ip],[-p, 0,-ip], // 16-19
-    ];
+  const PEN_CORNERS = [
+    new THREE.Vector3(PEN_T, 0, 0).sub(penOff),
+    new THREE.Vector3(0, PEN_T, 0).sub(penOff),
+    new THREE.Vector3(0, 0, PEN_T).sub(penOff),
+  ];
+  const PEN_COLORS = [0xFFD700, 0x00E5FF, 0xFF6B35];
 
-    // 12 pentagonal faces in cyclic vertex order:
-    const FACES = [
-      [ 0,  8,  4, 14, 12], [ 0,  8, 10,  2, 16],
-      [ 0, 12,  1, 17, 16], [ 1,  9,  5, 14, 12],
-      [ 1,  9, 11,  3, 17], [ 2, 10,  6, 15, 13],
-      [ 2, 13,  3, 17, 16], [ 3, 11,  7, 15, 13],
-      [ 4,  8, 10,  6, 18], [ 4, 14,  5, 19, 18],
-      [ 5,  9, 11,  7, 19], [ 6, 15,  7, 19, 18],
-    ];
+  PEN_CORNERS.forEach((from, i) => {
+    const to  = PEN_CORNERS[(i + 1) % 3];
+    const mid = from.clone().add(to).multiplyScalar(0.5);
+    const dir = to.clone().sub(from);
+    const len = dir.length();
 
-    // Pentagram edges: connect every-other vertex in each face (skip-1 = {5/2} winding)
-    const pts = [];
-    FACES.forEach(f => {
-      for (let k = 0; k < 5; k++) {
-        const a = V[f[k]], b = V[f[(k + 2) % 5]];
-        pts.push(...a, ...b);
-      }
+    const geo = new THREE.BoxGeometry(PEN_S, PEN_S, len + PEN_S * 0.5);
+    const mat = new THREE.MeshPhongMaterial({
+      color: PEN_COLORS[i],
+      emissive: PEN_COLORS[i],
+      emissiveIntensity: 0.30,
+      transparent: true, opacity: 0.90,
+      shininess: 90,
     });
+    R.disposables.push(geo, mat);
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.copy(mid);
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir.clone().normalize());
+    penGroup.add(mesh);
+  });
 
-    const gsdGeo = new THREE.BufferGeometry();
-    gsdGeo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
-    const gsdMat = new THREE.LineBasicMaterial({ color: 0xFFD700, transparent: true, opacity: 0.32 });
-    R.disposables.push(gsdGeo, gsdMat);
-    gsdGroup.add(new THREE.LineSegments(gsdGeo, gsdMat));
-  })();
+  // Float the tribar just above the helix apex (step 20 = F₈ closing point)
+  const PEN_Y = (STEPS - 1) * 0.68 + PEN_T + 1.2;
+  penGroup.position.set(0, PEN_Y, 0);
+  scene.add(penGroup);
 
-  // Scale so GSD circumradius (√3 at unit scale) matches the base helix radius.
-  // This places GSD vertices at roughly the same radial distance as the helix nodes,
-  // making the star pattern emerge from within the node cloud rather than surrounding it.
-  const GSD_MID_Y = (STEPS - 1) * 0.68 / 2;
-  gsdGroup.position.set(0, GSD_MID_Y, 0);
-  gsdGroup.scale.setScalar(R_BASE / Math.sqrt(3));
-  scene.add(gsdGroup);
+  // Magic viewpoint: (1,1,1) direction from tribar center — reveals the impossible triangle
+  PRESETS['tribar'] = {
+    pos: [penGroup.position.x + 14, penGroup.position.y + 14, penGroup.position.z + 14],
+    tgt: [penGroup.position.x, penGroup.position.y, penGroup.position.z],
+  };
 
   // ── Lighting ─────────────────────────────────────────────────────────────
   scene.add(new THREE.AmbientLight(0xffffff, 0.1));
@@ -1040,10 +1036,13 @@ export function buildS7() {
     document.getElementById('p8rot').classList.toggle('lit', controls.autoRotate);
   };
 
-  document.getElementById('p8gsd').onclick = () => {
-    gsdGroup.visible = !gsdGroup.visible;
-    document.getElementById('p8gsd').classList.toggle('lit', gsdGroup.visible);
+  document.getElementById('p8tribar').onclick = () => {
+    penGroup.visible = !penGroup.visible;
+    document.getElementById('p8tribar').classList.toggle('lit', penGroup.visible);
+    if (penGroup.visible) applyPreset('tribar');
   };
+
+  document.getElementById('p8v_tribar').onclick = () => applyPreset('tribar');
 
   const setGreekTitle = on => {
     const h1 = document.getElementById('site-title');
