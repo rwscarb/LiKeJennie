@@ -65,7 +65,7 @@ canvas { display:block; }
 .section-title::before { content:'▾'; font-size:.7em; opacity:.55; transition:transform .15s; }
 .section.collapsed .section-title::before { transform:rotate(-90deg); }
 .section.collapsed .section-title { margin-bottom:0; }
-.section-body { overflow:hidden; }
+.section-body { overflow:visible; }
 .section.collapsed .section-body { display:none; }
 /* seq section passes flex:1 through to its body, but collapses to title height when closed */
 .section[style*="flex:1"] { display:flex; flex-direction:column; }
@@ -857,11 +857,12 @@ let W=0,H=0;
 function resize(){
   W=canvas.parentElement.clientWidth; H=canvas.parentElement.clientHeight;
   canvas.width=W; canvas.height=H;
-  // Vertical stack: C60 upper, orbit ring lower — both centered horizontally
-  // Shared base unit so sizes stay matched
   const _u = Math.min(W, H) * 0.12;
-  OR = _u * 1.55;   // orbit ring — comfortably larger
-  OX=W*0.50; OY=H*0.74;
+  OR = _u * 1.55;
+  OX = W * 0.50;
+  // Keep orbit ring bottom above the keyboard — keyboard top is H - min(82,H*0.11) - 8
+  const kbTop = H - Math.min(82, Math.floor(H * 0.11)) - 8;
+  OY = Math.min(H * 0.74, kbTop - OR - 6);
 }
 resize(); window.addEventListener('resize',resize);
 
