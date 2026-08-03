@@ -383,7 +383,7 @@ const PRESETS = {
 
 // Synth settings bundled with named presets
 const PRESET_SYNTH = {
-  zen: { transpose:-3, waveform:'sine', reverbAmt:0.85, attackMs:80, bassAmt:0.30, detuneAmt:1, filterFreq:4000 },
+  zen: { transpose:-3, waveform:'sine', reverbAmt:0.85, attackMs:80, bassAmt:0.30, detuneAmt:1, filterFreq:4000, bpm:21 },
 };
 
 // Per-step octave lane bundled with named presets (16 values, range -2..+2)
@@ -431,6 +431,11 @@ function applySynthSettings(s) {
     if(sl) sl.value=v2;
     if(v) v.textContent=v2>=20000?'OFF':v2<1000?v2+'Hz':(Math.round(v2/100)/10)+'kHz';
     if(filterNode) filterNode.frequency.value=v2;
+  }
+  if (s.bpm !== undefined) {
+    bpm = s.bpm;
+    const sl=document.getElementById('bpmSlider'), v=document.getElementById('bpmVal');
+    if(sl) sl.value=bpm; if(v) v.textContent=bpm+' BPM';
   }
 }
 
