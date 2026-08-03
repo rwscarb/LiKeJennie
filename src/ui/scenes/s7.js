@@ -376,10 +376,12 @@ export function buildS7() {
     gsdGroup.add(new THREE.LineSegments(gsdGeo, gsdMat));
   })();
 
-  // Center on helix midpoint at default H_STEP; scale circumradius (√3) to envelope
+  // Scale so GSD circumradius (√3 at unit scale) matches the base helix radius.
+  // This places GSD vertices at roughly the same radial distance as the helix nodes,
+  // making the star pattern emerge from within the node cloud rather than surrounding it.
   const GSD_MID_Y = (STEPS - 1) * 0.68 / 2;
   gsdGroup.position.set(0, GSD_MID_Y, 0);
-  gsdGroup.scale.setScalar(helixR(STEPS / 2) * 2.4 / Math.sqrt(3));
+  gsdGroup.scale.setScalar(R_BASE / Math.sqrt(3));
   scene.add(gsdGroup);
 
   // ── Lighting ─────────────────────────────────────────────────────────────
