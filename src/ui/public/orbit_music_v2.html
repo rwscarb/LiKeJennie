@@ -9,6 +9,7 @@
   --bg:#040408; --fg:#00ff88; --dim:#0a2028; --cyan:#00e5ff;
   --orng:#ff9800; --muted:#1a6040; --panel:#040408;
 }
+html { overflow:hidden; height:100%; }
 body {
   background:var(--bg); color:var(--fg);
   font-family:'Courier New',monospace;
@@ -667,12 +668,29 @@ const LOOK=0.12;
 
 function stepDur() { return 60/(bpm*4); } // 16th note duration
 
+// Orbit-aware helpers
+// Rows follow [1,2,4,8,7,5] — each is ×2 mod9 of the previous → adjacent rows are harmonically related
+function orbitAdjacentRow(r) {
+  // step ±1 in orbit cycle; bias toward middle rows (avoid jumping to far bass end from high end)
+  const dir = Math.random() < 0.5 ? 1 : -1;
+  return (r + dir + ROWS) % ROWS;
+}
+// Beat windows: 16 steps split across 6 orbit positions → keep step moves within local window
+const _BEAT_WIN = [[0,1,2],[3,4],[5,6,7],[8,9,10],[11,12],[13,14,15]];
+function beatWindowStep(s) {
+  const win = _BEAT_WIN.find(w => w.includes(s)) || _BEAT_WIN[0];
+  // pick a different step in the same window, or bleed ±1 into adjacent window
+  const candidates = [...win, (win[0]-1+STEPS)%STEPS, (win[win.length-1]+1)%STEPS]
+    .filter(x => x !== s);
+  return candidates[Math.floor(Math.random()*candidates.length)];
+}
+
 function evolveTick() {
   evolveStepCount++;
-  // decide once per bar (every 16 steps) whether to queue a mutation
+  // one decision per bar
   if (evolveStepCount % 16 !== 0) return;
 
-  // snapshot active cells at decision time
+  // snapshot active cells
   const activeCells = [];
   for (let r=0; r<ROWS; r++)
     for (let s=0; s<STEPS; s++)
@@ -680,43 +698,52 @@ function evolveTick() {
   const density = activeCells.length;
   const roll = Math.random();
 
-  // Build the mutation as a closure — applied at step 0 of the next bar
   let mutation = null;
 
   if (density === 0) {
-    const r = Math.floor(Math.random() * ROWS);
-    const s = Math.floor(Math.random() * STEPS);
+    // reseed near orbit position 2-4 (mid-range, not jarring bass)
+    const r = 2 + Math.floor(Math.random() * 3);
+    const s = _BEAT_WIN[Math.floor(Math.random()*_BEAT_WIN.length)][0];
     mutation = () => { grid[r][s] = true; renderGrid(); };
 
   } else if (density < evolveDensityTarget - 1 && roll < 0.80) {
+    // too sparse: add near an existing note, orbit-adjacent row, same beat window
     const [ar, as_] = activeCells[Math.floor(Math.random() * activeCells.length)];
-    const ns = (as_ + 1 + Math.floor(Math.random() * 3)) % STEPS;
-    const nr = Math.min(ROWS-1, Math.max(0, ar + (Math.random()<0.4 ? (Math.random()<0.5?1:-1) : 0)));
-    mutation = () => { grid[nr][ns] = true; renderGrid(); };
+    const nr = (Math.random() < 0.5) ? orbitAdjacentRow(ar) : ar;
+    const ns = (Math.random() < 0.6) ? beatWindowStep(as_) : (as_+1)%STEPS;
+    if (!grid[nr][ns]) mutation = () => { grid[nr][ns] = true; renderGrid(); };
 
   } else if (density > evolveDensityTarget + 2 && roll < 0.75) {
-    const [r,s] = activeCells[Math.floor(Math.random() * activeCells.length)];
+    // too dense: remove a note (avoid removing low anchor rows 0-1 if possible)
+    const nonAnchor = activeCells.filter(([r])=>r>=2);
+    const pool = nonAnchor.length > 0 ? nonAnchor : activeCells;
+    const [r,s] = pool[Math.floor(Math.random() * pool.length)];
     mutation = () => { grid[r][s] = false; renderGrid(); };
 
-  } else if (roll < 0.55) {
-    // MOVE: migrate a note to a nearby position
+  } else if (roll < 0.60) {
+    // ORBIT MOVE — pick a note, migrate it along orbit axis OR within beat window (not both at once)
     const [r,s] = activeCells[Math.floor(Math.random() * activeCells.length)];
-    const moveAxis = Math.random();
+    const moveType = Math.random();
     let nr = r, ns = s;
-    if (moveAxis < 0.55) {
-      ns = (s + Math.floor(Math.random()*5) - 2 + STEPS) % STEPS;
-    } else if (moveAxis < 0.85) {
-      nr = Math.min(ROWS-1, Math.max(0, r + (Math.random()<0.5?1:-1)));
+    if (moveType < 0.45) {
+      // step drift: stay in beat window (max ±2 steps)
+      ns = beatWindowStep(s);
+    } else if (moveType < 0.80) {
+      // orbit row step: ±1 in [1,2,4,8,7,5] cycle
+      nr = orbitAdjacentRow(r);
     } else {
-      nr = Math.min(ROWS-1, Math.max(0, r + (Math.random()<0.5?1:-1)));
-      ns = (s + (Math.random()<0.5?1:-1) + STEPS) % STEPS;
+      // gentle diagonal: one orbit step + one beat-window step
+      nr = orbitAdjacentRow(r);
+      ns = beatWindowStep(s);
     }
-    mutation = () => { grid[r][s] = false; grid[nr][ns] = true; renderGrid(); };
+    if (nr !== r || ns !== s) {
+      mutation = () => { grid[r][s] = false; grid[nr][ns] = true; renderGrid(); };
+    }
 
-  } else if (roll < 0.72) {
-    // Oct lane mutation
+  } else if (roll < 0.76) {
+    // Oct lane: mean-revert (keeps from drifting) or add ±1 at an orbit-active step
     const nonzero = stepOctave.map((v,i)=>({v,i})).filter(x=>x.v!==0);
-    if (nonzero.length > 0 && Math.random() < 0.6) {
+    if (nonzero.length > 0 && Math.random() < 0.65) {
       const {v,i} = nonzero[Math.floor(Math.random()*nonzero.length)];
       const nv = v > 0 ? v-1 : v+1;
       mutation = () => { stepOctave[i] = nv; renderOctLane(); };
@@ -726,16 +753,16 @@ function evolveTick() {
       mutation = () => { stepOctave[as_] = nv; renderOctLane(); };
     }
 
-  } else if (roll < 0.88) {
-    // Transpose gravity
+  } else if (roll < 0.90) {
+    // Transpose gravity: pull toward base, max ±1 per bar so drift is imperceptibly slow
     const diff = evolveBaseTranspose - transpose;
-    const pull = diff !== 0 ? Math.sign(diff) : (Math.random()<0.5?1:-1);
-    if (Math.abs(transpose - evolveBaseTranspose) < 5 || diff !== 0) {
+    if (Math.abs(transpose - evolveBaseTranspose) < 4 || diff !== 0) {
+      const pull = diff !== 0 ? Math.sign(diff) : (Math.random()<0.5?1:-1);
       const target = transpose + pull;
       mutation = () => setTranspose(target);
     }
   }
-  // ~12%: breathe — queue nothing
+  // ~10%: breathe
 
   if (mutation) pendingEvolveMutations.push(mutation);
 }
