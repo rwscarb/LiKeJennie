@@ -19,7 +19,7 @@ body {
   display:grid;
   grid-template-rows:auto 1fr auto;
   grid-template-columns:1fr auto;
-  height:100vh; overflow:hidden; gap:0;
+  height:100vh; overflow-x:hidden; overflow-y:hidden; gap:0;
 }
 /* ── Header ── */
 header {
@@ -65,7 +65,7 @@ canvas { display:block; }
 .section-title::before { content:'▾'; font-size:.7em; opacity:.55; transition:transform .15s; }
 .section.collapsed .section-title::before { transform:rotate(-90deg); }
 .section.collapsed .section-title { margin-bottom:0; }
-.section-body { overflow:visible; }
+.section-body { overflow:hidden; }
 .section.collapsed .section-body { display:none; }
 /* seq section passes flex:1 through to its body */
 .section[style*="flex:1"] { display:flex; flex-direction:column; }
