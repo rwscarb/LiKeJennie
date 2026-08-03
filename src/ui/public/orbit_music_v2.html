@@ -325,6 +325,12 @@ const NOTE_NAMES = ['A1','A2','A3','A4','G4♮','C#4'];
 // White key offsets per octave: C=0,D=1,E=2,F=3,G=4,A=5,B=6
 const _WK_MAP = [0,null,1,null,2,3,null,4,null,5,null,6];
 const _BK_MAP = [null,0.5,null,1.5,null,null,3.5,null,4.5,null,5.5,null];
+const _CHROM  = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+function freqToNoteName(freq) {
+  if (freq <= 0) return '';
+  const midi = Math.round(69 + 12 * Math.log2(freq / 440));
+  return _CHROM[((midi % 12) + 12) % 12] + (Math.floor(midi / 12) - 1);
+}
 function freqToKey(freq) {
   if (freq <= 0) return null;
   const midi = Math.round(69 + 12 * Math.log2(freq / 440));
@@ -978,7 +984,7 @@ function drawFrame(ts) {
         ctx.font = `${on?'bold ':''}7px "Courier New"`;
         ctx.fillStyle = on ? '#020c08' : stepColor(hl.row, 0.42);
         ctx.textAlign='center'; ctx.textBaseline='bottom';
-        ctx.fillText(NOTE_NAMES[hl.row], x+WK_W/2, KB_Y+WK_H-2);
+        ctx.fillText(freqToNoteName(FREQS[hl.row]*pitchMult), x+WK_W/2, KB_Y+WK_H-2);
       }
     }
 
@@ -1006,7 +1012,7 @@ function drawFrame(ts) {
         if (hl) {
           ctx.font='6px "Courier New"'; ctx.textAlign='center'; ctx.textBaseline='bottom';
           ctx.fillStyle = on ? stepColor(hl.row, 0.95) : stepColor(hl.row, 0.38);
-          ctx.fillText(NOTE_NAMES[hl.row], x+BK_W/2, KB_Y+BK_H-1);
+          ctx.fillText(freqToNoteName(FREQS[hl.row]*pitchMult), x+BK_W/2, KB_Y+BK_H-1);
         }
       }
     }
