@@ -318,14 +318,22 @@ const BASE      = 55;
 const FREQS     = ORBIT.map(v => v * BASE);
 const NOTE_NAMES = ['A1','A2','A3','A4','G4♮','C#4'];
 // orbit row → piano key descriptor (C1 = white key 0, 4 octaves = 28 white keys)
-const ORBIT_KEYS = [
-  { row:0, isBlack:false, wkIdx:5   },  // A1 (55 Hz)
-  { row:1, isBlack:false, wkIdx:12  },  // A2 (110 Hz)
-  { row:2, isBlack:false, wkIdx:19  },  // A3 (220 Hz)
-  { row:3, isBlack:false, wkIdx:26  },  // A4 (440 Hz)
-  { row:4, isBlack:false, wkIdx:25  },  // G4 (385 Hz)
-  { row:5, isBlack:true,  bkPos:21.5}, // C#4 (275 Hz)
-];
+// Dynamic key lookup: freq → nearest piano key on C1–B4 keyboard
+// White key offsets per octave: C=0,D=1,E=2,F=3,G=4,A=5,B=6
+const _WK_MAP = [0,null,1,null,2,3,null,4,null,5,null,6];
+const _BK_MAP = [null,0.5,null,1.5,null,null,3.5,null,4.5,null,5.5,null];
+function freqToKey(freq) {
+  if (freq <= 0) return null;
+  const midi = Math.round(69 + 12 * Math.log2(freq / 440));
+  const rel = midi - 24; // C1 = MIDI 24
+  if (rel < 0 || rel > 59) return null; // outside C1–B4
+  const oct  = Math.floor(rel / 12);
+  const note = ((midi % 12) + 12) % 12;
+  const wk   = _WK_MAP[note];
+  return wk !== null
+    ? { isBlack: false, wkIdx: oct * 7 + wk }
+    : { isBlack: true,  bkPos: oct * 7 + _BK_MAP[note] };
+}
 const STEP_HUES = [0.33,0.50,0.62,0.83,0.10,0.23];
 function stepColor(i, l=0.55) {
   const h=STEP_HUES[i]; return `hsl(${Math.round(h*360)},90%,${Math.round(l*100)}%)`;
@@ -383,7 +391,11 @@ const PRESETS = {
 
 // Synth settings bundled with named presets
 const PRESET_SYNTH = {
-  zen: { transpose:-3, waveform:'sine', reverbAmt:0.85, attackMs:80, bassAmt:0.30, detuneAmt:1, filterFreq:4000, bpm:21 },
+  zen:    { transpose:-3, waveform:'sine', reverbAmt:0.85, attackMs:80, bassAmt:0.30, detuneAmt:1, filterFreq:4000, bpm:21 },
+  orbit:  { bpm:60 },
+  bass:   { bpm:60 },
+  scatter:{ bpm:60 },
+  ce:     { bpm:60 },
 };
 
 // Per-step octave lane bundled with named presets (16 values, range -2..+2)
@@ -838,7 +850,7 @@ function drawFrame(ts) {
   ctx.textAlign='center'; ctx.textBaseline='middle';
   ctx.fillText('×2',OX,OY-7); ctx.fillText('mod 9',OX,OY+7);
 
-  // ── Piano keyboard (bottom of canvas) ────────────────────────────────
+  // ── Piano keyboard — dynamic (accounts for transpose + octave + oct lane) ────
   {
     const N_WK   = 28; // C1–B4
     const WK_W   = Math.max(14, Math.floor(W / (N_WK + 1)));
@@ -849,54 +861,73 @@ function drawFrame(ts) {
     const KB_Y   = H - WK_H - 8;
     const BK_OCT = [0.5, 1.5, 3.5, 4.5, 5.5];
 
-    const rowActive = Array(ROWS).fill(false);
-    if (playing) for (let r=0;r<ROWS;r++) if (grid[r][animStep%STEPS]) rowActive[r]=true;
+    // Actual pitch factor at the current animation step
+    const curAS     = playing ? animStep % STEPS : 0;
+    const stepOct   = playing ? stepOctave[curAS] : 0;
+    const pitchMult = Math.pow(2, octave + stepOct) * Math.pow(2, transpose / 12);
 
-    // white keys
-    for (let i=0; i<N_WK; i++) {
-      const x  = KB_X + i * WK_W;
-      const ok = ORBIT_KEYS.find(k => !k.isBlack && k.wkIdx===i);
-      const gl = ok ? barLevels[ok.row] : 0;
-      const on = ok && (rowActive[ok.row] || gl>0.05);
-      ctx.beginPath(); ctx.rect(x+1, KB_Y, WK_W-2, WK_H);
-      ctx.fillStyle = on ? stepColor(ok.row, 0.60+gl*0.22)
-                       : ok ? stepColor(ok.row, 0.09) : '#091a10';
-      ctx.fill();
-      ctx.strokeStyle = (on&&ok) ? stepColor(ok.row, 0.75) : '#0a1f12';
-      ctx.lineWidth = 0.8; ctx.stroke();
-      if (ok) {
-        ctx.font = `${on?'bold ':''}7px "Courier New"`;
-        ctx.fillStyle = on ? '#020c08' : stepColor(ok.row, 0.42);
-        ctx.textAlign='center'; ctx.textBaseline='bottom';
-        ctx.fillText(NOTE_NAMES[ok.row], x+WK_W/2, KB_Y+WK_H-2);
+    // Build highlight maps: key id → {row, glow, on}
+    const wkHL = {}, bkHL = {};
+    for (let r = 0; r < ROWS; r++) {
+      const actualFreq = FREQS[r] * pitchMult;
+      const key = freqToKey(actualFreq);
+      if (!key) continue;
+      const gl = barLevels[r];
+      const on = gl > 0.05 || (playing && grid[r][curAS]);
+      const entry = { row: r, glow: gl, on };
+      if (key.isBlack) {
+        const k = String(key.bkPos);
+        if (!bkHL[k] || on) bkHL[k] = entry;
+      } else {
+        if (!wkHL[key.wkIdx] || on) wkHL[key.wkIdx] = entry;
       }
     }
 
-    // octave labels
+    // White keys
+    for (let i = 0; i < N_WK; i++) {
+      const x  = KB_X + i * WK_W;
+      const hl = wkHL[i];
+      const gl = hl ? hl.glow : 0;
+      const on = hl && hl.on;
+      ctx.beginPath(); ctx.rect(x+1, KB_Y, WK_W-2, WK_H);
+      ctx.fillStyle = on ? stepColor(hl.row, 0.60+gl*0.22)
+                       : hl ? stepColor(hl.row, 0.09) : '#091a10';
+      ctx.fill();
+      ctx.strokeStyle = (on&&hl) ? stepColor(hl.row, 0.75) : '#0a1f12';
+      ctx.lineWidth = 0.8; ctx.stroke();
+      if (hl) {
+        ctx.font = `${on?'bold ':''}7px "Courier New"`;
+        ctx.fillStyle = on ? '#020c08' : stepColor(hl.row, 0.42);
+        ctx.textAlign='center'; ctx.textBaseline='bottom';
+        ctx.fillText(NOTE_NAMES[hl.row], x+WK_W/2, KB_Y+WK_H-2);
+      }
+    }
+
+    // Octave labels
     ctx.font='6px "Courier New"'; ctx.textAlign='left'; ctx.textBaseline='top';
     for (let o=0;o<4;o++) {
       ctx.fillStyle='rgba(0,255,136,0.18)';
       ctx.fillText(`C${o+1}`, KB_X+o*7*WK_W+2, KB_Y+WK_H+1);
     }
 
-    // black keys
+    // Black keys
     for (let o=0;o<4;o++) {
       for (const bp of BK_OCT) {
         const bkPos = o*7 + bp;
         const x  = KB_X + bkPos*WK_W - BK_W/2;
-        const ok = ORBIT_KEYS.find(k => k.isBlack && Math.abs(k.bkPos-bkPos)<0.01);
-        const gl = ok ? barLevels[ok.row] : 0;
-        const on = ok && (rowActive[ok.row] || gl>0.05);
+        const hl = bkHL[String(bkPos)];
+        const gl = hl ? hl.glow : 0;
+        const on = hl && hl.on;
         ctx.beginPath(); ctx.rect(x, KB_Y, BK_W, BK_H);
-        ctx.fillStyle = on ? stepColor(ok.row, 0.52+gl*0.20)
-                         : ok ? stepColor(ok.row, 0.11) : '#010804';
+        ctx.fillStyle = on ? stepColor(hl.row, 0.52+gl*0.20)
+                         : hl ? stepColor(hl.row, 0.11) : '#010804';
         ctx.fill();
-        ctx.strokeStyle = (on&&ok) ? stepColor(ok.row, 0.65) : '#000';
+        ctx.strokeStyle = (on&&hl) ? stepColor(hl.row, 0.65) : '#000';
         ctx.lineWidth = 0.5; ctx.stroke();
-        if (ok) {
+        if (hl) {
           ctx.font='6px "Courier New"'; ctx.textAlign='center'; ctx.textBaseline='bottom';
-          ctx.fillStyle = on ? stepColor(ok.row, 0.95) : stepColor(ok.row, 0.38);
-          ctx.fillText(NOTE_NAMES[ok.row], x+BK_W/2, KB_Y+BK_H-1);
+          ctx.fillStyle = on ? stepColor(hl.row, 0.95) : stepColor(hl.row, 0.38);
+          ctx.fillText(NOTE_NAMES[hl.row], x+BK_W/2, KB_Y+BK_H-1);
         }
       }
     }
