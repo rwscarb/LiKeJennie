@@ -55,10 +55,55 @@ nearly closes on itself: the next structure to build.
 | Scroll | Zoom |
 | AUTO-ROTATE | Toggle rotation |
 | COMPLEMENT | Toggle trit labels ↔ decimal values |
+| TRIBAR | Toggle Penrose tribar inter-cycle fold overlay |
 | SIDE | Camera: tornado/DNA silhouette |
-| TOP | Camera: Fibonacci sunflower from above |
+| TOP | Camera: Fibonacci sunflower from above — reveals hexagram |
 | HERO | Camera: low heroic angle, large nodes |
 | Hover a node | Tooltip with trit, echo, group membership |
+
+---
+
+## Penrose Tribar — Inter-Cycle Fold Structure
+
+The HELIX runs 3 complete orbit cycles (CYCLES=3, 18 nodes per strand + apex). Each cycle
+covers one full period of [1,2,4,8,7,5]. Nodes at the same orbit position across cycles
+form natural triangles — the same value recurring at p, p+M, and p+2M (M=6).
+
+The edges of these triangles define three arm groups, each connecting adjacent cycles:
+
+| Arm | Color | Pairs | Reading |
+|-----|-------|-------|---------|
+| A | gold | cycle 0 → cycle 1 | the first fold |
+| B | cyan | cycle 1 → cycle 2 | the second fold |
+| C | orange | cycle 2 → cycle 0 | the impossible return |
+
+Arm C is impossible: the helix ascends continuously, so the return edge would have to close
+a triangle whose third vertex is below the starting point — a contradiction in 3D that is
+visible only in projection. The Penrose tribar is the classical diagram of exactly this
+impossibility. Arm C is drawn as lines only (no fill) to preserve that contradiction.
+
+Arms A and B are filled with translucent face shading (centroid-split into two sub-triangles
+per orbit position). This produces 12 filled sub-triangles per cycle pair — 12 faces total
+across the two filled arms.
+
+**TOP view:** From directly above, the 6 tribar triangles (one per orbit position, A+B filled)
+radiate from the helix center as a hexagram — a 6-pointed star. The impossible Arm C lines
+complete the outer silhouette of each triangle without filling it.
+
+**What it shows:** The tribar makes visible the mod-3 structure inside the mod-6 orbit.
+Three cycles is not arbitrary — it is the natural folding depth where the orbit closes on
+itself modulo 3. The impossible arm encodes the fact that closure is periodic, not spatial.
+This is the same structure that appears in GNN skip connections: Arm A and Arm B are
+long-range edges that carry information across cycle boundaries; Arm C is the ghost edge that
+would make the graph cyclic at the wrong scale. See `src/experiments/poc_penrose_tribar.py`.
+
+```
+orbit position p:   node[p]    node[p+M]    node[p+2M]
+                        ●────────────●────────────●
+                        │  Arm A     │  Arm B     │
+                        └────────────┴────────────┘
+                               Arm C (impossible)
+```
 
 ---
 
@@ -168,3 +213,8 @@ golden-angle spiral has accumulated 21 × 137.508° ≈ 7.7° past 8 full rotati
 — the Fibonacci near-return where the sunflower arm pattern folds back.
 
 The inversion at the 21-arc is the next thing to build.
+
+The Penrose tribar overlay (TRIBAR button) makes visible the mod-3 folding structure inside
+the orbit. Three cycles of period-6 produce 6 triangles whose edges are the tribar arms.
+From TOP: a hexagram. Arm C is the impossible return — periodic closure drawn as a ghost edge.
+This connects to the oliver42 topology: arm A is complement, arm B is bridge, arm C is collapse.
