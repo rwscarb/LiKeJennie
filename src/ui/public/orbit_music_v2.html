@@ -9,7 +9,10 @@
   --bg:#040408; --fg:#00ff88; --dim:#0a2028; --cyan:#00e5ff;
   --orng:#ff9800; --muted:#1a6040; --panel:#040408;
 }
-html { overflow:hidden; height:100%; }
+html { overflow:hidden; height:100%; scrollbar-width:none; }
+html::-webkit-scrollbar { display:none; }
+* { scrollbar-width:none; }
+*::-webkit-scrollbar { display:none; }
 body {
   background:var(--bg); color:var(--fg);
   font-family:'Courier New',monospace;
