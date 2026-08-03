@@ -397,11 +397,11 @@ const PRESETS = {
 
 // Synth settings bundled with named presets
 const PRESET_SYNTH = {
-  zen:    { transpose:0, waveform:'sine', reverbAmt:0.72, attackMs:120, bassAmt:0.05, detuneAmt:1, filterFreq:3000, bpm:60 },
-  orbit:  { bpm:60 },
-  bass:   { bpm:60 },
-  scatter:{ bpm:60 },
-  ce:     { bpm:60 },
+  zen:     { transpose:0,  waveform:'sine',     reverbAmt:0.72, attackMs:120, bassAmt:0.05, detuneAmt:1.0, filterFreq:3000,  bpm:60 },
+  orbit:   { transpose:0,  waveform:'triangle', reverbAmt:0.38, attackMs:60,  bassAmt:0.08, detuneAmt:2.0, filterFreq:8000,  bpm:60 },
+  bass:    { transpose:0,  waveform:'sawtooth', reverbAmt:0.22, attackMs:25,  bassAmt:0.22, detuneAmt:3.0, filterFreq:2000,  bpm:60 },
+  scatter: { transpose:0,  waveform:'triangle', reverbAmt:0.41, attackMs:80,  bassAmt:0.07, detuneAmt:2.5, filterFreq:4000,  bpm:60 },
+  ce:      { transpose:0,  waveform:'sine',     reverbAmt:0.60, attackMs:100, bassAmt:0.05, detuneAmt:0.5, filterFreq:12000, bpm:60 },
 };
 
 // Per-step octave lane bundled with named presets (16 values, range -2..+2)
@@ -608,6 +608,7 @@ let analyser=null, freqData=null, waveData=null;
 let waveform='triangle', reverbAmt=0.41, bassAmt=0.07, detuneAmt=2.5;
 let transpose=0, attackMs=80, volAmt=0.31, bassEnabled=true;
 let evolveMode=false, evolveStepCount=0, evolveBaseTranspose=0, evolveDensityTarget=4;
+let evolveTransposeDir=1; // ping-pong direction for transpose oscillation
 let filterNode=null;
 
 function initAudio() {
@@ -757,13 +758,15 @@ function evolveTick() {
     }
 
   } else if (roll < 0.90) {
-    // Transpose gravity: pull toward base, max ±1 per bar so drift is imperceptibly slow
-    const diff = evolveBaseTranspose - transpose;
-    if (Math.abs(transpose - evolveBaseTranspose) < 4 || diff !== 0) {
-      const pull = diff !== 0 ? Math.sign(diff) : (Math.random()<0.5?1:-1);
-      const target = transpose + pull;
-      mutation = () => setTranspose(target);
+    // Transpose oscillation: ping-pong within ±3 semitones of base, then reverse
+    const SWING = 3;
+    const target = transpose + evolveTransposeDir;
+    // flip direction at limits or randomly to add variation
+    if (Math.abs(target - evolveBaseTranspose) >= SWING || Math.random() < 0.25) {
+      evolveTransposeDir *= -1;
     }
+    const nextTarget = transpose + evolveTransposeDir;
+    mutation = () => setTranspose(nextTarget);
   }
   // ~10%: breathe
 
@@ -1273,11 +1276,11 @@ document.getElementById('evolveBtn').addEventListener('click',function(){
   evolveMode = !evolveMode;
   evolveStepCount = 0;
   if (evolveMode) {
-    // snapshot starting state so EVOLVE can anchor to it
     evolveBaseTranspose = transpose;
+    evolveTransposeDir = 1;
     let count = 0;
     for (let r=0; r<ROWS; r++) for (let s=0; s<STEPS; s++) if (grid[r][s]) count++;
-    evolveDensityTarget = Math.max(2, count); // at least 2 notes at all times
+    evolveDensityTarget = Math.max(2, count);
   }
   this.style.opacity = evolveMode ? '1' : '0.55';
   this.classList.toggle('lit', evolveMode);
