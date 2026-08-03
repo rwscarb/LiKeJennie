@@ -775,16 +775,25 @@ function evolveTick() {
       mutation = () => { stepOctave[as_] = nv; renderOctLane(); };
     }
 
+  } else if (roll < 0.82) {
+    // Transpose: jump to a harmonically meaningful interval relative to base
+    // Use musical intervals (not semitone drift — that sounds like detuning)
+    const INTERVALS = [0, 7, -5, 12, -12, 5, -7];
+    // Pick a different interval from current offset
+    const curOffset = transpose - evolveBaseTranspose;
+    const choices = INTERVALS.filter(i => i !== curOffset);
+    const nextOffset = choices[Math.floor(Math.random() * choices.length)];
+    const nextTarget = evolveBaseTranspose + nextOffset;
+    mutation = () => setTranspose(Math.min(12, Math.max(-12, nextTarget)));
+
   } else if (roll < 0.90) {
-    // Transpose oscillation: ping-pong within ±3 semitones of base, then reverse
-    const SWING = 3;
-    const target = transpose + evolveTransposeDir;
-    // flip direction at limits or randomly to add variation
-    if (Math.abs(target - evolveBaseTranspose) >= SWING || Math.random() < 0.25) {
-      evolveTransposeDir *= -1;
-    }
-    const nextTarget = transpose + evolveTransposeDir;
-    mutation = () => setTranspose(nextTarget);
+    // Global octave shift ±1 (clean doubling/halving — much clearer than semitone drift)
+    const newOct = Math.min(2, Math.max(-2, octave + (Math.random() < 0.5 ? 1 : -1)));
+    mutation = () => {
+      octave = newOct;
+      const el = document.getElementById('octVal');
+      if (el) el.textContent = (newOct > 0 ? '+' : '') + newOct;
+    };
   }
   // ~10%: breathe
 
@@ -1308,7 +1317,6 @@ document.getElementById('evolveBtn').addEventListener('click',function(){
   evolveApplyAt = Infinity;
   if (evolveMode) {
     evolveBaseTranspose = transpose;
-    evolveTransposeDir = 1;
     let count = 0;
     for (let r=0; r<ROWS; r++) for (let s=0; s<STEPS; s++) if (grid[r][s]) count++;
     evolveDensityTarget = Math.max(2, count);
