@@ -350,7 +350,8 @@ export function buildS7() {
 
   const tribarGroup = new THREE.Group();
   tribarGroup.visible = false;
-  const tribarLineData = []; // { attr, arr, fromIdx, toIdx } — updated per-frame
+  const tribarLineData  = []; // { attr, arr, fromIdx, toIdx }
+  const tribarFaceData  = []; // { attr, arr, i0, i1, i2 } — one filled triangle per orbit position
 
   TRIBAR_ARMS.forEach(arm => {
     arm.pairs.forEach(([from, to]) => {
@@ -367,6 +368,24 @@ export function buildS7() {
       tribarLineData.push({ attr, arr, fromIdx: from, toIdx: to });
     });
   });
+
+  // Filled faces: one triangle per orbit position p, vertices at steps p, p+M, p+2M.
+  // Each face is colored by the orbit value's palette, matching the helix shading style.
+  for (let p = 0; p < M; p++) {
+    const val   = ORBIT[p % M];
+    const color = STYLE[val].c;
+    const arr   = new Float32Array(9); // 3 vertices × 3 coords
+    const geo   = new THREE.BufferGeometry();
+    const attr  = new THREE.BufferAttribute(arr, 3);
+    attr.setUsage(THREE.DynamicDrawUsage);
+    geo.setAttribute('position', attr);
+    const mat = new THREE.MeshBasicMaterial({
+      color, transparent: true, opacity: 0.14, side: THREE.DoubleSide,
+    });
+    R.disposables.push(geo, mat);
+    tribarGroup.add(new THREE.Mesh(geo, mat));
+    tribarFaceData.push({ attr, arr, i0: p, i1: p + M, i2: p + 2 * M });
+  }
 
   scene.add(tribarGroup);
 
@@ -1444,6 +1463,13 @@ export function buildS7() {
         const fa = allMeshes[fromIdx].position, ta = allMeshes[toIdx].position;
         arr[0] = fa.x; arr[1] = fa.y; arr[2] = fa.z;
         arr[3] = ta.x; arr[4] = ta.y; arr[5] = ta.z;
+        attr.needsUpdate = true;
+      });
+      tribarFaceData.forEach(({ attr, arr, i0, i1, i2 }) => {
+        const a = allMeshes[i0].position, b = allMeshes[i1].position, c = allMeshes[i2].position;
+        arr[0] = a.x; arr[1] = a.y; arr[2] = a.z;
+        arr[3] = b.x; arr[4] = b.y; arr[5] = b.z;
+        arr[6] = c.x; arr[7] = c.y; arr[8] = c.z;
         attr.needsUpdate = true;
       });
     }
