@@ -43,6 +43,11 @@ const NOTE_IMGS = [
 let lightboxSrc = null;
 const unsub = cur.subscribe(v => { active = v; });
 
+// Lock outer body scroll when orbit music iframe covers the page
+$: if (typeof document !== 'undefined') {
+  document.body.style.overflowY = active === 14 ? 'hidden' : '';
+}
+
 // ── Compact URL state (base64url binary pack) ────────────────────────────────
 // Format: [u8 scene][f32×3 camPos][f32×3 camTgt][u16×6 sliders][u8 flags] = 38 bytes → ~50 chars
 const _SKEYS = ['rbase','rgrow','hstep','bamp','bfreq','spin'];
