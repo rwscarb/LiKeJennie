@@ -706,8 +706,8 @@ function beatWindowStep(s) {
 
 function evolveTick() {
   evolveStepCount++;
-  // generate preview every 4 bars; apply 4 bars later — never both in the same tick
-  if (evolveStepCount % 64 !== 0 || evolveStepCount === 0) return;
+  // generate preview every 2 bars; apply 1 bar later — never both in the same tick
+  if (evolveStepCount % 32 !== 0 || evolveStepCount === 0) return;
   if (pendingEvolveMutations.length > 0) return; // still waiting to apply previous mutation
 
   // snapshot active cells
@@ -791,7 +791,7 @@ function evolveTick() {
   if (mutation) {
     pendingEvolveMutations.push(mutation);
     // schedule application 4 bars (64 steps) from now; show preview immediately
-    evolveApplyAt = evolveStepCount + 64;
+    evolveApplyAt = evolveStepCount + 16; // preview shows for 1 bar before applying
     renderGrid(); // display shadow grid outlines right away
   }
 }
