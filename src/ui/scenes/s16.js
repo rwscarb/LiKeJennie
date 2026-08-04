@@ -34,7 +34,8 @@ function getCtx() {
 }
 
 function playNote(n, v = 0.32) {
-  const ctx = getCtx();
+  if (!audioCtx || audioCtx.state !== 'running') return;
+  const ctx = audioCtx;
   const freq = NOTE_FREQ[n];
   if (!freq) return;
   const osc  = ctx.createOscillator();
@@ -52,7 +53,8 @@ function playNote(n, v = 0.32) {
 }
 
 function playBass(n, v = 0.28) {
-  const ctx  = getCtx();
+  if (!audioCtx || audioCtx.state !== 'running') return;
+  const ctx  = audioCtx;
   const freq = COMP_FREQ[n];
   if (!freq) return;
   const osc  = ctx.createOscillator();
@@ -77,7 +79,7 @@ export function buildS16() {
   camera.position.set(0, 0.5, 14.5);
   camera.lookAt(0, 0, 0);
   const controls = R.controls = mkControls(camera);
-  controls.autoRotate = false;
+  controls.autoRotate = true;
 
   const RADIUS = 4.0;
 
@@ -304,6 +306,7 @@ export function buildS16() {
     ray.setFromCamera(mouse, camera);
     const hits = ray.intersectObjects(hoverables);
     if (hits.length > 0) {
+      getCtx(); // unlock audio on first click gesture
       const { k } = hits[0].object.userData;
       playNote(k);
       hits[0].object.material.emissiveIntensity = 1.8;
@@ -419,14 +422,17 @@ export function buildS16() {
     playBtn.textContent = '⏸ PAUSE';
     playBtn.classList.add('lit');
     playBtn.onclick = () => {
+      // First interaction: unlock AudioContext
+      getCtx();
       playing = !playing;
-      if (playing) { startTime = null; lastStep = -1; }
+      if (playing) { startTime = null; lastStep = -1; lastBassStep = -1; }
       playBtn.classList.toggle('lit', playing);
       playBtn.textContent = playing ? '⏸ PAUSE' : '▶ PLAY';
     };
   }
   const rotBtn = document.getElementById('s16rot');
   if (rotBtn) {
+    rotBtn.classList.add('lit');
     rotBtn.onclick = () => {
       controls.autoRotate = !controls.autoRotate;
       rotBtn.classList.toggle('lit', controls.autoRotate);
