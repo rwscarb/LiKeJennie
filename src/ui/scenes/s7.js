@@ -349,7 +349,7 @@ export function buildS7() {
   ];
 
   const tribarGroup = new THREE.Group();
-  tribarGroup.visible = false;
+  tribarGroup.visible = true;
   const tribarLineData  = []; // { attr, arr, fromIdx, toIdx }
   const tribarFaceData  = []; // { attr, arr, i0, i1, i2 } — one filled triangle per orbit position
 

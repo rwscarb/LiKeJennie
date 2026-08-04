@@ -508,7 +508,7 @@ afterUpdate(() => {
       <button class="btn" id="p8oliver">OLIVER42</button>
       <button class="btn" id="p8wave">WAVE</button>
       <button class="btn" id="p8collapse">COLLAPSE</button>
-      <button class="btn" id="p8tribar">TRIBAR</button>
+      <button class="btn lit" id="p8tribar">TRIBAR</button>
       <span class="clbl">A</span>
       <button class="btn" id="p8a_cw">CW</button>
       <button class="btn" id="p8a_ccw">CCW</button>
@@ -559,6 +559,9 @@ afterUpdate(() => {
       <button class="btn" id="s16play">▶ PLAY</button>
       <button class="btn" id="s16rot">AUTO-ROTATE</button>
       <span class="stat">click a node to play &nbsp;&middot;&nbsp; orbit {1,2,4,5,7} = pentatonic &nbsp;&middot;&nbsp; complement {3,6} = ground</span>
+    </div>
+    <div class="cset" class:on={active === 16}>
+      <span class="stat">drag to navigate &nbsp;&middot;&nbsp; 253 commits · 8 days · 9 experiments · 17 scenes</span>
     </div>
   </div>
 </div>
