@@ -172,9 +172,10 @@ let _cur      = 0;
 let _touring  = false;
 let _tourId   = null;
 let _targetY  = 0;
-let _targetZ  = 4;    // camera distance from target (orbit radius effectively)
+let _targetZ  = 4;    // camera position Z
 let _targetTX = 0;    // camera target X pan
-let _targetTZ = 0;    // camera target Z pan (toward active stream depth)
+let _targetTZ = 0;    // camera target Z (stream depth)
+let _zoomDist = 4;    // constant camera-to-card Z distance
 let _eventY   = [];
 let _cards    = [];
 let _alive    = false;
@@ -201,10 +202,10 @@ function jumpTo(i, pauseTour = false) {
   if (pauseTour && _touring) stopTour();
   _cur      = Math.max(0, Math.min(EVENTS.length - 1, i));
   _targetY  = _eventY[_cur];
-  _targetZ  = 4;
   const ft  = focusTarget(EVENTS[_cur].stream);
   _targetTX = ft.tx;
   _targetTZ = ft.tz;
+  _targetZ  = ft.tz + _zoomDist;  // maintain constant camera-to-card depth
   highlightCard(_cur);
   document.getElementById('s17prev')?.classList.toggle('lit', _cur > 0);
   document.getElementById('s17next')?.classList.toggle('lit', _cur < EVENTS.length - 1);
@@ -249,10 +250,11 @@ export function buildS17() {
   const botY  = Math.min(...EVENTS.map(e => e.y));
   const midY  = (topY + botY) / 2;
   _eventY     = EVENTS.map(e => e.y);
+  _zoomDist   = 4;
   _targetY    = _eventY[0];
-  _targetZ    = 4;
   _targetTX   = 0;
   _targetTZ   = 0;
+  _targetZ    = 4;  // = _targetTZ(0) + _zoomDist(4)
 
   camera.position.set(0, _eventY[0], 4);
   camera.lookAt(0, _eventY[0], 0);
@@ -398,8 +400,8 @@ export function buildS17() {
   function onPrev()  { jumpTo(_cur - 1, true); }
   function onNext()  { jumpTo(_cur + 1, true); }
   function onTour()  { _touring ? stopTour() : startTour(); }
-  function onZIn()   { _targetZ = Math.max(4, _targetZ - 2.5); }
-  function onZOut()  { _targetZ = Math.min(26, _targetZ + 2.5); _targetTX = 0; _targetTZ = 0; }
+  function onZIn()  { _zoomDist = Math.max(1, _zoomDist - 2.5); _targetZ = _targetTZ + _zoomDist; }
+  function onZOut() { _zoomDist = Math.min(22, _zoomDist + 2.5); _targetTX = 0; _targetTZ = 0; _targetZ = _zoomDist; }
   prevBtn?.addEventListener('click', onPrev);
   nextBtn?.addEventListener('click', onNext);
   tourBtn?.addEventListener('click', onTour);
