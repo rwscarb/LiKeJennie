@@ -86,16 +86,18 @@ class SeismoDataset(Dataset):
 def load_stead(max_per_class=MAX_EVENTS):
     import seisbench.data as sbd
     print("Loading STEAD (earthquake subset)...", flush=True)
-    eq = sbd.STEAD(download_kwargs={"chunk": "chunk2"}, cache='full')
+    eq = sbd.STEAD(download_kwargs={"chunk": "chunk2"}, cache=None)
 
     X_eq, X_noise = [], []
 
     # Earthquake waveforms
     print(f"  sampling up to {max_per_class} earthquake events...", flush=True)
     eq_indices = np.random.permutation(len(eq))[:max_per_class * 2]
-    for idx in eq_indices:
+    for _i, idx in enumerate(eq_indices):
         if len(X_eq) >= max_per_class:
             break
+        if _i % 1000 == 0:
+            print(f"    eq iter {_i}, collected {len(X_eq)}", flush=True)
         try:
             wf = eq.get_waveforms(idx)               # (3, T)
             meta = eq.metadata.iloc[idx]
@@ -108,15 +110,19 @@ def load_stead(max_per_class=MAX_EVENTS):
             std = w.std(axis=1, keepdims=True) + 1e-6
             w = w / std
             X_eq.append(w.flatten())
-        except Exception:
+        except Exception as e:
+            if _i % 5000 == 0:
+                print(f"    eq exception at {_i}: {e}", flush=True)
             continue
 
     # Noise waveforms
     print(f"  sampling up to {max_per_class} noise events...", flush=True)
     noise_indices = np.random.permutation(len(eq))[:max_per_class * 2]
-    for idx in noise_indices:
+    for _i, idx in enumerate(noise_indices):
         if len(X_noise) >= max_per_class:
             break
+        if _i % 1000 == 0:
+            print(f"    noise iter {_i}, collected {len(X_noise)}", flush=True)
         try:
             wf = eq.get_waveforms(idx)
             meta = eq.metadata.iloc[idx]
@@ -128,7 +134,9 @@ def load_stead(max_per_class=MAX_EVENTS):
             std = w.std(axis=1, keepdims=True) + 1e-6
             w = w / std
             X_noise.append(w.flatten())
-        except Exception:
+        except Exception as e:
+            if _i % 5000 == 0:
+                print(f"    noise exception at {_i}: {e}", flush=True)
             continue
 
     n = min(len(X_eq), len(X_noise))
