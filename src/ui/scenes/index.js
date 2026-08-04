@@ -14,6 +14,7 @@ import { buildS12 } from './s12.js';
 import { buildS13 } from './s13.js';
 import { buildS14 } from './s14.js';
 import { buildS15 } from './s15.js';
+import { buildS16 } from './s16.js';
 
 export const scenes = [
   { id: 'divisor-lattice',   num: '01', label: 'DIVISOR LATTICE',   build: buildS0  },
@@ -31,4 +32,5 @@ export const scenes = [
   { id: 'gnn-mirror',        num: '13', label: 'GNN MIRROR',         build: buildS13 },
   { id: 'buckminster',       num: '14', label: 'BUCKMINSTER',        build: buildS14 },
   { id: 'orbit-music',       num: '15', label: 'ORBIT MUSIC',         build: buildS15 },
+  { id: 'music',             num: '16', label: 'MUSIC',               build: buildS16 },
 ];

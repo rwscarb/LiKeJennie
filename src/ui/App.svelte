@@ -538,6 +538,11 @@ afterUpdate(() => {
     <div class="cset" class:on={active === 14}>
       <span class="stat">orbit {1,2,4,8,7,5} × 55 Hz &nbsp;&middot;&nbsp; step sequencer &nbsp;&middot;&nbsp; complement {3,6} as bass</span>
     </div>
+    <div class="cset" class:on={active === 15}>
+      <button class="btn" id="s16play">▶ PLAY</button>
+      <button class="btn" id="s16rot">AUTO-ROTATE</button>
+      <span class="stat">click a node to play &nbsp;&middot;&nbsp; orbit {1,2,4,5,7} = pentatonic &nbsp;&middot;&nbsp; complement {3,6} = ground</span>
+    </div>
   </div>
 </div>
 
