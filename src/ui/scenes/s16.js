@@ -168,22 +168,22 @@ export function buildS16() {
     const out   = pos.clone().normalize();
 
     // Number label — slightly outside the sphere
-    lbl(String(k), pos.clone().addScaledVector(out, 0.62), cs, '17px');
+    lbl(String(k), pos.clone().addScaledVector(out, 0.62), cs, '22px');
 
     // Note name — further out
-    lbl(NOTE_NAMES[k], pos.clone().addScaledVector(out, 1.10), isOrb ? '#226655' : '#553388', '10px');
+    lbl(NOTE_NAMES[k], pos.clone().addScaledVector(out, 1.15), isOrb ? '#33aa88' : '#8855cc', '13px');
   }
 
   // Octave return label near the arc midpoint
   const arcMid = nodePos(4).clone().add(nodePos(1)).multiplyScalar(0.5);
   const arcOut  = arcMid.clone().normalize();
-  lbl('8 = octave ↩', arcMid.clone().addScaledVector(arcOut, 2.4), '#224455', '9px');
+  lbl('8 = octave ↩', arcMid.clone().addScaledVector(arcOut, 2.4), '#336688', '11px');
 
   // "there is no 9" near the gap between 7 and 1 on the far side
-  lbl('there is no 9', new THREE.Vector3(0, 6.0, 0), '#1a1a2a', '9px');
+  lbl('there is no 9', new THREE.Vector3(0, 6.0, 0), '#553366', '12px');
 
   // Bottom label
-  lbl('the orbit is the pentatonic scale', new THREE.Vector3(0, -6.4, 0), '#2a3a3a', '10px');
+  lbl('the orbit is the pentatonic scale', new THREE.Vector3(0, -6.4, 0), '#448899', '13px');
 
   // ── Traveler ───────────────────────────────────────────────────────────────
   const travGeo = new THREE.SphereGeometry(0.16, 16, 10);
@@ -278,7 +278,7 @@ export function buildS16() {
 
   // ── Animation ─────────────────────────────────────────────────────────────
   const STEP_DUR = 1.0; // seconds per step between orbit nodes
-  let playing   = false;
+  let playing   = true;  // auto-start visual; audio unlocks on first user gesture
   let startTime = null;
   let lastStep  = -1;
   const N_STEPS = ORBIT_SEQ.length; // 5
@@ -336,6 +336,8 @@ export function buildS16() {
   // ── Button wiring (elements live in App.svelte cset div) ──────────────────
   const playBtn = document.getElementById('s16play');
   if (playBtn) {
+    playBtn.textContent = '⏸ PAUSE';
+    playBtn.classList.add('lit');
     playBtn.onclick = () => {
       playing = !playing;
       if (playing) { startTime = null; lastStep = -1; }
