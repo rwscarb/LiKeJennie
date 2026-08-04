@@ -13,7 +13,7 @@ let glc, ov, tt, rain, labelHost, panelwrap, camCoords, clkDisplay;
 let renderer, labelRenderer, rafId = 0;
 let active = 7;
 let p8adv = false;
-let audioMuted = false;
+let audioMuted = true; // start muted — first click unlocks AudioContext and begins playback
 
 function toggleAudio() {
   audioMuted = !audioMuted;
