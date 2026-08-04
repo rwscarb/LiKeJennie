@@ -111,9 +111,10 @@ export function buildS16() {
       color: 0x225577, transparent: true, opacity: 0.50,
       dashSize: 0.22, gapSize: 0.18,
     });
-    arcGeo.computeLineDistances();
     R.disposables.push(arcGeo, arcMat);
-    scene.add(new THREE.Line(arcGeo, arcMat));
+    const arcLine = new THREE.Line(arcGeo, arcMat);
+    arcLine.computeLineDistances();
+    scene.add(arcLine);
   }
 
   // ── Node spheres ──────────────────────────────────────────────────────────
