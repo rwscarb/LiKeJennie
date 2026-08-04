@@ -295,17 +295,12 @@ export function buildS17() {
   };
 
   // Cleanup when scene exits
-  const origDisposeFn = R.disposables;  // not needed, but mark for clarity
-  R.disposables.push({
-    geometry: null, material: null,
-    _isCleanup: true,
-    dispose() {
-      _alive = false;
-      stopTour();
-      canvas.removeEventListener('wheel', onWheel);
-      prevBtn?.removeEventListener('click', onPrev);
-      nextBtn?.removeEventListener('click', onNext);
-      tourBtn?.removeEventListener('click', onTour);
-    },
-  });
+  R.teardown = () => {
+    _alive = false;
+    stopTour();
+    canvas.removeEventListener('wheel', onWheel);
+    prevBtn?.removeEventListener('click', onPrev);
+    nextBtn?.removeEventListener('click', onNext);
+    tourBtn?.removeEventListener('click', onTour);
+  };
 }
