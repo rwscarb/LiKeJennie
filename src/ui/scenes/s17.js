@@ -20,7 +20,7 @@ const STREAMS = {
 
 // Days from 2026-07-27 → Y values (top=latest start, down=time advancing)
 // Y = 14 - (days_offset * 2)
-function dayY(offset, sub = 0) { return 14 - offset * 2 - sub * 0.7; }
+function dayY(offset, sub = 0) { return 14 - offset * 2.5 - sub * 1.5; }
 
 // ── Event data ────────────────────────────────────────────────────────────────
 const EVENTS = [
@@ -172,7 +172,7 @@ let _cur      = 0;
 let _touring  = false;
 let _tourId   = null;
 let _targetY  = 0;
-let _targetZ  = 22;   // camera Z: 22=overview, 8=focused
+let _targetZ  = 4;    // camera Z: 4=max zoom (default), 26=overview
 let _targetTX = 0;    // camera target X (pans toward active branch)
 let _eventY   = [];
 let _cards    = [];
@@ -450,6 +450,4 @@ export function buildS17() {
     nextBtn?.removeEventListener('click',  onNext);
     tourBtn?.removeEventListener('click',  onTour);
     zinBtn?.removeEventListener('click',   onZIn);
-    zoutBtn?.removeEventListener('click',  onZOut);
-  };
-}
+    zoutBtn?.removeEventListener('click',  onZOu
