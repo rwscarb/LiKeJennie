@@ -331,9 +331,20 @@ export function buildS17() {
   _targetTZ   = 0;
   _targetAz   = 0;
 
-  camera.position.set(0, _eventY[0], 4);
-  camera.lookAt(0, _eventY[0], 0);
-  controls.target.set(0, _eventY[0], 0);
+  // Snap camera directly to card 0's stream so it's centered on load
+  {
+    const s0  = STREAMS[EVENTS[0].stream];
+    const tx  = s0.x < -1 ? s0.x - 0.3 : s0.x + 0.3;
+    const tz  = s0.z;
+    const az  = streamAzimuth(EVENTS[0].stream);
+    _targetY  = _eventY[0];
+    _targetTX = tx;
+    _targetTZ = tz;
+    _targetAz = az;
+    controls.target.set(tx, _eventY[0], tz);
+    camera.position.set(tx + _zoomDist * Math.sin(az), _eventY[0], tz + _zoomDist * Math.cos(az));
+    camera.lookAt(tx, _eventY[0], tz);
+  }
   controls.enableDamping  = true;
   controls.autoRotate     = false;
   controls.enableZoom     = false;
