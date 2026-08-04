@@ -107,8 +107,8 @@ input[type=range]::-moz-range-thumb{width:8px;height:8px;background:#00ff88;bord
 /* ── writeup ──────────────────────────────────────── */
 .writeup{max-width:1147px;margin:.8rem auto 0;padding:0 1rem;position:relative;z-index:2}
 .writeup-hdr{font-size:.52rem;color:#2a5038;letter-spacing:.22em;margin-bottom:.9rem;padding-bottom:.35rem;border-bottom:1px solid #0a0a0a;text-transform:uppercase}
-.writeup h1[data-acc]::before,.writeup h2[data-acc]::before{content:'▶';font-size:.55em;opacity:.45;margin-right:.5em;display:inline-block;transition:transform .15s}
-.writeup h1[data-acc].acc-open::before,.writeup h2[data-acc].acc-open::before{transform:rotate(90deg)}
+.writeup h2[data-acc]::before{content:'▶';font-size:.55em;opacity:.45;margin-right:.5em;display:inline-block;transition:transform .15s}
+.writeup h2[data-acc].acc-open::before{transform:rotate(90deg)}
 .writeup h1[data-acc]:hover,.writeup h2[data-acc]:hover{opacity:.8}
 .writeup article{color:#9ab09a;line-height:1.75;font-size:.72rem;background:rgba(4,4,8,.92);border:1px solid #0a0a0a;border-radius:0 0 6px 6px;padding:1.4rem 1.8rem;}
 .writeup h1{font-size:1.4rem;color:#ff9800;letter-spacing:.12em;margin-bottom:.6rem;font-weight:normal}
