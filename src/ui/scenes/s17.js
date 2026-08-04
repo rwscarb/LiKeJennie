@@ -293,18 +293,8 @@ function jumpTo(i, pauseTour = false) {
 function _updateKeyHints() {
   const canUp = _cur > 0;
   const canDn = _cur < EVENTS.length - 1;
-  if (_kUp) {
-    _kUp.style.opacity     = canUp ? '0.85' : '0.35';
-    _kUp.style.color       = canUp ? '#2a8060' : '#1a3a28';
-    _kUp.style.borderColor = canUp ? '#1a4030' : 'transparent';
-    _kUp.style.background  = canUp ? '#040408' : 'transparent';
-  }
-  if (_kDn) {
-    _kDn.style.opacity     = canDn ? '0.85' : '0.35';
-    _kDn.style.color       = canDn ? '#2a8060' : '#1a3a28';
-    _kDn.style.borderColor = canDn ? '#1a4030' : 'transparent';
-    _kDn.style.background  = canDn ? '#040408' : 'transparent';
-  }
+  if (_kUp) { _kUp.style.opacity = canUp ? '0.85' : '0.2'; _kUp.style.color = canUp ? '#2a8060' : '#1a3a28'; }
+  if (_kDn) { _kDn.style.opacity = canDn ? '0.85' : '0.2'; _kDn.style.color = canDn ? '#2a8060' : '#1a3a28'; }
 }
 
 function stopTour() {
@@ -507,18 +497,12 @@ export function buildS17() {
 
   // ── Arrow key hints (lower-left) ─────────────────────────────────────────────
   const keyHintBase = [
-    'font-family:"Courier New",monospace',
-    'font-size:14px',
-    'letter-spacing:.07em',
-    'background:transparent',
-    'border:1px solid transparent',
+    'font-size:16px',
     'color:#1a3a28',
-    'border-radius:3px',
-    'padding:4px 12px',
     'display:block',
     'text-align:center',
     'opacity:0.35',
-    'transition:color .15s,border-color .15s,box-shadow .15s,opacity .15s',
+    'transition:color .15s,opacity .15s',
     'user-select:none',
   ].join(';');
   const keyHintWrap = document.createElement('div');
@@ -544,13 +528,12 @@ export function buildS17() {
   _updateKeyHints();
 
   function flashKey(el) {
-    el.style.color = '#00ff88';
-    el.style.borderColor = '#00ff88';
-    el.style.boxShadow = '0 0 6px #00ff8840';
+    el.style.color   = '#00ff88';
+    el.style.opacity = '1';
     setTimeout(() => {
-      el.style.color = '';
-      el.style.borderColor = '';
-      el.style.boxShadow = '';
+      el.style.color   = '';
+      el.style.opacity = '';
+      _updateKeyHints();
     }, 160);
   }
 
