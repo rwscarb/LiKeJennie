@@ -143,7 +143,7 @@ export function buildS17() {
   const scene    = R.scene    = new THREE.Scene();
   const camera   = R.camera   = mkCamera();
   const N        = EVENTS.length;
-  const YSPAN    = 14;
+  const YSPAN    = 24;
   const Y_TOP    = YSPAN / 2;
   const YSTEP    = YSPAN / (N - 1);
   _eventY        = EVENTS.map((_, i) => Y_TOP - i * YSTEP);
@@ -151,7 +151,7 @@ export function buildS17() {
   _cur           = 0;
   _targetY       = _eventY[0];
 
-  camera.position.set(0, _eventY[0], 10);
+  camera.position.set(0, _eventY[0], 14);
   camera.lookAt(0, _eventY[0], 0);
   const controls = R.controls = mkControls(camera);
   controls.target.set(0, _eventY[0], 0);
