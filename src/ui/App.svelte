@@ -351,11 +351,15 @@ afterUpdate(() => {
   });
 
   // Accordion: wrap content after each h1/h2 into a collapsible body, collapsed by default
+  let firstSection = true;
   document.querySelectorAll('.writeup article h1:not([data-acc]), .writeup article h2:not([data-acc])').forEach(hdr => {
     hdr.setAttribute('data-acc', '1');
     const body = document.createElement('div');
     body.className = 'acc-body';
-    body.style.display = 'none';
+    const isFirst = firstSection;
+    body.style.display = isFirst ? '' : 'none';
+    if (isFirst) hdr.classList.add('acc-open');
+    firstSection = false;
     let next = hdr.nextElementSibling;
     while (next && next.tagName !== 'H1' && next.tagName !== 'H2') {
       const tmp = next.nextElementSibling;
