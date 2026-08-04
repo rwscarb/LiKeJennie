@@ -107,6 +107,10 @@ input[type=range]::-moz-range-thumb{width:8px;height:8px;background:#00ff88;bord
 /* ── writeup ──────────────────────────────────────── */
 .writeup{max-width:1147px;margin:.8rem auto 0;padding:0 1rem;position:relative;z-index:2}
 .writeup-hdr{font-size:.52rem;color:#2a5038;letter-spacing:.22em;margin-bottom:.9rem;padding-bottom:.35rem;border-bottom:1px solid #0a0a0a;text-transform:uppercase}
+.writeup-toggle{cursor:pointer;user-select:none;display:flex;align-items:center;gap:.5em}
+.writeup-toggle:hover{color:#3a7050}
+.writeup-chevron{font-size:.55rem;opacity:.55;transition:transform .18s;display:inline-block}
+.writeup-chevron.open{transform:rotate(90deg)}
 .writeup article{color:#9ab09a;line-height:1.75;font-size:.72rem;background:rgba(4,4,8,.92);border:1px solid #0a0a0a;border-radius:0 0 6px 6px;padding:1.4rem 1.8rem;}
 .writeup h1{font-size:1.4rem;color:#ff9800;letter-spacing:.12em;margin-bottom:.6rem;font-weight:normal}
 .writeup h2{font-size:.75rem;color:#00e5ff;letter-spacing:.14em;margin:1.4rem 0 .5rem;text-transform:uppercase;font-weight:normal}
