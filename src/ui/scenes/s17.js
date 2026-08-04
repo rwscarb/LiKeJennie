@@ -143,6 +143,13 @@ const EVENTS = [
     stat: 'base 87.4%  tri 88.4%  (+1.0%)  · >8s warning before S-wave',
   },
   {
+    stream: 'result', y: dayY(7, 2.1),
+    date: '2026-08-03',
+    title: 'Permutation ablation',
+    body: 'stride-5 ≈ random ≈ identity — all beat baseline equally at clean signal. Gated skip + LN is doing the work, not the orbit geometry. Under noise (σ=1.5), identity collapses first. Mixing matters for robustness, not accuracy.',
+    stat: 'σ=0.0: +6.20% (stride-5) +6.06% (random) +6.12% (identity)',
+  },
+  {
     stream: 'wife', y: dayY(7, 0.4),
     date: '2026-08-03',
     title: 'E² = mc³',

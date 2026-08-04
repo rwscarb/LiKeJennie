@@ -98,6 +98,16 @@ Tribar positive at every noise level. Peak gap at σ=0.3 — the ambient noise r
 
 The seismograph measures oscillation in the medium. The orbit *is* oscillation structured. The geometry didn't need to be told to look for it.
 
+**Permutation ablation results (2026-08-03):** Fashion-MNIST K=32, CYCLES=3, 5 seeds. stride-5 vs random vs identity vs baseline:
+
+| σ | baseline | stride-5 | random | identity |
+|---|----------|----------|--------|----------|
+| 0.0 | 74.75% | 80.95% | 80.81% | 80.87% |
+| 0.7 | 73.98% | 77.00% | 77.16% | 76.56% |
+| 1.5 | 71.58% | 71.88% | 72.24% | 71.37% |
+
+All three permutation types beat baseline by nearly the same margin at clean signal. The orbit geometry isn't special — the gated skip + LayerNorm is doing the work. Where permutation type matters: under noise (σ=1.5), identity barely holds (+0.30%) while random and stride-5 stay positive. The *mixing* earns its keep at the degraded end. The silk thread carries signal. The pattern of the thread is secondary.
+
 ---
 
 ## For a Minute There, I Lost Myself
