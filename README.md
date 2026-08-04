@@ -7,6 +7,8 @@ wound around a Fibonacci phyllotaxis cone, breathing.
 
 ---
 
+[![fib896.com](src/ui/public/fib896.png)](https://fib896.com)
+
 ## What It Shows
 
 Start at 1. Double it. Take the result mod 9. Repeat:
