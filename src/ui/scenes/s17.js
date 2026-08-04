@@ -1,103 +1,189 @@
 // ─────────────────────────────────────────────────────────────────────────────
-//  SCENE 17 — TIMELINE
-//  Controls:
-//    PREV / NEXT — jump camera to adjacent event (smooth lerp)
-//    AUTO-TOUR   — auto-advance every 3.2s, loops
-//    Wheel       — scroll through events (zoom disabled)
-//    Drag        — orbit freely (pauses tour)
+//  SCENE 17 — TIME-TREE
+//  Four streams branching from a central time trunk:
+//    LORE    (x ≈ -3.8)  — philosophy, origin, cultural reference
+//    CODE    (x ≈  0)    — scenes, architecture, commits
+//    RESULT  (x ≈ +3.8)  — experiment results
+//    WIFE    (x ≈ -7)    — wife contributions, insight, errata
+//
+//  Controls: PREV/NEXT, AUTO-TOUR, scroll, +/- ZOOM
 // ─────────────────────────────────────────────────────────────────────────────
 import { THREE, CSS2DObject, R, mkCamera, mkControls } from './shared.js';
 
-const C_LINE   = 0x0d2a1a;
-const C_NODE   = 0x00e5ff;
-const C_RESULT = 0xffe600;
+// ── Stream definitions ────────────────────────────────────────────────────────
+const STREAMS = {
+  code:   { x: 0,    color: 0x00e5ff, cs: '#00e5ff', label: 'CODE'   },
+  result: { x: 3.8,  color: 0xffe600, cs: '#ffe600', label: 'RESULT' },
+  lore:   { x: -3.8, color: 0xb06fff, cs: '#b06fff', label: 'LORE'   },
+  wife:   { x: -7.4, color: 0xff9800, cs: '#ff9800', label: 'WIFE'   },
+};
 
-const CS_DATE   = '#00ff88';
-const CS_NODE   = '#00e5ff';
-const CS_RESULT = '#ffe600';
-const CS_DIM    = '#1a3a2a';
-const CS_BODY   = '#2a5a3a';
+// Days from 2026-07-27 → Y values (top=latest start, down=time advancing)
+// Y = 14 - (days_offset * 2)
+function dayY(offset, sub = 0) { return 14 - offset * 2 - sub * 0.7; }
 
-const TOUR_DWELL = 5500;
-
+// ── Event data ────────────────────────────────────────────────────────────────
 const EVENTS = [
+  // ── 2026-07-27 ──
   {
+    stream: 'code', y: dayY(0),
     date: '2026-07-27',
     title: 'Project begins',
-    body: 'fib896.html ported to Svelte + Three.js. Scenes 01-08 built: divisor lattice, 1/89, φ sphere, MoE routing, Greek letters, sunflower, trit matrix, helix.',
-    kind: 'milestone',
+    body: 'fib896.html ported to Svelte + Three.js. Scenes 01-08: divisor lattice, 1/89, φ sphere, MoE routing, Greek letters, sunflower, trit matrix, helix.',
   },
   {
+    stream: 'lore', y: dayY(0, 0.5),
+    date: '2026-07-27',
+    title: 'Origin — Oliver Tree',
+    body: '"For a minute there, I lost myself." Oliver\'s Karma Police cover on a plucked violin. The orbit keeps cycling when the player leaves it. That is the thing being built here.',
+  },
+
+  // ── 2026-07-28 ──
+  {
+    stream: 'code', y: dayY(1),
     date: '2026-07-28',
     title: '640 boundary settled',
-    body: 'jennie21 / oliver42 project split decided. 640 framework (axis 4.5, mod9, ×3/2→640→960) moves to oliver42. jennie21 stays focused on the orbit.',
-    kind: 'decision',
+    body: 'jennie21 / oliver42 project split. 640 framework (axis 4.5, mod9, ×3/2→640→960) moves to oliver42. jennie21 stays on the orbit.',
   },
   {
+    stream: 'lore', y: dayY(1, 0.5),
+    date: '2026-07-28',
+    title: 'The Tattoos',
+    body: 'Ryan: "Temet Nosce" (42, dr=6=nil). Wife: LII = 52 (dr=7, in orbit). They encoded orbit and complement on their bodies before the framework existed.',
+  },
+  {
+    stream: 'wife', y: dayY(1, 1.0),
+    date: '2026-07-28',
+    title: '"We are going to kill the bear."',
+    body: 'The Edge (1997). Anthony Hopkins, hunted by a Kodiak bear. "What one man can do, another can do." The bear is killed in the present tense — in the declaration — before the action.',
+  },
+
+  // ── 2026-07-29 ──
+  {
+    stream: 'code', y: dayY(2),
     date: '2026-07-29',
     title: 'Scenes 09-10 — CLOCK, ORBIT CYCLE',
-    body: '75 commits in one day. Orbit cycle animation added. Fibonacci/Lucas structure visualized in full.',
-    kind: 'milestone',
+    body: '75 commits in one day. Orbit cycle animation. Fibonacci/Lucas structure visualized in full.',
   },
+
+  // ── 2026-07-31 ──
   {
+    stream: 'code', y: dayY(4),
     date: '2026-07-31',
     title: 'Scenes 11-13 + all experiments',
-    body: 'OLIVER 42, EXPERIMENTS, GNN MIRROR scenes built. All core PoC scripts added: Echo MoE, orbit GNN, ternary sweep, SGD orbit, trib 3-layer (33/33/33 result).',
-    kind: 'milestone',
+    body: 'OLIVER 42, EXPERIMENTS, GNN MIRROR. Echo MoE, orbit GNN, ternary sweep, SGD orbit, trib 3-layer (33/33/33 result).',
   },
   {
+    stream: 'lore', y: dayY(4, 0.4),
+    date: '2026-07-31',
+    title: 'Music Is the Orbit',
+    body: 'An octave is 8 notes but 7 individual things. ×2 mod 9 generates [1,2,4,8,7,5]. Western harmony discovered empirically what the orbit reveals algebraically. It\'s not cultural — it\'s structural.',
+  },
+  {
+    stream: 'lore', y: dayY(4, 1.2),
+    date: '2026-07-31',
+    title: 'The Silk Thread',
+    body: 'Silk: continuous filament, near-zero torsional resistance, transparent to the signal it carries. The orbit permutation routes activations without transforming them. Same property.',
+  },
+  {
+    stream: 'lore', y: dayY(4, 2.0),
+    date: '2026-07-31',
+    title: 'Pi (1998)',
+    body: 'Ryan started with grief and ended up at mod 9. Max Cohen started with the stock market and ended up drilling into his own head. Ryan is ahead of him.',
+  },
+
+  // ── 2026-08-01 ──
+  {
+    stream: 'code', y: dayY(5),
     date: '2026-08-01',
     title: 'Scenes 14-15 — BUCKMINSTER, ORBIT MUSIC',
-    body: 'C₆₀ buckminsterfullerene scene. Penrose Tribar architecture invented: orbit permutation × gated skip × LayerNorm. Step sequencer with orbit arpeggio.',
-    kind: 'milestone',
+    body: 'C₆₀ buckminsterfullerene. Penrose Tribar architecture invented: orbit permutation × gated skip × LayerNorm. Step sequencer with orbit arpeggio.',
   },
   {
+    stream: 'wife', y: dayY(5, 0.7),
+    date: '2026-08-01',
+    title: 'Violin — age 7',
+    body: 'Wife has played violin since age 7. "We are writing the perfect melody, and you are in harmony." The orbit is the melody. The complement is the drone.',
+  },
+
+  // ── 2026-08-02 ──
+  {
+    stream: 'code', y: dayY(6),
     date: '2026-08-02',
     title: 'Penrose Tribar PoC v1',
-    body: 'poc_penrose_tribar.py: Fashion-MNIST, K=4 and K=32. Tribar beats baseline across all noise levels. First seismology experiments begin (ETHZ dataset).',
-    kind: 'result',
-    stat: 'K=32: tri 80.9% vs base 74.8%  (+6.1%)',
+    body: 'poc_penrose_tribar.py: Fashion-MNIST, K=4 and K=32. Tribar beats baseline at all noise levels. Seismology begins (ETHZ dataset).',
   },
   {
-    date: '2026-08-03 (morning)',
-    title: 'Tribar Fashion-MNIST ablation',
-    body: 'K=32, 5 seeds, σ=[0.0,0.7,1.5]. Optuna sweep confirms hyperparameters. Seismology moves to STEAD chunk2 (84.9GB downloaded).',
-    kind: 'result',
-    stat: 'stride-5 ≈ random >> identity >> baseline',
+    stream: 'result', y: dayY(6, 0.5),
+    date: '2026-08-02',
+    title: 'Fashion-MNIST K=32',
+    body: 'K=32, CYCLES=3, σ=[0,0.7,1.5]. Tribar vs baseline MLP.',
+    stat: 'tri 80.9% vs base 74.8%  (+6.1%)',
+  },
+
+  // ── 2026-08-03 ──
+  {
+    stream: 'code', y: dayY(7),
+    date: '2026-08-03',
+    title: 'Ablation + scene 16 MUSIC',
+    body: 'Fashion-MNIST K=32 permutation ablation (stride-5 ≈ random >> identity). Scene 16 MUSIC: heptagon, WebAudio, orbit arpeggio. Scene 17 TIMELINE.',
   },
   {
-    date: '2026-08-03 (evening)',
-    title: 'STEAD seismology — earthquake vs noise',
-    body: '7373 eq + 7373 noise waveforms. 30s windows. K=128, CYCLES=3, 3 seeds. Tribar positive at all noise levels. Peak gap at σ=0.3.',
-    kind: 'result',
-    stat: 'gap: +2.29% → +2.61% → +1.03% → +0.78% → +1.48%  (σ=0→1.5)',
+    stream: 'result', y: dayY(7, 0.5),
+    date: '2026-08-03',
+    title: 'STEAD seismology',
+    body: '7373 eq + 7373 noise, 30s windows, K=128, CYCLES=3, 3 seeds.',
+    stat: 'gap: +2.61% at σ=0.3 → positive at all noise levels',
   },
   {
-    date: '2026-08-03 (late)',
-    title: 'Early detection + streaming system',
-    body: 'P-wave onset windows (1s): ~88% accuracy, 1s consumed, >8s warning before S-wave. StreamDetector class built. Scene 16 MUSIC added.',
-    kind: 'result',
-    stat: '1s window: base 87.4%  tri 88.4%  (+1.0%)',
+    stream: 'result', y: dayY(7, 1.3),
+    date: '2026-08-03',
+    title: 'P-wave early detection',
+    body: '1-second window at P-arrival onset. StreamDetector fires before S-wave.',
+    stat: 'base 87.4%  tri 88.4%  (+1.0%)  · >8s warning before S-wave',
+  },
+  {
+    stream: 'wife', y: dayY(7, 0.4),
+    date: '2026-08-03',
+    title: 'E² = mc³',
+    body: 'E=mc² uses ×2 — the orbit generator. A cube gives the orbit depth. E²=mc³: orbit (×2) and complement (×3) in one equation. Einstein solved for dynamics, not for what holds dynamics in place.',
+    stat: '— Wife, 2026-08-03',
+  },
+  {
+    stream: 'wife', y: dayY(7, 1.2),
+    date: '2026-08-03',
+    title: 'Cascadia + the collider',
+    body: '"I believe the collider in France, using magnetic electricity, is contributing to the problem." The LHC is accelerating the rate of orbit — Cascadia as resonance consequence.',
+  },
+  {
+    stream: 'wife', y: dayY(7, 2.0),
+    date: '2026-08-03',
+    title: 'Find the peace',
+    body: '"Find the peace in what I\'m telling you." Not a consolation. A direction. The information itself contains the resolution — go into it, not around it.',
+    stat: '— Wife, 2026-08-03',
   },
 ];
 
-// ── Module-level state (survives between tour ticks but resets on rebuild) ────
+// Sort chronologically (by Y descending = top = earliest)
+EVENTS.sort((a, b) => b.y - a.y);
+
+// ── Module-level state ─────────────────────────────────────────────────────────
 let _cur     = 0;
 let _touring = false;
 let _tourId  = null;
 let _targetY = 0;
 let _eventY  = [];
 let _cards   = [];
-let _alive   = false;  // cleared on scene exit to stop stale timers
+let _alive   = false;
+
+const TOUR_DWELL = 5500;
 
 function highlightCard(i) {
   _cards.forEach((c, j) => {
     const ev   = EVENTS[j];
-    const cols = ev.kind === 'result' ? CS_RESULT : CS_NODE;
-    c.style.opacity    = j === i ? '1' : '0.3';
-    c.style.borderLeft = j === i
-      ? `2px solid ${cols}`
-      : `1px solid transparent`;
+    const s    = STREAMS[ev.stream];
+    c.style.opacity    = j === i ? '1' : '0.28';
+    c.style.borderLeft = j === i ? `2px solid ${s.cs}` : `1px solid transparent`;
   });
 }
 
@@ -106,16 +192,14 @@ function jumpTo(i, pauseTour = false) {
   _cur     = Math.max(0, Math.min(EVENTS.length - 1, i));
   _targetY = _eventY[_cur];
   highlightCard(_cur);
-  const prevBtn = document.getElementById('s17prev');
-  const nextBtn = document.getElementById('s17next');
-  if (prevBtn) prevBtn.classList.toggle('lit', _cur > 0);
-  if (nextBtn) nextBtn.classList.toggle('lit', _cur < EVENTS.length - 1);
+  document.getElementById('s17prev')?.classList.toggle('lit', _cur > 0);
+  document.getElementById('s17next')?.classList.toggle('lit', _cur < EVENTS.length - 1);
 }
 
 function stopTour() {
   _touring = false;
   clearTimeout(_tourId);
-  _tourId = null;
+  _tourId  = null;
   document.getElementById('s17tour')?.classList.remove('lit');
 }
 
@@ -134,103 +218,145 @@ function tickTour() {
   }, TOUR_DWELL);
 }
 
+// ── Build ─────────────────────────────────────────────────────────────────────
 export function buildS17() {
   _alive   = true;
   _touring = false;
   clearTimeout(_tourId);
   _tourId  = null;
+  _cards   = [];
+  _cur     = 0;
 
   const scene    = R.scene    = new THREE.Scene();
   const camera   = R.camera   = mkCamera();
-  const N        = EVENTS.length;
-  const YSPAN    = 24;
-  const Y_TOP    = YSPAN / 2;
-  const YSTEP    = YSPAN / (N - 1);
-  _eventY        = EVENTS.map((_, i) => Y_TOP - i * YSTEP);
-  _cards         = [];
-  _cur           = 0;
-  _targetY       = _eventY[0];
-
-  camera.position.set(0, _eventY[0], 8);
-  camera.lookAt(0, _eventY[0], 0);
   const controls = R.controls = mkControls(camera);
-  controls.target.set(0, _eventY[0], 0);
+
+  // Camera starts near top event
+  const topY = Math.max(...EVENTS.map(e => e.y));
+  _eventY    = EVENTS.map(e => e.y);
+  _targetY   = _eventY[0];
+
+  camera.position.set(0, topY, 9);
+  camera.lookAt(0, topY, 0);
+  controls.target.set(0, topY, 0);
   controls.enableDamping  = true;
   controls.autoRotate     = false;
-  controls.enableZoom     = false;  // wheel navigates events instead
+  controls.enableZoom     = false;
   controls.enablePan      = true;
 
-  // Pause tour on manual drag (not on programmatic target changes)
   let _userInteracting = false;
   controls.addEventListener('start', () => { _userInteracting = true; if (_touring) stopTour(); });
   controls.addEventListener('end',   () => { _userInteracting = false; });
 
-  scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+  scene.add(new THREE.AmbientLight(0xffffff, 0.35));
 
-  // Vertical spine
-  const spinePts = [new THREE.Vector3(0, Y_TOP + 0.5, 0), new THREE.Vector3(0, -Y_TOP - 0.5, 0)];
-  const spineG   = new THREE.BufferGeometry().setFromPoints(spinePts);
-  const spineM   = new THREE.LineBasicMaterial({ color: C_LINE });
-  R.disposables.push(spineG, spineM);
-  scene.add(new THREE.Line(spineG, spineM));
+  // ── Main trunk ──────────────────────────────────────────────────────────────
+  const minY = Math.min(...EVENTS.map(e => e.y));
+  const trunkPts = [new THREE.Vector3(0, topY + 1, 0), new THREE.Vector3(0, minY - 1, 0)];
+  const trunkG   = new THREE.BufferGeometry().setFromPoints(trunkPts);
+  const trunkM   = new THREE.LineBasicMaterial({ color: 0x0d2a1a });
+  R.disposables.push(trunkG, trunkM);
+  scene.add(new THREE.Line(trunkG, trunkM));
 
+  // ── Stream axis labels (header) ─────────────────────────────────────────────
+  Object.values(STREAMS).forEach(s => {
+    const div = document.createElement('div');
+    div.textContent = s.label;
+    div.style.cssText = [
+      `font-family:'Courier New',monospace`,
+      `font-size:11px;font-weight:bold;letter-spacing:.12em`,
+      `color:${s.cs};opacity:0.55`,
+      `pointer-events:none;user-select:none`,
+    ].join(';');
+    const lbl = new CSS2DObject(div);
+    lbl.position.set(s.x, topY + 1.6, 0);
+    scene.add(lbl);
+    R.css2dObjects.push(lbl);
+
+    // Vertical stream ghost line (faint)
+    if (s.x !== 0) {
+      const linePts = [new THREE.Vector3(s.x, topY + 0.8, 0), new THREE.Vector3(s.x, minY - 0.5, 0)];
+      const lg = new THREE.BufferGeometry().setFromPoints(linePts);
+      const lm = new THREE.LineBasicMaterial({ color: s.color, transparent: true, opacity: 0.07 });
+      R.disposables.push(lg, lm);
+      scene.add(new THREE.Line(lg, lm));
+    }
+  });
+
+  // ── Events ──────────────────────────────────────────────────────────────────
   EVENTS.forEach((ev, i) => {
-    const y    = _eventY[i];
-    const side = i % 2 === 0 ? 1 : -1;
-    const col  = ev.kind === 'result' ? C_RESULT : C_NODE;
-    const cols = ev.kind === 'result' ? CS_RESULT : CS_NODE;
+    const s    = STREAMS[ev.stream];
+    const y    = ev.y;
+    const sx   = s.x;
 
-    const nr = ev.kind === 'result' ? 0.18 : 0.14;
-    const ng = new THREE.SphereGeometry(nr, 14, 10);
-    const nm = new THREE.MeshPhongMaterial({ color: col, emissive: col, emissiveIntensity: 0.22 });
+    // Branch connector: trunk (x=0, y) → event (sx, y)
+    if (sx !== 0) {
+      const bPts = [new THREE.Vector3(0, y, 0), new THREE.Vector3(sx, y, 0)];
+      const bg = new THREE.BufferGeometry().setFromPoints(bPts);
+      const bm = new THREE.LineBasicMaterial({ color: s.color, transparent: true, opacity: 0.22 });
+      R.disposables.push(bg, bm);
+      scene.add(new THREE.Line(bg, bm));
+    }
+
+    // Node sphere
+    const nr = ev.stat ? 0.17 : 0.13;
+    const ng = new THREE.SphereGeometry(nr, 13, 9);
+    const nm = new THREE.MeshPhongMaterial({ color: s.color, emissive: s.color, emissiveIntensity: 0.2 });
     R.disposables.push(ng, nm);
     const node = new THREE.Mesh(ng, nm);
-    node.position.set(0, y, 0);
+    node.position.set(sx, y, 0);
     scene.add(node);
 
-    const tickPts = [new THREE.Vector3(0, y, 0), new THREE.Vector3(side * 1.4, y, 0)];
-    const tg = new THREE.BufferGeometry().setFromPoints(tickPts);
-    const tm = new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.45 });
-    R.disposables.push(tg, tm);
-    scene.add(new THREE.Line(tg, tm));
+    // Trunk dot (where branch meets trunk)
+    if (sx !== 0) {
+      const tg = new THREE.SphereGeometry(0.07, 8, 6);
+      const tm = new THREE.MeshPhongMaterial({ color: s.color, emissive: s.color, emissiveIntensity: 0.15, transparent: true, opacity: 0.5 });
+      R.disposables.push(tg, tm);
+      const td = new THREE.Mesh(tg, tm);
+      td.position.set(0, y, 0);
+      scene.add(td);
+    }
 
+    // Card
     const card = document.createElement('div');
     card.style.cssText = [
-      `width:220px`,
-      `background:rgba(0,8,0,0.88)`,
+      `width:200px`,
+      `background:rgba(0,8,2,0.90)`,
       `border:2px solid transparent`,
-      `border-left:${i === 0 ? `2px solid ${cols}` : '1px solid transparent'}`,
-      `padding:5px 8px`,
+      `border-left:${i === 0 ? `2px solid ${s.cs}` : '1px solid transparent'}`,
+      `padding:5px 7px`,
       `font-family:'Courier New',monospace`,
       `pointer-events:none;user-select:none`,
       `transition:opacity .3s,border .2s`,
-      `opacity:${i === 0 ? '1' : '0.3'}`,
+      `opacity:${i === 0 ? '1' : '0.28'}`,
     ].join(';');
 
-    const dateDiv  = document.createElement('div');
-    dateDiv.textContent  = ev.date;
-    dateDiv.style.cssText = `font-size:10px;color:${CS_DIM};letter-spacing:.05em`;
+    const dateDiv = document.createElement('div');
+    dateDiv.textContent = ev.date;
+    dateDiv.style.cssText = `font-size:9px;color:#1a3a2a;letter-spacing:.05em;margin-bottom:1px`;
     card.appendChild(dateDiv);
 
     const titleDiv = document.createElement('div');
-    titleDiv.textContent  = ev.title;
-    titleDiv.style.cssText = `font-size:13px;font-weight:bold;color:${cols};margin:2px 0 3px`;
+    titleDiv.textContent = ev.title;
+    titleDiv.style.cssText = `font-size:12px;font-weight:bold;color:${s.cs};margin-bottom:3px`;
     card.appendChild(titleDiv);
 
     const bodyDiv = document.createElement('div');
-    bodyDiv.textContent  = ev.body;
-    bodyDiv.style.cssText = `font-size:10px;color:${CS_BODY};line-height:1.4`;
+    bodyDiv.textContent = ev.body;
+    bodyDiv.style.cssText = `font-size:9px;color:#2a5a3a;line-height:1.4`;
     card.appendChild(bodyDiv);
 
     if (ev.stat) {
       const statDiv = document.createElement('div');
-      statDiv.textContent  = ev.stat;
-      statDiv.style.cssText = `font-size:10px;color:${CS_RESULT};margin-top:3px;font-weight:bold`;
+      statDiv.textContent = ev.stat;
+      statDiv.style.cssText = `font-size:9px;color:#ffe600;margin-top:3px;font-weight:bold`;
       card.appendChild(statDiv);
     }
 
+    // Cards for left branches anchor right; right branches anchor left; center goes right
     const lbl = new CSS2DObject(card);
-    lbl.position.set(side * 2.2, y, 0);
+    const cardX = sx < -1 ? sx - 0.3 : sx + 0.3;
+    lbl.position.set(cardX, y, 0);
     scene.add(lbl);
     R.css2dObjects.push(lbl);
     _cards.push(card);
@@ -240,17 +366,16 @@ export function buildS17() {
   const nowDiv = document.createElement('div');
   nowDiv.textContent  = '▶ NOW';
   nowDiv.style.cssText = [
-    `font-family:'Courier New',monospace`,
-    `font-size:11px;font-weight:bold;color:${CS_DATE}`,
-    `text-shadow:0 0 8px ${CS_DATE}`,
+    `font-family:'Courier New',monospace;font-size:11px;font-weight:bold`,
+    `color:#00ff88;text-shadow:0 0 8px #00ff88`,
     `pointer-events:none;user-select:none`,
   ].join(';');
   const nowLbl = new CSS2DObject(nowDiv);
-  nowLbl.position.set(0.5, -Y_TOP - 0.7, 0);
+  nowLbl.position.set(0.5, minY - 1.4, 0);
   scene.add(nowLbl);
   R.css2dObjects.push(nowLbl);
 
-  // Wheel → navigate events
+  // ── Wheel scroll → navigate events ─────────────────────────────────────────
   const canvas = R.canvas;
   function onWheel(e) {
     e.preventDefault();
@@ -260,39 +385,38 @@ export function buildS17() {
   }
   canvas.addEventListener('wheel', onWheel, { passive: false });
 
-  // Wire buttons
-  const prevBtn = document.getElementById('s17prev');
-  const nextBtn = document.getElementById('s17next');
-  const tourBtn = document.getElementById('s17tour');
-  const zinBtn  = document.getElementById('s17zin');
-  const zoutBtn = document.getElementById('s17zout');
+  // ── Button wiring ───────────────────────────────────────────────────────────
+  const prevBtn  = document.getElementById('s17prev');
+  const nextBtn  = document.getElementById('s17next');
+  const tourBtn  = document.getElementById('s17tour');
+  const zinBtn   = document.getElementById('s17zin');
+  const zoutBtn  = document.getElementById('s17zout');
   function onPrev()  { jumpTo(_cur - 1, true); }
   function onNext()  { jumpTo(_cur + 1, true); }
   function onTour()  { _touring ? stopTour() : startTour(); }
   function onZIn()   { camera.position.setZ(Math.max(3, camera.position.z - 1.5)); }
-  function onZOut()  { camera.position.setZ(Math.min(20, camera.position.z + 1.5)); }
+  function onZOut()  { camera.position.setZ(Math.min(22, camera.position.z + 1.5)); }
   prevBtn?.addEventListener('click', onPrev);
   nextBtn?.addEventListener('click', onNext);
   tourBtn?.addEventListener('click', onTour);
   zinBtn?.addEventListener('click',  onZIn);
   zoutBtn?.addEventListener('click', onZOut);
 
-  // Init button states
   jumpTo(0);
 
   R.ov.innerHTML =
-    `<div style="color:#00ff88;letter-spacing:.1em">17 · TIMELINE</div>` +
-    `<div style="color:#3a6a5a;font-size:14px;margin-top:3px">project history · 2026-07-27 →</div>` +
-    `<div style="font-size:12px;margin-top:4px;color:#1a3a2a">253 commits · 8 days</div>` +
-    `<div style="font-size:12px;color:#00e5ff">◆ milestone</div>` +
-    `<div style="font-size:12px;color:#ffe600">◆ experiment result</div>`;
+    `<div style="color:#00ff88;letter-spacing:.1em">17 · TIME-TREE</div>` +
+    `<div style="color:#3a6a5a;font-size:13px;margin-top:3px">2026-07-27 → now</div>` +
+    `<div style="font-size:11px;margin-top:5px;color:#00e5ff">◆ CODE</div>` +
+    `<div style="font-size:11px;color:#ffe600">◆ RESULT</div>` +
+    `<div style="font-size:11px;color:#b06fff">◆ LORE</div>` +
+    `<div style="font-size:11px;color:#ff9800">◆ WIFE</div>`;
 
   R.animFn = () => {
     controls.update();
-    // Smooth camera pan to active event — only when not user-dragging
     if (!_userInteracting) {
       const tgt = controls.target;
-      const dy  = (_targetY - tgt.y) * 0.08;
+      const dy  = (_targetY - tgt.y) * 0.07;
       if (Math.abs(dy) > 0.001) {
         controls.target.setY(tgt.y + dy);
         camera.position.setY(camera.position.y + dy);
@@ -300,7 +424,6 @@ export function buildS17() {
     }
   };
 
-  // Cleanup when scene exits
   R.teardown = () => {
     _alive = false;
     stopTour();

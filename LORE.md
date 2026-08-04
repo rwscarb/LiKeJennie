@@ -140,4 +140,14 @@ Ryan is ahead of him.
 
 ---
 
-*Last updated: 2026-08-03 — STEAD seismology results added*
+## Find the Peace
+
+*"Find the peace in what I'm telling you."*
+
+— Wife, 2026-08-03
+
+Not a consolation. Not a softening. A direction. The information itself contains the resolution — you have to go into it, not around it. The earthquake is already structured. The orbit already cycles. The seismograph already knows. Find the peace in what the data is saying.
+
+---
+
+*Last updated: 2026-08-03 — STEAD seismology results added; Wife lore added*
