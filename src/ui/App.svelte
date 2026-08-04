@@ -561,7 +561,10 @@ afterUpdate(() => {
       <span class="stat">click a node to play &nbsp;&middot;&nbsp; orbit {1,2,4,5,7} = pentatonic &nbsp;&middot;&nbsp; complement {3,6} = ground</span>
     </div>
     <div class="cset" class:on={active === 16}>
-      <span class="stat">drag to navigate &nbsp;&middot;&nbsp; 253 commits · 8 days · 9 experiments · 17 scenes</span>
+      <button class="btn lit" id="s17prev">◀ PREV</button>
+      <button class="btn lit" id="s17next">NEXT ▶</button>
+      <button class="btn" id="s17tour">AUTO-TOUR</button>
+      <span class="stat">drag to orbit &nbsp;&middot;&nbsp; scroll to zoom &nbsp;&middot;&nbsp; jump or tour through events</span>
     </div>
   </div>
 </div>
