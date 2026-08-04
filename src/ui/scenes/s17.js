@@ -254,6 +254,8 @@ let _targetAz = 0;    // desired camera azimuth around Y axis
 let _eventY   = [];
 let _cards    = [];
 let _alive    = false;
+let _kUp      = null;   // arrow hint elements; set during init
+let _kDn      = null;
 
 // Azimuth that isolates stream — camera sits on outward radial from trunk
 function streamAzimuth(stream) {
@@ -285,6 +287,24 @@ function jumpTo(i, pauseTour = false) {
   highlightCard(_cur);
   document.getElementById('s17prev')?.classList.toggle('lit', _cur > 0);
   document.getElementById('s17next')?.classList.toggle('lit', _cur < EVENTS.length - 1);
+  _updateKeyHints();
+}
+
+function _updateKeyHints() {
+  const canUp = _cur > 0;
+  const canDn = _cur < EVENTS.length - 1;
+  if (_kUp) {
+    _kUp.style.opacity     = canUp ? '0.85' : '0.35';
+    _kUp.style.color       = canUp ? '#2a8060' : '#1a3a28';
+    _kUp.style.borderColor = canUp ? '#1a4030' : 'transparent';
+    _kUp.style.background  = canUp ? '#040408' : 'transparent';
+  }
+  if (_kDn) {
+    _kDn.style.opacity     = canDn ? '0.85' : '0.35';
+    _kDn.style.color       = canDn ? '#2a8060' : '#1a3a28';
+    _kDn.style.borderColor = canDn ? '#1a4030' : 'transparent';
+    _kDn.style.background  = canDn ? '#040408' : 'transparent';
+  }
 }
 
 function stopTour() {
@@ -490,15 +510,15 @@ export function buildS17() {
     'font-family:"Courier New",monospace',
     'font-size:14px',
     'letter-spacing:.07em',
-    'background:#040408',
-    'border:1px solid #1a4030',
-    'color:#2a8060',
+    'background:transparent',
+    'border:1px solid transparent',
+    'color:#1a3a28',
     'border-radius:3px',
     'padding:4px 12px',
     'display:block',
     'text-align:center',
-    'opacity:0.9',
-    'transition:color .1s,border-color .1s,box-shadow .1s',
+    'opacity:0.35',
+    'transition:color .15s,border-color .15s,box-shadow .15s,opacity .15s',
     'user-select:none',
   ].join(';');
   const keyHintWrap = document.createElement('div');
@@ -520,6 +540,8 @@ export function buildS17() {
   kDn.style.cssText = keyHintBase;
   keyHintWrap.append(kUp, kDn);
   canvas.parentElement.appendChild(keyHintWrap);
+  _kUp = kUp; _kDn = kDn;
+  _updateKeyHints();
 
   function flashKey(el) {
     el.style.color = '#00ff88';
@@ -616,5 +638,6 @@ export function buildS17() {
     zoutBtn?.removeEventListener('click',  onZOut);
     window.removeEventListener('keydown', onKeyDown);
     keyHintWrap.remove();
+    _kUp = null; _kDn = null;
   };
 }
