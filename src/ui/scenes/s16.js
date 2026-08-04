@@ -14,8 +14,11 @@ import {
 
 const ORBIT_SET  = new Set([1, 2, 4, 5, 7]);
 const ORBIT_SEQ  = [1, 2, 4, 7, 5]; // orbit order in 7-circle (8 collapses to 1)
-const NOTE_NAMES = ['', 'C', 'D', 'E', 'F', 'G', 'A', 'B'];
-const NOTE_FREQ  = [0, 261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88];
+const NOTE_NAMES  = ['', 'C', 'D', 'E', 'F', 'G', 'A', 'B'];
+const NOTE_FREQ   = [0, 261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88];
+// Complement notes one octave lower — the bass ground
+const COMP_FREQ   = { 3: 164.81, 6: 220.00 }; // E3, A3
+const COMP_SEQ    = [3, 6]; // 2-cycle, same as oliver42
 
 const C_ORBIT  = 0x00e5ff;
 const C_COMP   = 0xaa44ff;
@@ -46,6 +49,24 @@ function playNote(n, v = 0.32) {
   gain.gain.exponentialRampToValueAtTime(0.001, t + 1.5);
   osc.start(t);
   osc.stop(t + 1.5);
+}
+
+function playBass(n, v = 0.28) {
+  const ctx  = getCtx();
+  const freq = COMP_FREQ[n];
+  if (!freq) return;
+  const osc  = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = 'sine'; // sine is rounder/warmer for bass
+  osc.frequency.value = freq;
+  const t = ctx.currentTime;
+  gain.gain.setValueAtTime(0, t);
+  gain.gain.linearRampToValueAtTime(v, t + 0.015);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 2.2); // longer decay
+  osc.start(t);
+  osc.stop(t + 2.2);
 }
 
 // ── Scene ──────────────────────────────────────────────────────────────────────
@@ -208,6 +229,28 @@ export function buildS16() {
   scene.add(new THREE.Line(tailGeo, tailMat));
   const tailHistory = [];
 
+  // ── Bass traveler (complement 2-cycle: 3 → 6 → 3 …) ──────────────────────
+  const bassTravGeo = new THREE.SphereGeometry(0.14, 16, 10);
+  const bassTravMat = new THREE.MeshPhongMaterial({
+    color: C_COMP, emissive: C_COMP, emissiveIntensity: 1.2,
+    transparent: true, opacity: 0.88,
+  });
+  R.disposables.push(bassTravGeo, bassTravMat);
+  const bassTraveler = new THREE.Mesh(bassTravGeo, bassTravMat);
+  scene.add(bassTraveler);
+  bassTraveler.position.copy(nodePos(3));
+
+  const BASS_TAIL = 14;
+  const bassTailArr  = new Float32Array((BASS_TAIL + 1) * 3);
+  const bassTailGeo  = new THREE.BufferGeometry();
+  const bassTailAttr = new THREE.BufferAttribute(bassTailArr, 3);
+  bassTailAttr.setUsage(THREE.DynamicDrawUsage);
+  bassTailGeo.setAttribute('position', bassTailAttr);
+  const bassTailMat = new THREE.LineBasicMaterial({ color: C_COMP, transparent: true, opacity: 0.16 });
+  R.disposables.push(bassTailGeo, bassTailMat);
+  scene.add(new THREE.Line(bassTailGeo, bassTailMat));
+  const bassTailHistory = [];
+
   // ── Lighting ───────────────────────────────────────────────────────────────
   scene.add(new THREE.AmbientLight(0x060810, 3.0));
   const pl1 = new THREE.PointLight(C_ORBIT, 2.5, 22);
@@ -277,11 +320,14 @@ export function buildS16() {
   }
 
   // ── Animation ─────────────────────────────────────────────────────────────
-  const STEP_DUR = 1.0; // seconds per step between orbit nodes
+  const STEP_DUR      = 1.0;  // seconds per orbit step
+  const BASS_STEP_DUR = 2.5;  // slower — complement breathes differently
   let playing   = true;  // auto-start visual; audio unlocks on first user gesture
   let startTime = null;
   let lastStep  = -1;
-  const N_STEPS = ORBIT_SEQ.length; // 5
+  let lastBassStep = -1;
+  const N_STEPS      = ORBIT_SEQ.length; // 5
+  const N_BASS_STEPS = COMP_SEQ.length;  // 2
 
   R.animFn = (now) => {
     // Pulse decay for all nodes
@@ -297,16 +343,17 @@ export function buildS16() {
     if (!playing) return;
     if (startTime === null) startTime = now;
     const elapsed = (now - startTime) / 1000;
-    const stepF   = (elapsed / STEP_DUR) % N_STEPS;
-    const step    = Math.floor(stepF);
-    const frac    = stepF - step;
+
+    // ── Orbit traveler ─────────────────────────────────────────────────────
+    const stepF = (elapsed / STEP_DUR) % N_STEPS;
+    const step  = Math.floor(stepF);
+    const frac  = stepF - step;
 
     const fromK = ORBIT_SEQ[step % N_STEPS];
     const toK   = ORBIT_SEQ[(step + 1) % N_STEPS];
     const fromP = nodePos(fromK);
     const toP   = nodePos(toK);
 
-    // Slight arc between nodes — lift into Z at midpoint
     const arcLift = 0.8 * Math.sin(frac * Math.PI);
     traveler.position.set(
       fromP.x + (toP.x - fromP.x) * frac,
@@ -321,7 +368,6 @@ export function buildS16() {
       if (m) m.material.emissiveIntensity = 1.8;
     }
 
-    // Trail
     tailHistory.push(traveler.position.clone());
     if (tailHistory.length > TAIL) tailHistory.shift();
     for (let i = 0; i < tailHistory.length; i++) {
@@ -331,6 +377,40 @@ export function buildS16() {
     }
     tailAttr.needsUpdate = true;
     tailGeo.setDrawRange(0, tailHistory.length);
+
+    // ── Bass traveler (complement 2-cycle: 3 → 6 → 3 …) ─────────────────
+    const bassStepF = (elapsed / BASS_STEP_DUR) % N_BASS_STEPS;
+    const bassStep  = Math.floor(bassStepF);
+    const bassFrac  = bassStepF - bassStep;
+
+    const bassFromK = COMP_SEQ[bassStep % N_BASS_STEPS];
+    const bassToK   = COMP_SEQ[(bassStep + 1) % N_BASS_STEPS];
+    const bassFromP = nodePos(bassFromK);
+    const bassToP   = nodePos(bassToK);
+
+    const bassLift = 0.5 * Math.sin(bassFrac * Math.PI);
+    bassTraveler.position.set(
+      bassFromP.x + (bassToP.x - bassFromP.x) * bassFrac,
+      bassFromP.y + (bassToP.y - bassFromP.y) * bassFrac,
+      bassLift,
+    );
+
+    if (bassStep !== lastBassStep) {
+      playBass(bassFromK);
+      lastBassStep = bassStep;
+      const m = nodeMeshes[bassFromK];
+      if (m) m.material.emissiveIntensity = 1.6;
+    }
+
+    bassTailHistory.push(bassTraveler.position.clone());
+    if (bassTailHistory.length > BASS_TAIL) bassTailHistory.shift();
+    for (let i = 0; i < bassTailHistory.length; i++) {
+      bassTailArr[i * 3]     = bassTailHistory[i].x;
+      bassTailArr[i * 3 + 1] = bassTailHistory[i].y;
+      bassTailArr[i * 3 + 2] = bassTailHistory[i].z;
+    }
+    bassTailAttr.needsUpdate = true;
+    bassTailGeo.setDrawRange(0, bassTailHistory.length);
   };
 
   // ── Button wiring (elements live in App.svelte cset div) ──────────────────
