@@ -313,25 +313,6 @@ export function buildS17() {
       scene.add(new THREE.Line(bg, bm));
     }
 
-    // Node sphere
-    const nr = ev.stat ? 0.17 : 0.13;
-    const ng = new THREE.SphereGeometry(nr, 13, 9);
-    const nm = new THREE.MeshPhongMaterial({ color: s.color, emissive: s.color, emissiveIntensity: 0.2 });
-    R.disposables.push(ng, nm);
-    const node = new THREE.Mesh(ng, nm);
-    node.position.set(sx, y, 0);
-    scene.add(node);
-
-    // Trunk dot (where branch meets trunk)
-    if (sx !== 0) {
-      const tg = new THREE.SphereGeometry(0.07, 8, 6);
-      const tm = new THREE.MeshPhongMaterial({ color: s.color, emissive: s.color, emissiveIntensity: 0.15, transparent: true, opacity: 0.5 });
-      R.disposables.push(tg, tm);
-      const td = new THREE.Mesh(tg, tm);
-      td.position.set(0, y, 0);
-      scene.add(td);
-    }
-
     // Card
     const card = document.createElement('div');
     card.style.cssText = [
@@ -395,8 +376,12 @@ export function buildS17() {
   function onWheel(e) {
     e.preventDefault();
     e.stopPropagation();
-    if (e.deltaY > 0) jumpTo(_cur + 1, true);
-    else              jumpTo(_cur - 1, true);
+    if (e.ctrlKey) {
+      if (e.deltaY > 0) onZOut(); else onZIn();
+    } else {
+      if (e.deltaY > 0) jumpTo(_cur + 1, true);
+      else              jumpTo(_cur - 1, true);
+    }
   }
   canvas.addEventListener('wheel', onWheel, { passive: false });
 
