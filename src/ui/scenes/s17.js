@@ -20,7 +20,7 @@ const STREAMS = {
 
 // Days from 2026-07-27 → Y values (top=latest start, down=time advancing)
 // Y = 14 - (days_offset * 2)
-function dayY(offset, sub = 0) { return 14 - offset * 2.5 - sub * 1.5; }
+function dayY(offset, sub = 0) { return 14 - offset * 3 - sub * 2.5; }
 
 // ── Event data ────────────────────────────────────────────────────────────────
 const EVENTS = [
