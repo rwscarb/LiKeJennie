@@ -30,6 +30,7 @@ export const R = {
   camera: null,
   controls: null,
   animFn: null,
+  teardown: null,        // optional per-scene cleanup fn
   cur: 0,
   disposables: [],
   css2dObjects: [],
@@ -39,6 +40,7 @@ export function mkCamera() { return new THREE.PerspectiveCamera(55, R.canvas.wid
 export function mkControls(cam) { const c = new OrbitControls(cam, R.canvas); c.enableDamping = true; c.dampingFactor = 0.08; return c; }
 export function disposeScene() {
   if (!R.scene) return;
+  if (R.teardown) { try { R.teardown(); } catch(_) {} R.teardown = null; }
   R.css2dObjects.forEach(o => { if (o.parent) o.parent.remove(o); o.element?.remove(); });
   R.css2dObjects = [];
   R.disposables.forEach(d => { if (d.geometry) d.geometry.dispose(); if (d.material) { if (Array.isArray(d.material)) d.material.forEach(m => m.dispose()); else d.material.dispose(); } });
