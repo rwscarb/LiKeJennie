@@ -269,6 +269,7 @@ function highlightCard(i) {
     const s    = STREAMS[ev.stream];
     c.style.opacity    = j === i ? '1' : '0.72';
     c.style.borderLeft = j === i ? `2px solid ${s.cs}` : `1px solid transparent`;
+    c.firstChild.style.display = j === i ? 'block' : 'none';
   });
 }
 
@@ -419,6 +420,14 @@ export function buildS17() {
       `opacity:${i === 0 ? '1' : '0.72'}`,
     ].join(';');
 
+    const sceneHdr = document.createElement('div');
+    sceneHdr.textContent = 'TIME-TREE';
+    sceneHdr.style.cssText = [
+      `font-size:7.5px;letter-spacing:.18em;color:#00ff88`,
+      `margin-bottom:4px;display:${i === 0 ? 'block' : 'none'}`,
+    ].join(';');
+    card.appendChild(sceneHdr);
+
     const dateDiv = document.createElement('div');
     dateDiv.textContent = ev.date;
     dateDiv.style.cssText = `font-size:9px;color:#1a3a2a;letter-spacing:.05em;margin-bottom:1px`;
@@ -494,27 +503,28 @@ export function buildS17() {
   // ── Arrow key hints (lower-left) ─────────────────────────────────────────────
   const keyHintBase = [
     'font-family:"Courier New",monospace',
-    'font-size:9px',
+    'font-size:14px',
     'letter-spacing:.07em',
     'background:#040408',
-    'border:1px solid #0a2028',
-    'color:#1a6040',
-    'border-radius:2px',
-    'padding:2px 7px',
+    'border:1px solid #1a4030',
+    'color:#2a8060',
+    'border-radius:3px',
+    'padding:4px 12px',
     'display:block',
     'text-align:center',
+    'opacity:0.9',
     'transition:color .1s,border-color .1s,box-shadow .1s',
     'user-select:none',
   ].join(';');
   const keyHintWrap = document.createElement('div');
   keyHintWrap.style.cssText = [
     'position:absolute',
-    'bottom:10px',
+    'bottom:52px',
     'left:12px',
     'z-index:6',
     'display:flex',
     'flex-direction:column',
-    'gap:3px',
+    'gap:4px',
     'pointer-events:none',
   ].join(';');
   const kUp = document.createElement('span');
