@@ -35,6 +35,7 @@ function getCtx() {
 
 function playNote(n, v = 0.32) {
   if (!audioCtx || audioCtx.state !== 'running') return;
+  if (window.__s16mute) return;
   const ctx = audioCtx;
   const freq = NOTE_FREQ[n];
   if (!freq) return;
@@ -54,6 +55,7 @@ function playNote(n, v = 0.32) {
 
 function playBass(n, v = 0.28) {
   if (!audioCtx || audioCtx.state !== 'running') return;
+  if (window.__s16mute) return;
   const ctx  = audioCtx;
   const freq = COMP_FREQ[n];
   if (!freq) return;
