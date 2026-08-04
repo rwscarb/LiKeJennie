@@ -201,7 +201,7 @@ function jumpTo(i, pauseTour = false) {
   if (pauseTour && _touring) stopTour();
   _cur      = Math.max(0, Math.min(EVENTS.length - 1, i));
   _targetY  = _eventY[_cur];
-  _targetZ  = 8;
+  _targetZ  = 4;
   _targetTX = focusTX(EVENTS[_cur].stream);
   highlightCard(_cur);
   document.getElementById('s17prev')?.classList.toggle('lit', _cur > 0);
@@ -247,13 +247,13 @@ export function buildS17() {
   const botY  = Math.min(...EVENTS.map(e => e.y));
   const midY  = (topY + botY) / 2;
   _eventY     = EVENTS.map(e => e.y);
-  _targetY    = midY;
-  _targetZ    = 22;    // start zoomed out — full tree visible
+  _targetY    = _eventY[0];
+  _targetZ    = 4;
   _targetTX   = 0;
 
-  camera.position.set(0, midY, 22);
-  camera.lookAt(0, midY, 0);
-  controls.target.set(0, midY, 0);
+  camera.position.set(0, _eventY[0], 4);
+  camera.lookAt(0, _eventY[0], 0);
+  controls.target.set(0, _eventY[0], 0);
   controls.enableDamping  = true;
   controls.autoRotate     = false;
   controls.enableZoom     = false;
@@ -450,4 +450,6 @@ export function buildS17() {
     nextBtn?.removeEventListener('click',  onNext);
     tourBtn?.removeEventListener('click',  onTour);
     zinBtn?.removeEventListener('click',   onZIn);
-    zoutBtn?.removeEventListener('click',  onZOu
+    zoutBtn?.removeEventListener('click',  onZOut);
+  };
+}
