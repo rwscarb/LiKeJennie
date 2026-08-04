@@ -249,7 +249,7 @@ let _tourId   = null;
 let _targetY  = 0;
 let _targetTX = 0;    // look-at X (stream X)
 let _targetTZ = 0;    // look-at Z (stream Z)
-let _zoomDist = 4;    // camera-to-target distance
+let _zoomDist = 3;    // camera-to-target distance
 let _targetAz = 0;    // desired camera azimuth around Y axis
 let _eventY   = [];
 let _cards    = [];
@@ -281,7 +281,7 @@ function jumpTo(i, pauseTour = false) {
   _targetTX = 0;
   _targetTZ = 0;
   _targetAz = streamAzimuth(EVENTS[_cur].stream) + Math.PI;
-  _zoomDist = 6;
+  _zoomDist = 3;
   highlightCard(_cur);
   document.getElementById('s17prev')?.classList.toggle('lit', _cur > 0);
   document.getElementById('s17next')?.classList.toggle('lit', _cur < EVENTS.length - 1);
