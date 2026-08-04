@@ -111,8 +111,8 @@ input[type=range]::-moz-range-thumb{width:8px;height:8px;background:#00ff88;bord
 .writeup h2[data-acc].acc-open::before{transform:rotate(90deg)}
 .writeup h1[data-acc]:hover,.writeup h2[data-acc]:hover{opacity:.8}
 .writeup article{color:#9ab09a;line-height:1.75;font-size:.72rem;background:rgba(4,4,8,.92);border:1px solid #0a0a0a;border-radius:0 0 6px 6px;padding:1.4rem 1.8rem;}
-.writeup h1{font-size:1.4rem;color:#ff9800;letter-spacing:.12em;margin-bottom:.6rem;font-weight:normal}
-.writeup h2{font-size:.75rem;color:#00e5ff;letter-spacing:.14em;margin:1.4rem 0 .5rem;text-transform:uppercase;font-weight:normal}
+.writeup h1{font-size:1.4rem;color:#ff9800;letter-spacing:.12em;margin:2.2rem 0 .6rem;font-weight:normal}
+.writeup h2{font-size:.75rem;color:#00e5ff;letter-spacing:.14em;margin:1.4rem 0 .5rem;text-transform:uppercase;font-weight:normal;padding-left:1.2rem}
 .writeup p{margin:.5rem 0;color:#8a9e8a}
 .writeup hr{border:none;border-top:1px solid #0c160c;margin:1.1rem 0}
 .writeup pre{background:#1e1e22;border:1px solid #2a2a30;border-radius:3px;padding:.65rem .9rem;margin:.6rem 0;overflow-x:auto}
