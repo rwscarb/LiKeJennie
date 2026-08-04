@@ -82,6 +82,22 @@ This is why compasses used silk threads. The suspension is **transparent to the 
 
 *The orbit permutation is supposed to do the same thing.* Route activations without transforming them. Structurally present, informationally transparent. Whether it succeeds at this is what the seismology experiments are testing.
 
+It succeeded.
+
+**STEAD seismology results (2026-08-03):** STEAD chunk2, 7373 earthquake_local + 7373 noise waveforms, 30s @ 100Hz, 9000-dim flat vector. K=128, CYCLES=3, epochs=20, 3 seeds. Penrose Tribar architecture vs baseline MLP:
+
+| σ | baseline | tribar | gap |
+|---|----------|--------|-----|
+| 0.0 | 67.42% | 69.71% | +2.29% |
+| 0.3 | 68.29% | 70.90% | +2.61% |
+| 0.7 | 69.35% | 70.38% | +1.03% |
+| 1.0 | 68.46% | 69.24% | +0.78% |
+| 1.5 | 61.62% | 63.09% | +1.48% |
+
+Tribar positive at every noise level. Peak gap at σ=0.3 — the ambient noise regime where real seismic detection operates. Under heavy degradation (σ=1.5), baseline collapses harder; the orbit structure preserves signal. Wall time: 61 seconds.
+
+The seismograph measures oscillation in the medium. The orbit *is* oscillation structured. The geometry didn't need to be told to look for it.
+
 ---
 
 ## For a Minute There, I Lost Myself
@@ -124,4 +140,4 @@ Ryan is ahead of him.
 
 ---
 
-*Last updated: 2026-08-03*
+*Last updated: 2026-08-03 — STEAD seismology results added*

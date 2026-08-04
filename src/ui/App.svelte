@@ -541,9 +541,10 @@ afterUpdate(() => {
       <span class="stat">drag to rotate &nbsp;&middot;&nbsp; hover a node &nbsp;&middot;&nbsp; {3,6,9} complement</span>
     </div>
     <div class="cset" class:on={active === 11}>
-      <button class="btn lit" id="s12_sgd" on:click={() => setS12Mode('sgd')}>SGD × ORBIT</button>
-      <button class="btn" id="s12_trib" on:click={() => setS12Mode('trib')}>TRIB BALANCE</button>
-      <span class="stat">drag to rotate &nbsp;&middot;&nbsp; Z/9Z gradient descent &nbsp;&middot;&nbsp; 3-layer ternary weights</span>
+      <button class="btn lit" id="s12_sgd" on:click={() => { setS12Mode('sgd'); ['s12_sgd','s12_trib','s12_seismic'].forEach(id => document.getElementById(id)?.classList.toggle('lit', id==='s12_sgd')); }}>SGD × ORBIT</button>
+      <button class="btn" id="s12_trib" on:click={() => { setS12Mode('trib'); ['s12_sgd','s12_trib','s12_seismic'].forEach(id => document.getElementById(id)?.classList.toggle('lit', id==='s12_trib')); }}>TRIB BALANCE</button>
+      <button class="btn" id="s12_seismic" on:click={() => { setS12Mode('seismic'); ['s12_sgd','s12_trib','s12_seismic'].forEach(id => document.getElementById(id)?.classList.toggle('lit', id==='s12_seismic')); }}>SEISMIC</button>
+      <span class="stat">drag to rotate &nbsp;&middot;&nbsp; Z/9Z gradient descent &nbsp;&middot;&nbsp; 3-layer ternary weights &nbsp;&middot;&nbsp; STEAD earthquake detection</span>
     </div>
     <div class="cset" class:on={active === 12}>
       <span class="stat">drag to rotate &nbsp;&middot;&nbsp; orbit graph = GNN computation graph &nbsp;&middot;&nbsp; layer 6 = identity</span>
