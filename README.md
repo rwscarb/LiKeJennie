@@ -44,10 +44,18 @@ nearly closes on itself: the next structure to build.
 | 07 | TRIT MATRIX | Balanced ternary digit matrix |
 | **08** | **HELIX** | **JENNIE 21 — the main event** |
 | 09 | TERNARY VS CLOCK | Balanced ternary vs clock arithmetic |
+| 10 | ORBIT CYCLE | Full period-6 cycle animated |
+| 11 | OLIVER 42 | oliver42 framework: orbit × complement |
+| 12 | EXPERIMENTS | Penrose Tribar experiment results |
+| 13 | GNN MIRROR | Orbit GNN skip-connection topology |
+| 14 | BUCKMINSTER | C₆₀ — nil coordinate container |
+| 15 | ORBIT MUSIC | Heptagon WebAudio orbit arpeggio |
+| 16 | MUSIC | Extended orbit music sequencer |
+| 17 | TIME-TREE | Project timeline — four streams from origin |
 
 ---
 
-## Controls (Scene 08)
+## Controls (Scene 08 — HELIX)
 
 | Control | Action |
 |---------|--------|
@@ -95,7 +103,7 @@ Three cycles is not arbitrary — it is the natural folding depth where the orbi
 itself modulo 3. The impossible arm encodes the fact that closure is periodic, not spatial.
 This is the same structure that appears in GNN skip connections: Arm A and Arm B are
 long-range edges that carry information across cycle boundaries; Arm C is the ghost edge that
-would make the graph cyclic at the wrong scale. See `src/experiments/poc_penrose_tribar.py`.
+would make the graph cyclic at the wrong scale.
 
 ```
 orbit position p:   node[p]    node[p+M]    node[p+2M]
@@ -104,6 +112,60 @@ orbit position p:   node[p]    node[p+M]    node[p+2M]
                         └────────────┴────────────┘
                                Arm C (impossible)
 ```
+
+---
+
+## Experiments
+
+All experiments are in `src/experiments/`. They progress from early proofs-of-concept
+through the Penrose Tribar architecture and into seismology applications.
+
+### Penrose Tribar (main line)
+
+| File | Description |
+|------|-------------|
+| `poc_penrose_tribar.py` | Original PoC — orbit permutation × gated skip × LayerNorm on Fashion-MNIST |
+| `poc_tribar_fashion_k4.py` | K=4 ablation |
+| `poc_tribar_fashion_k32.py` | K=32 benchmark (tri 80.9% vs base 74.8%, +6.1%) |
+| `poc_tribar_seismo_ethz.py` | ETHZ seismology dataset |
+| `poc_tribar_seismo_stead.py` | STEAD dataset — 7373 eq + 7373 noise, +2.61% at σ=0.3 |
+| `poc_tribar_early_detection.py` | P-wave early detection — >8s warning before S-wave |
+| `poc_tribar_seismic_system.py` | Full streaming seismic detection system |
+| `poc_tribar_optuna.py` | Optuna HPO for Tribar hyperparameters |
+
+### Echo MoE (mixture-of-experts with orbit routing)
+
+| File | Description |
+|------|-------------|
+| `poc_echo_moe_final.py` | Final Echo MoE with orbit-gated expert selection |
+| `poc_echo_moe_gaussian.py` | Gaussian noise robustness sweep |
+| `poc_echo_moe_top2.py` | Top-2 expert routing variant |
+| `poc_echo_moe_training.py` | Training loop diagnostics |
+| `poc_echo_moe_warmup.py` | Warmup schedule exploration |
+| `poc_echo_moe_temp.py` | Temperature scaling for routing |
+| `poc_echo_init_stats.py` | Expert initialization statistics |
+
+### Early work
+
+| File | Description |
+|------|-------------|
+| `poc_orbit_gnn.py` | Graph neural network with orbit skip topology |
+| `poc_sgd_orbit.py` | SGD learning rate mapped to orbit sequence |
+| `poc_ternary_sweep.py` | Ternary activation sweep |
+| `poc_ternary_orbit.py` | Orbit-structured ternary quantization |
+| `poc_ternary_hard.py` | Hard ternary (no straight-through) |
+| `poc_trib_3layer.py` | 3-layer Tribonacci balance (33/33/33 result at fc3) |
+| `poc_trib_improved.py` | Tribonacci attractor improved |
+| `poc_trib_hard.py` | Hard Tribonacci constraints |
+| `poc_tribonacci.py` | Tribonacci sequence baseline |
+| `poc_jennie22.py` | jennie22 hypothesis test |
+
+### Data
+
+| Path | Contents |
+|------|----------|
+| `data/MNIST/` | Fashion-MNIST raw files (auto-downloaded by torchvision) |
+| `data/silk_research.md` | Silk / compass thread research — orbit permutation as signal conduit |
 
 ---
 
@@ -171,34 +233,34 @@ make test         # run all tests (python + js)
 
 ```
 src/
-  ui/                       # WebGL visualisation (Svelte + Vite)
+  ui/                         # WebGL visualization (Svelte + Vite)
     index.html
     main.js
-    App.svelte              # shell: canvas, tabs, nav, controls
-    app.css                 # global styles + responsive breakpoints
+    App.svelte                # shell: canvas, tabs, nav, controls
+    app.css                   # global styles + responsive breakpoints
     lib/
-      state.js              # active scene store (writable, starts at scene 8)
+      state.js                # active scene store
     scenes/
-      index.js              # scene registry (9 panels)
-      shared.js             # Three.js setup, R singleton, tooltip helpers
-      s7.js                 # JENNIE 21 helix — main scene
-      s0–s6, s8.js          # other panels
+      index.js                # scene registry (17 panels)
+      shared.js               # Three.js setup, R singleton, tooltip helpers
+      s0.js – s16.js          # individual scene modules
     tests/
-      unit/                 # vitest unit tests (state, shared math)
-      e2e/                  # playwright e2e tests
+      unit/                   # vitest unit tests
+      e2e/                    # playwright e2e tests
 
   experiments/
-    wind/                   # ISO wind power forecasting (Python)
-      constants.py          # grid topology, feature dims, EIA URLs
-      config.py             # runtime config (cache paths)
-      data.py               # EIA 930 + Open-Meteo data loading
-      features.py           # directed cross-ISO sources, sliding-window dataset
-      models.py             # BatchedISOModel + MLP with RSM coupling layer
-      train.py              # training loop, inference, RMSE
-      hpo.py                # Optuna hyperparameter search
-      iso_wind_rgnn.py      # entrypoint (--optuna, --wd, --lr, --alphas)
-      pyproject.toml        # python deps + tool config (uv)
-      tests/                # pytest unit + e2e pipeline tests
+    poc_penrose_tribar.py     # Penrose Tribar architecture (main)
+    poc_tribar_*.py           # Tribar variants: Fashion-MNIST, seismology, HPO
+    poc_echo_moe_*.py         # Echo MoE with orbit-gated routing
+    poc_orbit_gnn.py          # Orbit GNN topology
+    poc_sgd_orbit.py          # SGD with orbit learning rate schedule
+    poc_ternary_*.py          # Ternary activation experiments
+    poc_trib_*.py             # Tribonacci attractor experiments
+    poc_jennie22.py           # jennie22 hypothesis
+    TRIBONACCI_ATTRACTOR.md   # Tribonacci attractor writeup
+    data/
+      MNIST/                  # Fashion-MNIST raw files
+      silk_research.md        # Silk / compass thread — orbit as signal conduit
 ```
 
 ---
@@ -212,9 +274,12 @@ The ×2 mod 9 orbit of 1 has period 6: {1,2,4,8,7,5}. At step 21 (F₈), the
 golden-angle spiral has accumulated 21 × 137.508° ≈ 7.7° past 8 full rotations
 — the Fibonacci near-return where the sunflower arm pattern folds back.
 
-The inversion at the 21-arc is the next thing to build.
-
-The Penrose tribar overlay (TRIBAR button) makes visible the mod-3 folding structure inside
+The Penrose Tribar overlay makes visible the mod-3 folding structure inside
 the orbit. Three cycles of period-6 produce 6 triangles whose edges are the tribar arms.
 From TOP: a hexagram. Arm C is the impossible return — periodic closure drawn as a ghost edge.
 This connects to the oliver42 topology: arm A is complement, arm B is bridge, arm C is collapse.
+
+The Penrose Tribar architecture (gated skip + orbit permutation + LayerNorm) outperforms
+baseline MLP at every tested noise level on Fashion-MNIST and STEAD seismology datasets.
+Peak advantage at ambient noise (σ=0.3) — the operating regime of real seismic detection.
+Wall time: 61 seconds for the full seismology benchmark.
