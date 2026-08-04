@@ -236,7 +236,7 @@ EVENTS.sort((a, b) => b.y - a.y);
 
 // Enforce minimum vertical gap — prevents overlap between tall cards
 // regardless of how many events share the same day/stream.
-const MIN_CARD_GAP = 2.5;
+const MIN_CARD_GAP = 4.0;
 for (let i = 1; i < EVENTS.length; i++) {
   const needed = EVENTS[i - 1].y - MIN_CARD_GAP;
   if (EVENTS[i].y > needed) EVENTS[i].y = needed;
@@ -267,7 +267,7 @@ function highlightCard(i) {
   _cards.forEach((c, j) => {
     const ev   = EVENTS[j];
     const s    = STREAMS[ev.stream];
-    c.style.opacity    = j === i ? '1' : '0.72';
+    c.style.opacity    = j === i ? '1' : '0.92';
     c.style.borderLeft = j === i ? `2px solid ${s.cs}` : `1px solid transparent`;
     c.firstChild.style.display = j === i ? 'block' : 'none';
   });
@@ -417,7 +417,7 @@ export function buildS17() {
       `font-family:'Courier New',monospace`,
       `pointer-events:none;user-select:none`,
       `transition:opacity .3s,border .2s`,
-      `opacity:${i === 0 ? '1' : '0.72'}`,
+      `opacity:${i === 0 ? '1' : '0.92'}`,
     ].join(';');
 
     const sceneHdr = document.createElement('div');
