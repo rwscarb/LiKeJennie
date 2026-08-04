@@ -140,17 +140,18 @@ input[type=range]::-moz-range-thumb{width:8px;height:8px;background:#00ff88;bord
 .c-fn{color:#FFC66D}
 /* ── responsive ───────────────────────────────────── */
 @media(max-width:1000px){
-  .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap}
-  .tabs::-webkit-scrollbar{display:none}
+  /* allow tabs to wrap to 2 rows rather than overflow-scrolling at mid widths */
+  .tabs{flex-wrap:wrap}
+  .tab{flex:0 0 12.5%;padding:.38rem .3rem;font-size:.50rem}
 }
 @media(max-width:640px){
   h1{font-size:2.4rem;letter-spacing:.18em}
   .sub{font-size:.5rem;letter-spacing:.05em}
   .gleg{gap:.8rem;font-size:.58rem}
   .hdr{padding:.7rem .6rem .3rem}
-  .tabs{padding:0 .3rem;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap}
-  .tabs::-webkit-scrollbar{display:none}
-  .tab{padding:.28rem .65rem;font-size:.48rem;white-space:nowrap}
+  /* 4-per-row grid: all 16 tabs visible and tappable, no hidden overflow scroll */
+  .tabs{flex-wrap:wrap;overflow-x:unset;padding:0}
+  .tab{flex:0 0 25%;box-sizing:border-box;padding:.3rem .2rem;font-size:.44rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:0;border:none;border-bottom:1px solid #0a1a1a}
   .pw{padding:.55rem .45rem .45rem}
   .nav{gap:.6rem}
   .nav-arr{font-size:.58rem;padding:.2rem .45rem}
@@ -176,7 +177,7 @@ input[type=range]::-moz-range-thumb{width:8px;height:8px;background:#00ff88;bord
   #glc{aspect-ratio:2/3;max-height:55vh}
   .ov,#camCoords,#clkDisplay{display:none}
   .node-lbl{font-size:9px}
-  .tab{font-size:.42rem;padding:.2rem .45rem}
+  .tab{flex:0 0 33.333%;font-size:.40rem;padding:.2rem .15rem}
 }
 /* large viewports: drive canvas by viewport height instead of width so the
    scene uses the available vertical space (2:1 aspect caps ~557px at max width).
