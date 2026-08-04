@@ -1,8 +1,10 @@
 // ─────────────────────────────────────────────────────────────────────────────
 //  SCENE 17 — TIMELINE
-//  Project history derived from git log + experiment results.
-//  Controls: PREV / NEXT jump to event, AUTO-TOUR plays through all events.
-//  Manual drag pauses auto-tour; orbit+zoom always available.
+//  Controls:
+//    PREV / NEXT — jump camera to adjacent event (smooth lerp)
+//    AUTO-TOUR   — auto-advance every 3.2s, loops
+//    Wheel       — scroll through events (zoom disabled)
+//    Drag        — orbit freely (pauses tour)
 // ─────────────────────────────────────────────────────────────────────────────
 import { THREE, CSS2DObject, R, mkCamera, mkControls } from './shared.js';
 
@@ -16,9 +18,8 @@ const CS_RESULT = '#ffe600';
 const CS_DIM    = '#1a3a2a';
 const CS_BODY   = '#2a5a3a';
 
-const TOUR_DWELL = 3200;  // ms per event during auto-tour
+const TOUR_DWELL = 3200;
 
-// ── Timeline data ─────────────────────────────────────────────────────────────
 const EVENTS = [
   {
     date: '2026-07-27',
@@ -80,84 +81,91 @@ const EVENTS = [
   },
 ];
 
-// ── Module state ──────────────────────────────────────────────────────────────
-let _cur       = 0;
-let _touring   = false;
-let _tourTimer = null;
-let _targetY   = 0;
-let _camera    = null;
-let _controls  = null;
-let _eventY    = [];  // Y world positions per event
-let _cards     = [];  // card DOM elements
-
-function eventY(i) { return _eventY[i]; }
+// ── Module-level state (survives between tour ticks but resets on rebuild) ────
+let _cur     = 0;
+let _touring = false;
+let _tourId  = null;
+let _targetY = 0;
+let _eventY  = [];
+let _cards   = [];
+let _alive   = false;  // cleared on scene exit to stop stale timers
 
 function highlightCard(i) {
   _cards.forEach((c, j) => {
-    c.style.opacity     = j === i ? '1' : '0.35';
-    c.style.borderLeft  = j === i
-      ? `2px solid ${EVENTS[j].kind === 'result' ? CS_RESULT : CS_NODE}`
-      : `2px solid transparent`;
+    const ev   = EVENTS[j];
+    const cols = ev.kind === 'result' ? CS_RESULT : CS_NODE;
+    c.style.opacity    = j === i ? '1' : '0.3';
+    c.style.borderLeft = j === i
+      ? `2px solid ${cols}`
+      : `1px solid transparent`;
   });
 }
 
-function jumpTo(i) {
+function jumpTo(i, pauseTour = false) {
+  if (pauseTour && _touring) stopTour();
   _cur     = Math.max(0, Math.min(EVENTS.length - 1, i));
-  _targetY = eventY(_cur);
+  _targetY = _eventY[_cur];
   highlightCard(_cur);
-
-  // Update button states
   const prevBtn = document.getElementById('s17prev');
   const nextBtn = document.getElementById('s17next');
-  if (prevBtn) prevBtn.disabled = _cur === 0;
-  if (nextBtn) nextBtn.disabled = _cur === EVENTS.length - 1;
+  if (prevBtn) prevBtn.classList.toggle('lit', _cur > 0);
+  if (nextBtn) nextBtn.classList.toggle('lit', _cur < EVENTS.length - 1);
+}
+
+function stopTour() {
+  _touring = false;
+  clearTimeout(_tourId);
+  _tourId = null;
+  document.getElementById('s17tour')?.classList.remove('lit');
 }
 
 function startTour() {
   _touring = true;
   document.getElementById('s17tour')?.classList.add('lit');
-  scheduleTour();
+  tickTour();
 }
 
-function stopTour() {
-  _touring = false;
-  clearTimeout(_tourTimer);
-  document.getElementById('s17tour')?.classList.remove('lit');
-}
-
-function scheduleTour() {
-  _tourTimer = setTimeout(() => {
-    if (!_touring) return;
-    const next = (_cur + 1) % EVENTS.length;
-    jumpTo(next);
-    scheduleTour();
+function tickTour() {
+  if (!_touring || !_alive) return;
+  _tourId = setTimeout(() => {
+    if (!_touring || !_alive) return;
+    jumpTo((_cur + 1) % EVENTS.length);
+    tickTour();
   }, TOUR_DWELL);
 }
 
 export function buildS17() {
+  _alive   = true;
+  _touring = false;
+  clearTimeout(_tourId);
+  _tourId  = null;
+
   const scene    = R.scene    = new THREE.Scene();
   const camera   = R.camera   = mkCamera();
-  _camera = camera;
-  camera.position.set(0, 7, 10);  // start near top event
-  camera.lookAt(0, 7, 0);
-  const controls = R.controls = mkControls(camera);
-  _controls = controls;
-  controls.target.set(0, 7, 0);
-  controls.enableDamping   = true;
-  controls.autoRotate      = false;
-  controls.enablePan       = true;
+  const N        = EVENTS.length;
+  const YSPAN    = 14;
+  const Y_TOP    = YSPAN / 2;
+  const YSTEP    = YSPAN / (N - 1);
+  _eventY        = EVENTS.map((_, i) => Y_TOP - i * YSTEP);
+  _cards         = [];
+  _cur           = 0;
+  _targetY       = _eventY[0];
 
-  // Pause tour when user grabs control
-  controls.addEventListener('start', () => { if (_touring) stopTour(); });
+  camera.position.set(0, _eventY[0], 10);
+  camera.lookAt(0, _eventY[0], 0);
+  const controls = R.controls = mkControls(camera);
+  controls.target.set(0, _eventY[0], 0);
+  controls.enableDamping  = true;
+  controls.autoRotate     = false;
+  controls.enableZoom     = false;  // wheel navigates events instead
+  controls.enablePan      = true;
+
+  // Pause tour on manual drag (not on programmatic target changes)
+  let _userInteracting = false;
+  controls.addEventListener('start', () => { _userInteracting = true; if (_touring) stopTour(); });
+  controls.addEventListener('end',   () => { _userInteracting = false; });
 
   scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-
-  const N     = EVENTS.length;
-  const YSPAN = 14;
-  const Y_TOP = YSPAN / 2;
-  const YSTEP = YSPAN / (N - 1);
-  _eventY = EVENTS.map((_, i) => Y_TOP - i * YSTEP);
-  _cards  = [];
 
   // Vertical spine
   const spinePts = [new THREE.Vector3(0, Y_TOP + 0.5, 0), new THREE.Vector3(0, -Y_TOP - 0.5, 0)];
@@ -172,7 +180,6 @@ export function buildS17() {
     const col  = ev.kind === 'result' ? C_RESULT : C_NODE;
     const cols = ev.kind === 'result' ? CS_RESULT : CS_NODE;
 
-    // Node sphere
     const nr = ev.kind === 'result' ? 0.18 : 0.14;
     const ng = new THREE.SphereGeometry(nr, 14, 10);
     const nm = new THREE.MeshPhongMaterial({ color: col, emissive: col, emissiveIntensity: 0.22 });
@@ -181,25 +188,23 @@ export function buildS17() {
     node.position.set(0, y, 0);
     scene.add(node);
 
-    // Horizontal tick
     const tickPts = [new THREE.Vector3(0, y, 0), new THREE.Vector3(side * 0.7, y, 0)];
-    const tg      = new THREE.BufferGeometry().setFromPoints(tickPts);
-    const tm      = new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.45 });
+    const tg = new THREE.BufferGeometry().setFromPoints(tickPts);
+    const tm = new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.45 });
     R.disposables.push(tg, tm);
     scene.add(new THREE.Line(tg, tm));
 
-    // Card
     const card = document.createElement('div');
     card.style.cssText = [
       `width:220px`,
       `background:rgba(0,8,0,0.88)`,
       `border:2px solid transparent`,
-      `border-left:2px solid ${cols}`,
+      `border-left:${i === 0 ? `2px solid ${cols}` : '1px solid transparent'}`,
       `padding:5px 8px`,
       `font-family:'Courier New',monospace`,
       `pointer-events:none;user-select:none`,
-      `transition:opacity .25s,border-color .25s`,
-      `opacity:${i === 0 ? '1' : '0.35'}`,
+      `transition:opacity .3s,border .2s`,
+      `opacity:${i === 0 ? '1' : '0.3'}`,
     ].join(';');
 
     const dateDiv  = document.createElement('div');
@@ -236,8 +241,7 @@ export function buildS17() {
   nowDiv.textContent  = '▶ NOW';
   nowDiv.style.cssText = [
     `font-family:'Courier New',monospace`,
-    `font-size:11px;font-weight:bold`,
-    `color:${CS_DATE}`,
+    `font-size:11px;font-weight:bold;color:${CS_DATE}`,
     `text-shadow:0 0 8px ${CS_DATE}`,
     `pointer-events:none;user-select:none`,
   ].join(';');
@@ -246,15 +250,29 @@ export function buildS17() {
   scene.add(nowLbl);
   R.css2dObjects.push(nowLbl);
 
-  // Wire up external buttons (attached after mount)
-  setTimeout(() => {
-    document.getElementById('s17prev')?.addEventListener('click', () => { stopTour(); jumpTo(_cur - 1); });
-    document.getElementById('s17next')?.addEventListener('click', () => { stopTour(); jumpTo(_cur + 1); });
-    document.getElementById('s17tour')?.addEventListener('click', () => {
-      _touring ? stopTour() : startTour();
-    });
-    jumpTo(0);  // init highlight + button state
-  }, 0);
+  // Wheel → navigate events
+  const canvas = R.canvas;
+  function onWheel(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.deltaY > 0) jumpTo(_cur + 1, true);
+    else              jumpTo(_cur - 1, true);
+  }
+  canvas.addEventListener('wheel', onWheel, { passive: false });
+
+  // Wire buttons (they're always in DOM)
+  const prevBtn = document.getElementById('s17prev');
+  const nextBtn = document.getElementById('s17next');
+  const tourBtn = document.getElementById('s17tour');
+  function onPrev() { jumpTo(_cur - 1, true); }
+  function onNext() { jumpTo(_cur + 1, true); }
+  function onTour() { _touring ? stopTour() : startTour(); }
+  prevBtn?.addEventListener('click', onPrev);
+  nextBtn?.addEventListener('click', onNext);
+  tourBtn?.addEventListener('click', onTour);
+
+  // Init button states
+  jumpTo(0);
 
   R.ov.innerHTML =
     `<div style="color:#00ff88;letter-spacing:.1em">17 · TIMELINE</div>` +
@@ -263,18 +281,31 @@ export function buildS17() {
     `<div style="font-size:12px;color:#00e5ff">◆ milestone</div>` +
     `<div style="font-size:12px;color:#ffe600">◆ experiment result</div>`;
 
-  _cur = 0;
-  _targetY = _eventY[0];
-  _touring = false;
-
-  // Cleanup on scene exit
-  const origDispose = R.animFn;
   R.animFn = () => {
     controls.update();
-    // Smooth camera chase toward _targetY
-    const ty = controls.target.y;
-    const ny = ty + (_targetY - ty) * 0.07;
-    controls.target.setY(ny);
-    camera.position.setY(camera.position.y + (_targetY - ty) * 0.07);
+    // Smooth camera pan to active event — only when not user-dragging
+    if (!_userInteracting) {
+      const tgt = controls.target;
+      const dy  = (_targetY - tgt.y) * 0.08;
+      if (Math.abs(dy) > 0.001) {
+        controls.target.setY(tgt.y + dy);
+        camera.position.setY(camera.position.y + dy);
+      }
+    }
   };
+
+  // Cleanup when scene exits
+  const origDisposeFn = R.disposables;  // not needed, but mark for clarity
+  R.disposables.push({
+    geometry: null, material: null,
+    _isCleanup: true,
+    dispose() {
+      _alive = false;
+      stopTour();
+      canvas.removeEventListener('wheel', onWheel);
+      prevBtn?.removeEventListener('click', onPrev);
+      nextBtn?.removeEventListener('click', onNext);
+      tourBtn?.removeEventListener('click', onTour);
+    },
+  });
 }
