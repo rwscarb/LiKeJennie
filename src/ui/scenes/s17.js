@@ -234,6 +234,14 @@ const EVENTS = [
 // Sort chronologically (by Y descending = top = earliest)
 EVENTS.sort((a, b) => b.y - a.y);
 
+// Enforce minimum vertical gap — prevents overlap between tall cards
+// regardless of how many events share the same day/stream.
+const MIN_CARD_GAP = 2.5;
+for (let i = 1; i < EVENTS.length; i++) {
+  const needed = EVENTS[i - 1].y - MIN_CARD_GAP;
+  if (EVENTS[i].y > needed) EVENTS[i].y = needed;
+}
+
 // ── Module-level state ─────────────────────────────────────────────────────────
 let _cur      = 0;
 let _touring  = false;
