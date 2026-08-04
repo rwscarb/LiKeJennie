@@ -236,7 +236,7 @@ EVENTS.sort((a, b) => b.y - a.y);
 
 // Enforce minimum vertical gap — prevents overlap between tall cards
 // regardless of how many events share the same day/stream.
-const MIN_CARD_GAP = 4.0;
+const MIN_CARD_GAP = 6.0;
 for (let i = 1; i < EVENTS.length; i++) {
   const needed = EVENTS[i - 1].y - MIN_CARD_GAP;
   if (EVENTS[i].y > needed) EVENTS[i].y = needed;
@@ -278,10 +278,10 @@ function jumpTo(i, pauseTour = false) {
   _cur      = Math.max(0, Math.min(EVENTS.length - 1, i));
   _targetY  = _eventY[_cur];
   const s   = STREAMS[EVENTS[_cur].stream];
-  _targetTX = s.x < -1 ? s.x - 0.3 : s.x + 0.3;
-  _targetTZ = s.z;
-  _targetAz = streamAzimuth(EVENTS[_cur].stream);
-  _zoomDist = 4;
+  _targetTX = 0;
+  _targetTZ = 0;
+  _targetAz = streamAzimuth(EVENTS[_cur].stream) + Math.PI;
+  _zoomDist = 6;
   highlightCard(_cur);
   document.getElementById('s17prev')?.classList.toggle('lit', _cur > 0);
   document.getElementById('s17next')?.classList.toggle('lit', _cur < EVENTS.length - 1);
@@ -333,18 +333,16 @@ export function buildS17() {
   _targetAz   = 0;
 
   // Snap camera directly to card 0's stream so it's centered on load
+  // Camera at trunk center looking outward toward card 0 stream
   {
-    const s0  = STREAMS[EVENTS[0].stream];
-    const tx  = s0.x < -1 ? s0.x - 0.3 : s0.x + 0.3;
-    const tz  = s0.z;
-    const az  = streamAzimuth(EVENTS[0].stream);
+    const az  = streamAzimuth(EVENTS[0].stream) + Math.PI;
     _targetY  = _eventY[0];
-    _targetTX = tx;
-    _targetTZ = tz;
+    _targetTX = 0;
+    _targetTZ = 0;
     _targetAz = az;
-    controls.target.set(tx, _eventY[0], tz);
-    camera.position.set(tx + _zoomDist * Math.sin(az), _eventY[0], tz + _zoomDist * Math.cos(az));
-    camera.lookAt(tx, _eventY[0], tz);
+    controls.target.set(0, _eventY[0], 0);
+    camera.position.set(_zoomDist * Math.sin(az), _eventY[0], _zoomDist * Math.cos(az));
+    camera.lookAt(0, _eventY[0], 0);
   }
   controls.enableDamping  = true;
   controls.autoRotate     = false;
@@ -440,7 +438,11 @@ export function buildS17() {
 
     const bodyDiv = document.createElement('div');
     bodyDiv.textContent = ev.body;
-    bodyDiv.style.cssText = `font-size:9px;color:#2a5a3a;line-height:1.4`;
+    bodyDiv.style.cssText = [
+      `font-size:9px;color:#2a5a3a;line-height:1.4`,
+      `display:-webkit-box;-webkit-box-orient:vertical`,
+      `-webkit-line-clamp:5;overflow:hidden`,
+    ].join(';');
     card.appendChild(bodyDiv);
 
     if (ev.stat) {
@@ -564,7 +566,7 @@ export function buildS17() {
   function onNext()  { jumpTo(_cur + 1, true); }
   function onTour()  { _touring ? stopTour() : startTour(); }
   function onZIn()  { _zoomDist = Math.max(1, _zoomDist - 2.5); }
-  function onZOut() { _zoomDist = Math.min(22, _zoomDist + 2.5); _targetTX = 0; _targetTZ = 0; _targetAz = 0; }
+  function onZOut() { _zoomDist = Math.min(22, _zoomDist + 2.5); }
   prevBtn?.addEventListener('click', onPrev);
   nextBtn?.addEventListener('click', onNext);
   tourBtn?.addEventListener('click', onTour);
