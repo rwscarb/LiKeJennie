@@ -1008,4 +1008,6 @@ complement {3,6}  × 55 Hz         →  E (perfect 5th above A)</code></pre>
 
 <div class="footer">
   <a href="mailto:oliver42@fib896.com">oliver42@fib896.com</a>
+  <br>
+  <a href="https://github.com/rwscarb/LiKeJennie" target="_blank" rel="noopener" class="footer-src">source</a>
 </div>
