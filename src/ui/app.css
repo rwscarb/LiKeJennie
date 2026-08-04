@@ -190,7 +190,7 @@ input[type=range]::-moz-range-thumb{width:8px;height:8px;background:#00ff88;bord
 #fsBtn2{align-self:flex-start}
 #fsBtn2:hover{border-color:#00e5ff!important;color:#00e5ff!important;box-shadow:0 0 10px #00e5ff20}
 /* ── audio mute toggle ────────────────────────────── */
-#audioBtn{position:absolute;top:6px;right:44px;z-index:6;background:none;border:none;cursor:pointer;font-size:1rem;line-height:1;padding:3px;transition:opacity .15s}
+#audioBtn{position:absolute;top:28px;right:44px;z-index:6;background:none;border:none;cursor:pointer;font-size:1rem;line-height:1;padding:3px;transition:opacity .15s}
 #audioBtn:hover{opacity:1!important}
 #panelwrap:fullscreen,#panelwrap:-webkit-full-screen{
   background:#000;max-width:none;border-radius:0;

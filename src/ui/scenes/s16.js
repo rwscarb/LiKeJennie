@@ -418,6 +418,20 @@ export function buildS16() {
     bassTailGeo.setDrawRange(0, bassTailHistory.length);
   };
 
+  // ── Expose audio unlock for the global speaker toggle button ─────────────
+  window.__unlockS16Audio = () => {
+    getCtx();
+    // If animation hasn't started playing yet, kick it off
+    if (!playing) {
+      playing = true;
+      startTime = null;
+      lastStep = -1;
+      lastBassStep = -1;
+      const pb = document.getElementById('s16play');
+      if (pb) { pb.textContent = '⏸ PAUSE'; pb.classList.add('lit'); }
+    }
+  };
+
   // ── Button wiring (elements live in App.svelte cset div) ──────────────────
   const playBtn = document.getElementById('s16play');
   if (playBtn) {
