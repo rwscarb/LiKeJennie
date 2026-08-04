@@ -168,13 +168,23 @@ const EVENTS = [
 EVENTS.sort((a, b) => b.y - a.y);
 
 // ── Module-level state ─────────────────────────────────────────────────────────
-let _cur     = 0;
-let _touring = false;
-let _tourId  = null;
-let _targetY = 0;
-let _eventY  = [];
-let _cards   = [];
-let _alive   = false;
+let _cur      = 0;
+let _touring  = false;
+let _tourId   = null;
+let _targetY  = 0;
+let _targetZ  = 22;   // camera Z: 22=overview, 8=focused
+let _targetTX = 0;    // camera target X (pans toward active branch)
+let _eventY   = [];
+let _cards    = [];
+let _alive    = false;
+
+// Stream X → target camera look-at X when focused
+function focusTX(stream) {
+  if (stream === 'wife')   return -3.2;
+  if (stream === 'lore')   return -1.5;
+  if (stream === 'result') return  1.8;
+  return 0;
+}
 
 const TOUR_DWELL = 5500;
 
@@ -189,8 +199,10 @@ function highlightCard(i) {
 
 function jumpTo(i, pauseTour = false) {
   if (pauseTour && _touring) stopTour();
-  _cur     = Math.max(0, Math.min(EVENTS.length - 1, i));
-  _targetY = _eventY[_cur];
+  _cur      = Math.max(0, Math.min(EVENTS.length - 1, i));
+  _targetY  = _eventY[_cur];
+  _targetZ  = 8;
+  _targetTX = focusTX(EVENTS[_cur].stream);
   highlightCard(_cur);
   document.getElementById('s17prev')?.classList.toggle('lit', _cur > 0);
   document.getElementById('s17next')?.classList.toggle('lit', _cur < EVENTS.length - 1);
@@ -231,14 +243,17 @@ export function buildS17() {
   const camera   = R.camera   = mkCamera();
   const controls = R.controls = mkControls(camera);
 
-  // Camera starts near top event
-  const topY = Math.max(...EVENTS.map(e => e.y));
-  _eventY    = EVENTS.map(e => e.y);
-  _targetY   = _eventY[0];
+  const topY  = Math.max(...EVENTS.map(e => e.y));
+  const botY  = Math.min(...EVENTS.map(e => e.y));
+  const midY  = (topY + botY) / 2;
+  _eventY     = EVENTS.map(e => e.y);
+  _targetY    = midY;
+  _targetZ    = 22;    // start zoomed out — full tree visible
+  _targetTX   = 0;
 
-  camera.position.set(0, topY, 9);
-  camera.lookAt(0, topY, 0);
-  controls.target.set(0, topY, 0);
+  camera.position.set(0, midY, 22);
+  camera.lookAt(0, midY, 0);
+  controls.target.set(0, midY, 0);
   controls.enableDamping  = true;
   controls.autoRotate     = false;
   controls.enableZoom     = false;
@@ -394,15 +409,19 @@ export function buildS17() {
   function onPrev()  { jumpTo(_cur - 1, true); }
   function onNext()  { jumpTo(_cur + 1, true); }
   function onTour()  { _touring ? stopTour() : startTour(); }
-  function onZIn()   { camera.position.setZ(Math.max(3, camera.position.z - 1.5)); }
-  function onZOut()  { camera.position.setZ(Math.min(22, camera.position.z + 1.5)); }
+  function onZIn()   { _targetZ = Math.max(4, _targetZ - 2.5); }
+  function onZOut()  { _targetZ = Math.min(26, _targetZ + 2.5); _targetTX = 0; }
   prevBtn?.addEventListener('click', onPrev);
   nextBtn?.addEventListener('click', onNext);
   tourBtn?.addEventListener('click', onTour);
   zinBtn?.addEventListener('click',  onZIn);
   zoutBtn?.addEventListener('click', onZOut);
 
-  jumpTo(0);
+  // Init button states without triggering zoom-in
+  _cur = 0;
+  highlightCard(0);
+  document.getElementById('s17prev')?.classList.remove('lit');
+  document.getElementById('s17next')?.classList.add('lit');
 
   R.ov.innerHTML =
     `<div style="color:#00ff88;letter-spacing:.1em">17 · TIME-TREE</div>` +
@@ -415,11 +434,25 @@ export function buildS17() {
   R.animFn = () => {
     controls.update();
     if (!_userInteracting) {
-      const tgt = controls.target;
-      const dy  = (_targetY - tgt.y) * 0.07;
+      const tgt  = controls.target;
+      const LERP = 0.07;
+
+      // Lerp target Y
+      const dy = (_targetY - tgt.y) * LERP;
       if (Math.abs(dy) > 0.001) {
         controls.target.setY(tgt.y + dy);
         camera.position.setY(camera.position.y + dy);
+      }
+
+      // Lerp camera Z (zoom)
+      const dz = (_targetZ - camera.position.z) * LERP;
+      if (Math.abs(dz) > 0.001) camera.position.setZ(camera.position.z + dz);
+
+      // Lerp camera target X (branch pan)
+      const dtx = (_targetTX - tgt.x) * LERP;
+      if (Math.abs(dtx) > 0.001) {
+        controls.target.setX(tgt.x + dtx);
+        camera.position.setX(camera.position.x + dtx);
       }
     }
   };
