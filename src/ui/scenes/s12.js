@@ -17,8 +17,17 @@ const C_XAV    = 0x00e5ff;  const CS_XAV    = '#00e5ff';
 const C_TRIB   = 0xffe600;  const CS_TRIB   = '#ffe600';
 
 // ── Shared state ──────────────────────────────────────────────────────────────
-let _mode = 'sgd';   // 'sgd' | 'trib'
-let _sgdGroup, _tribGroup;
+let _mode = 'sgd';   // 'sgd' | 'trib' | 'seismic'
+let _sgdGroup, _tribGroup, _seismicGroup;
+
+// ── STEAD seismology results (poc_tribar_seismo.py · K=128 · CYCLES=3 · 3 seeds) ──
+const SEISMIC_DATA = [
+  { sigma: 0.0,  base: 67.42, tri: 69.71, gap: 2.29 },
+  { sigma: 0.3,  base: 68.29, tri: 70.90, gap: 2.61 },
+  { sigma: 0.7,  base: 69.35, tri: 70.38, gap: 1.03 },
+  { sigma: 1.0,  base: 68.46, tri: 69.24, gap: 0.78 },
+  { sigma: 1.5,  base: 61.62, tri: 63.09, gap: 1.48 },
+];
 
 // ── Data from poc_trib_3layer.py (20-seed means, RTX 4090) ───────────────────
 const TRIB_DATA = {
@@ -463,11 +472,132 @@ function buildTRIB(scene) {
   };
 }
 
+// ── Build SEISMIC sub-scene ──────────────────────────────────────────────────
+function buildSEISMIC(scene) {
+  const grp = new THREE.Group();
+  scene.add(grp);
+  _seismicGroup = grp;
+
+  const C_BASE  = 0x3a7aaa;  const CS_BASE  = '#3a7aaa';
+  const C_TRI   = 0x00ff88;  const CS_TRI   = '#00ff88';
+  const C_GAP   = 0xffe600;  const CS_GAP   = '#ffe600';
+  const C_AXIS  = 0x1a2a2a;
+
+  const BAR_W   = 0.42;
+  const BAR_GAP = 0.14;
+  const GRP_GAP = 1.4;
+  const Y_FLOOR = 55;    // % floor for chart
+  const Y_SCALE = 0.35;  // units per %
+
+  SEISMIC_DATA.forEach((d, i) => {
+    const cx = (i - 2) * GRP_GAP;
+
+    // Baseline bar
+    const bh = (d.base - Y_FLOOR) * Y_SCALE;
+    const bg = new THREE.BoxGeometry(BAR_W, bh, BAR_W);
+    const bm = new THREE.MeshPhongMaterial({ color: C_BASE, transparent: true, opacity: 0.75 });
+    R.disposables.push(bg, bm);
+    const bMesh = new THREE.Mesh(bg, bm);
+    bMesh.position.set(cx - BAR_W/2 - BAR_GAP/2, bh/2, 0);
+    grp.add(bMesh);
+
+    // Tribar bar
+    const th = (d.tri - Y_FLOOR) * Y_SCALE;
+    const tg = new THREE.BoxGeometry(BAR_W, th, BAR_W);
+    const tm = new THREE.MeshPhongMaterial({ color: C_TRI, emissive: C_TRI, emissiveIntensity: 0.12, transparent: true, opacity: 0.88 });
+    R.disposables.push(tg, tm);
+    const tMesh = new THREE.Mesh(tg, tm);
+    tMesh.position.set(cx + BAR_W/2 + BAR_GAP/2, th/2, 0);
+    grp.add(tMesh);
+
+    // Gap bracket line
+    const gPts = [
+      new THREE.Vector3(cx + BAR_W/2 + BAR_GAP/2 + BAR_W/2 + 0.1, (d.base - Y_FLOOR) * Y_SCALE, 0),
+      new THREE.Vector3(cx + BAR_W/2 + BAR_GAP/2 + BAR_W/2 + 0.1, (d.tri  - Y_FLOOR) * Y_SCALE, 0),
+    ];
+    const gg = new THREE.BufferGeometry().setFromPoints(gPts);
+    const gm = new THREE.LineBasicMaterial({ color: C_GAP, transparent: true, opacity: 0.7 });
+    R.disposables.push(gg, gm);
+    grp.add(new THREE.Line(gg, gm));
+
+    // σ label
+    const sDiv = document.createElement('div');
+    sDiv.textContent = `σ=${d.sigma}`;
+    sDiv.style.cssText = [
+      `font-family:'Courier New',monospace`,
+      `font-size:11px;color:#3a6a5a`,
+      `text-align:center;pointer-events:none;user-select:none`,
+    ].join(';');
+    const sLbl = new CSS2DObject(sDiv);
+    sLbl.position.set(cx, -0.4, 0);
+    scene.add(sLbl);
+    R.css2dObjects.push(sLbl);
+
+    // Gap label
+    const gDiv = document.createElement('div');
+    gDiv.textContent = `+${d.gap.toFixed(2)}%`;
+    gDiv.style.cssText = [
+      `font-family:'Courier New',monospace`,
+      `font-size:10px;font-weight:bold;color:${CS_GAP}`,
+      `text-align:center;pointer-events:none;user-select:none`,
+    ].join(';');
+    const gLbl = new CSS2DObject(gDiv);
+    gLbl.position.set(cx + BAR_W + BAR_GAP + 0.32, ((d.base + d.tri) / 2 - Y_FLOOR) * Y_SCALE, 0);
+    scene.add(gLbl);
+    R.css2dObjects.push(gLbl);
+  });
+
+  // Floor gridline at 65%
+  for (const pct of [60, 65, 70]) {
+    const y = (pct - Y_FLOOR) * Y_SCALE;
+    const gl = [new THREE.Vector3(-3.6, y, 0), new THREE.Vector3(3.6, y, 0)];
+    const gg = new THREE.BufferGeometry().setFromPoints(gl);
+    const gm = new THREE.LineBasicMaterial({ color: C_AXIS, transparent: true, opacity: 0.35 });
+    R.disposables.push(gg, gm);
+    grp.add(new THREE.Line(gg, gm));
+
+    const pDiv = document.createElement('div');
+    pDiv.textContent = `${pct}%`;
+    pDiv.style.cssText = `font-family:'Courier New',monospace;font-size:10px;color:#1a3a2a;pointer-events:none`;
+    const pLbl = new CSS2DObject(pDiv);
+    pLbl.position.set(-4.1, y, 0);
+    scene.add(pLbl);
+    R.css2dObjects.push(pLbl);
+  }
+
+  // Legend
+  [
+    { label: 'baseline MLP', col: CS_BASE, dx: -1.1 },
+    { label: 'tribar',       col: CS_TRI,  dx:  0.6 },
+    { label: 'gap',          col: CS_GAP,  dx:  2.0 },
+  ].forEach(({ label, col, dx }) => {
+    const div = document.createElement('div');
+    div.textContent = label;
+    div.style.cssText = [
+      `font-family:'Courier New',monospace`,
+      `font-size:12px;color:${col}`,
+      `pointer-events:none;user-select:none`,
+    ].join(';');
+    const lbl = new CSS2DObject(div);
+    lbl.position.set(dx, -0.9, 0);
+    scene.add(lbl);
+    R.css2dObjects.push(lbl);
+  });
+
+  grp._animate = (t) => {
+    // Tribar bars breathe gently
+    grp.children.forEach((c, i) => {
+      if (c.isMesh && i % 2 === 1) c.scale.y = 1 + 0.005 * Math.sin(t * 0.8 + i);
+    });
+  };
+}
+
 // ── Public API ────────────────────────────────────────────────────────────────
 export function setS12Mode(m) {
   _mode = m;
-  if (_sgdGroup)  _sgdGroup.visible  = (m === 'sgd');
-  if (_tribGroup) _tribGroup.visible = (m === 'trib');
+  if (_sgdGroup)     _sgdGroup.visible     = (m === 'sgd');
+  if (_tribGroup)    _tribGroup.visible    = (m === 'trib');
+  if (_seismicGroup) _seismicGroup.visible = (m === 'seismic');
 
   if (R.ov && _sgdGroup && _mode === 'sgd') {
     R.ov.innerHTML =
@@ -484,6 +614,13 @@ export function setS12Mode(m) {
       `<div style="font-size:12px;margin-top:4px;color:#3a5a3a">fc3 Tribonacci cascade</div>` +
       `<div style="font-size:12px;color:${CS_TRIB}">→ exact 33/33/33 balance</div>` +
       `<div style="font-size:11px;margin-top:4px;color:#1a3a2a">D=64→64→64→16 · 20 seeds · 4090</div>`;
+  } else if (R.ov && _seismicGroup && _mode === 'seismic') {
+    R.ov.innerHTML =
+      `<div style="color:#00ff88;letter-spacing:.1em">12 · SEISMIC</div>` +
+      `<div style="color:#3a6a5a;font-size:14px;margin-top:3px">STEAD earthquake vs noise</div>` +
+      `<div style="font-size:12px;margin-top:4px;color:#3a5a3a">tribar &gt; baseline at all σ</div>` +
+      `<div style="font-size:12px;color:#ffe600">peak gap +2.61% at σ=0.3</div>` +
+      `<div style="font-size:11px;margin-top:4px;color:#1a3a2a">K=128 · CYCLES=3 · 3 seeds · 7373 eq/noise</div>`;
   }
 }
 
@@ -505,11 +642,14 @@ export function buildS12() {
   _mode = 'sgd';
   buildSGD(scene);
   buildTRIB(scene);
-  _tribGroup.visible = false;
+  buildSEISMIC(scene);
+  _tribGroup.visible    = false;
+  _seismicGroup.visible = false;
 
   R.animFn = (t) => {
     controls.update();
-    if (_mode === 'sgd'  && _sgdGroup?._animate)  _sgdGroup._animate(t);
-    if (_mode === 'trib' && _tribGroup?._animate) _tribGroup._animate(t);
+    if (_mode === 'sgd'     && _sgdGroup?._animate)     _sgdGroup._animate(t);
+    if (_mode === 'trib'    && _tribGroup?._animate)    _tribGroup._animate(t);
+    if (_mode === 'seismic' && _seismicGroup?._animate) _seismicGroup._animate(t);
   };
 }
