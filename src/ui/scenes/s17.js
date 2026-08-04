@@ -363,21 +363,8 @@ export function buildS17() {
   R.disposables.push(trunkG, trunkM);
   scene.add(new THREE.Line(trunkG, trunkM));
 
-  // ── Stream axis labels (header) ─────────────────────────────────────────────
+  // ── Stream ghost lines ───────────────────────────────────────────────────────
   Object.values(STREAMS).forEach(s => {
-    const div = document.createElement('div');
-    div.textContent = s.label;
-    div.style.cssText = [
-      `font-family:'Courier New',monospace`,
-      `font-size:11px;font-weight:bold;letter-spacing:.12em`,
-      `color:${s.cs};opacity:0.55`,
-      `pointer-events:none;user-select:none`,
-    ].join(';');
-    const lbl = new CSS2DObject(div);
-    lbl.position.set(s.x, topY + 1.6, s.z);
-    scene.add(lbl);
-    R.css2dObjects.push(lbl);
-
     // Vertical stream ghost line (faint)
     if (s.x !== 0 || s.z !== 0) {
       const linePts = [new THREE.Vector3(s.x, topY + 0.8, s.z), new THREE.Vector3(s.x, minY - 0.5, s.z)];
@@ -419,9 +406,9 @@ export function buildS17() {
     ].join(';');
 
     const sceneHdr = document.createElement('div');
-    sceneHdr.textContent = 'TIME-TREE';
+    sceneHdr.textContent = s.label;
     sceneHdr.style.cssText = [
-      `font-size:7.5px;letter-spacing:.18em;color:#00ff88`,
+      `font-size:7.5px;letter-spacing:.18em;color:${s.cs}`,
       `margin-bottom:4px;display:${i === 0 ? 'block' : 'none'}`,
     ].join(';');
     card.appendChild(sceneHdr);
