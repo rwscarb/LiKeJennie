@@ -188,7 +188,7 @@ export function buildS17() {
     node.position.set(0, y, 0);
     scene.add(node);
 
-    const tickPts = [new THREE.Vector3(0, y, 0), new THREE.Vector3(side * 0.7, y, 0)];
+    const tickPts = [new THREE.Vector3(0, y, 0), new THREE.Vector3(side * 1.4, y, 0)];
     const tg = new THREE.BufferGeometry().setFromPoints(tickPts);
     const tm = new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.45 });
     R.disposables.push(tg, tm);
@@ -230,7 +230,7 @@ export function buildS17() {
     }
 
     const lbl = new CSS2DObject(card);
-    lbl.position.set(side * 1.2, y, 0);
+    lbl.position.set(side * 2.2, y, 0);
     scene.add(lbl);
     R.css2dObjects.push(lbl);
     _cards.push(card);
