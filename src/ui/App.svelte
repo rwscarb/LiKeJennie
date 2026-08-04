@@ -18,6 +18,8 @@ let audioMuted = false;
 function toggleAudio() {
   audioMuted = !audioMuted;
   window.__s16mute = audioMuted;
+  // Unlock AudioContext on first unmute gesture
+  if (!audioMuted) window.__unlockS16Audio?.();
 }
 
 // ── CSS2D label scaling ───────────────────────────────────────────────────────
@@ -568,7 +570,7 @@ afterUpdate(() => {
   <button
     class="nav-arr"
     on:click={() => goTo(active - 1)}
-    style="position:fixed;top:14px;left:14px;z-index:51;opacity:.65;font-size:.6rem;padding:.22rem .7rem;"
+    style="position:fixed;top:42px;left:14px;z-index:51;opacity:.65;font-size:.6rem;padding:.22rem .7rem;"
     on:mouseenter={e => e.currentTarget.style.opacity='1'}
     on:mouseleave={e => e.currentTarget.style.opacity='.7'}
   >← BACK</button>
