@@ -1,9 +1,11 @@
 """
-Penrose Tribar PoC — Fashion-MNIST (FAST version)
-- batch=4096 (saturates 4090 on tiny K=4 models)
-- parallel seeds via multiprocessing (5 seeds → 5 workers, all GPU)
-- torch.compile on each model
-Best hyperparams: K=4, CYCLES=3, lr=2.42e-04, gate=0.346
+Penrose Tribar PoC — Fashion-MNIST, K=4 (SUPERSEDED by poc_tribar_fashion_k32.py)
+Finding: K=4 baseline is capacity-floored (~16% ≈ random on Fashion-MNIST),
+making the noise-robustness comparison meaningless. Tribar showed +9% at σ=0
+but this was a structural artifact, not signal.
+Use poc_tribar_fashion_k32.py for the proper experiment.
+- batch=4096, parallel seeds via multiprocessing
+Best hyperparams from Optuna (MNIST): K=4, CYCLES=3, lr=2.42e-04, gate=0.346
 """
 import torch, torch.nn as nn, torch.optim as optim
 import torch.multiprocessing as mp
