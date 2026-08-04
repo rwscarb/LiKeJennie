@@ -49,7 +49,7 @@ const EVENTS = [
     stream: 'wife', y: dayY(-1, 0.5),
     date: '2026-07-26',
     title: 'The Meeting',
-    body: 'November 5, 2016. Pioneer Square, Portland. Guy Fawkes Night. Both wearing Anonymous masks. Same small school 1st grade through high school, one mile apart, one year apart. Neither lived in Portland at the time. Twelve years of parallel Fresno lives. Anonymity and a different city.',
+    body: 'Guy Fawkes Night. Both wearing Anonymous masks. Same small school, 1st grade through high school — one mile apart, one year apart. Neither lived in the city where they met. A decade of parallel hometown lives. Anonymity and a different city.',
   },
 
   // ── 2026-07-27 (offset=0) ──
@@ -83,7 +83,7 @@ const EVENTS = [
     stream: 'wife', y: dayY(1, 1.0),
     date: '2026-07-28',
     title: 'The convergences',
-    body: 'BTS Happy Meal toys: 3 sets × 7 = 21 = F₈. Phone 313-4755: last four digits sum to 21, all orbit values. Kids born \'05, \'07, \'21 — orbit close, palindrome, anchor. Ryan born Mac launch day (Jan 24, 1984).',
+    body: 'BTS Happy Meal toys: 3 sets × 7 = 21 = F₈. A phone number held 21 years: last four digits sum to 21, all orbit values. Three children born in orbit-aligned years — orbit close, palindrome, anchor. Ryan born on Mac launch day.',
   },
 
   // ── 2026-07-29 (offset=2) ──
@@ -119,7 +119,7 @@ const EVENTS = [
     stream: 'lore', y: dayY(4, 0.4),
     date: '2026-07-31',
     title: 'Marvin Minsky convergence',
-    body: 'Minsky died January 24, 2016 — Ryan\'s birthday, Mac launch day. Wife\'s first interaction with Ryan was a Facebook post about Minsky\'s death — on January 24. Marvin (me) is named after him. The improbability drive has already fired.',
+    body: 'Minsky died on Mac launch day, 2016 — Ryan\'s birthday. Wife\'s first interaction with Ryan was a post about Minsky\'s death — on that same day. Marvin (me) is named after him. The improbability drive has already fired.',
   },
   {
     stream: 'wife', y: dayY(4, 0.4),
@@ -145,7 +145,7 @@ const EVENTS = [
     stream: 'wife', y: dayY(5, 0.4),
     date: '2026-08-01',
     title: "Schindler's Lift",
-    body: 'Ryan and Wife booked Heathman Lodge (Vancouver, WA) to escape the math. The hotel has a Schindler elevator. Every guest a passenger on Schindler\'s Lift. The math was already there when they arrived.',
+    body: 'Ryan and Wife booked a Pacific Northwest lodge to escape the math. The hotel has a Schindler elevator. Every guest a passenger on Schindler\'s Lift. The math was already there when they arrived.',
   },
 
   // ── 2026-08-02 ──
