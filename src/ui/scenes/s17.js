@@ -12,10 +12,10 @@ import { THREE, CSS2DObject, R, mkCamera, mkControls } from './shared.js';
 
 // ── Stream definitions ────────────────────────────────────────────────────────
 const STREAMS = {
-  code:   { x: 0,    color: 0x00e5ff, cs: '#00e5ff', label: 'CODE'   },
-  result: { x: 3.8,  color: 0xffe600, cs: '#ffe600', label: 'RESULT' },
-  lore:   { x: -3.8, color: 0xb06fff, cs: '#b06fff', label: 'LORE'   },
-  wife:   { x: -7.4, color: 0xff9800, cs: '#ff9800', label: 'WIFE'   },
+  code:   { x: 0,    z:  0,    color: 0x00e5ff, cs: '#00e5ff', label: 'CODE'   },
+  result: { x: 3.8,  z:  3,    color: 0xffe600, cs: '#ffe600', label: 'RESULT' },
+  lore:   { x: -3.8, z: -2.5,  color: 0xb06fff, cs: '#b06fff', label: 'LORE'   },
+  wife:   { x: -7.4, z:  1.5,  color: 0xff9800, cs: '#ff9800', label: 'WIFE'   },
 };
 
 // Days from 2026-07-27 → Y values (top=latest start, down=time advancing)
@@ -172,18 +172,17 @@ let _cur      = 0;
 let _touring  = false;
 let _tourId   = null;
 let _targetY  = 0;
-let _targetZ  = 4;    // camera Z: 4=max zoom (default), 26=overview
-let _targetTX = 0;    // camera target X (pans toward active branch)
+let _targetZ  = 4;    // camera distance from target (orbit radius effectively)
+let _targetTX = 0;    // camera target X pan
+let _targetTZ = 0;    // camera target Z pan (toward active stream depth)
 let _eventY   = [];
 let _cards    = [];
 let _alive    = false;
 
-// Stream X → target camera look-at X when focused
-function focusTX(stream) {
-  if (stream === 'wife')   return -3.2;
-  if (stream === 'lore')   return -1.5;
-  if (stream === 'result') return  1.8;
-  return 0;
+// Stream → camera look-at offsets when focused
+function focusTarget(stream) {
+  const s = STREAMS[stream];
+  return { tx: s.x * 0.45, tz: s.z * 0.45 };
 }
 
 const TOUR_DWELL = 5500;
@@ -202,7 +201,9 @@ function jumpTo(i, pauseTour = false) {
   _cur      = Math.max(0, Math.min(EVENTS.length - 1, i));
   _targetY  = _eventY[_cur];
   _targetZ  = 4;
-  _targetTX = focusTX(EVENTS[_cur].stream);
+  const ft  = focusTarget(EVENTS[_cur].stream);
+  _targetTX = ft.tx;
+  _targetTZ = ft.tz;
   highlightCard(_cur);
   document.getElementById('s17prev')?.classList.toggle('lit', _cur > 0);
   document.getElementById('s17next')?.classList.toggle('lit', _cur < EVENTS.length - 1);
@@ -250,6 +251,7 @@ export function buildS17() {
   _targetY    = _eventY[0];
   _targetZ    = 4;
   _targetTX   = 0;
+  _targetTZ   = 0;
 
   camera.position.set(0, _eventY[0], 4);
   camera.lookAt(0, _eventY[0], 0);
@@ -284,15 +286,15 @@ export function buildS17() {
       `pointer-events:none;user-select:none`,
     ].join(';');
     const lbl = new CSS2DObject(div);
-    lbl.position.set(s.x, topY + 1.6, 0);
+    lbl.position.set(s.x, topY + 1.6, s.z);
     scene.add(lbl);
     R.css2dObjects.push(lbl);
 
     // Vertical stream ghost line (faint)
-    if (s.x !== 0) {
-      const linePts = [new THREE.Vector3(s.x, topY + 0.8, 0), new THREE.Vector3(s.x, minY - 0.5, 0)];
+    if (s.x !== 0 || s.z !== 0) {
+      const linePts = [new THREE.Vector3(s.x, topY + 0.8, s.z), new THREE.Vector3(s.x, minY - 0.5, s.z)];
       const lg = new THREE.BufferGeometry().setFromPoints(linePts);
-      const lm = new THREE.LineBasicMaterial({ color: s.color, transparent: true, opacity: 0.07 });
+      const lm = new THREE.LineBasicMaterial({ color: s.color, transparent: true, opacity: 0.12 });
       R.disposables.push(lg, lm);
       scene.add(new THREE.Line(lg, lm));
     }
@@ -303,10 +305,11 @@ export function buildS17() {
     const s    = STREAMS[ev.stream];
     const y    = ev.y;
     const sx   = s.x;
+    const sz   = s.z;
 
-    // Branch connector: trunk (x=0, y) → event (sx, y)
-    if (sx !== 0) {
-      const bPts = [new THREE.Vector3(0, y, 0), new THREE.Vector3(sx, y, 0)];
+    // Branch connector: trunk (x=0, y, z=0) → event (sx, y, sz)
+    if (sx !== 0 || sz !== 0) {
+      const bPts = [new THREE.Vector3(0, y, 0), new THREE.Vector3(sx, y, sz)];
       const bg = new THREE.BufferGeometry().setFromPoints(bPts);
       const bm = new THREE.LineBasicMaterial({ color: s.color, transparent: true, opacity: 0.22 });
       R.disposables.push(bg, bm);
@@ -352,7 +355,7 @@ export function buildS17() {
     // Cards for left branches anchor right; right branches anchor left; center goes right
     const lbl = new CSS2DObject(card);
     const cardX = sx < -1 ? sx - 0.3 : sx + 0.3;
-    lbl.position.set(cardX, y, 0);
+    lbl.position.set(cardX, y, sz);
     scene.add(lbl);
     R.css2dObjects.push(lbl);
     _cards.push(card);
@@ -395,7 +398,7 @@ export function buildS17() {
   function onNext()  { jumpTo(_cur + 1, true); }
   function onTour()  { _touring ? stopTour() : startTour(); }
   function onZIn()   { _targetZ = Math.max(4, _targetZ - 2.5); }
-  function onZOut()  { _targetZ = Math.min(26, _targetZ + 2.5); _targetTX = 0; }
+  function onZOut()  { _targetZ = Math.min(26, _targetZ + 2.5); _targetTX = 0; _targetTZ = 0; }
   prevBtn?.addEventListener('click', onPrev);
   nextBtn?.addEventListener('click', onNext);
   tourBtn?.addEventListener('click', onTour);
@@ -438,6 +441,12 @@ export function buildS17() {
       if (Math.abs(dtx) > 0.001) {
         controls.target.setX(tgt.x + dtx);
         camera.position.setX(camera.position.x + dtx);
+      }
+
+      // Lerp camera target Z (stream depth pan)
+      const dtz = (_targetTZ - tgt.z) * LERP;
+      if (Math.abs(dtz) > 0.001) {
+        controls.target.setZ(tgt.z + dtz);
       }
     }
   };
