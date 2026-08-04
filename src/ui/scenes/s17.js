@@ -182,7 +182,7 @@ function highlightCard(i) {
   _cards.forEach((c, j) => {
     const ev   = EVENTS[j];
     const s    = STREAMS[ev.stream];
-    c.style.opacity    = j === i ? '1' : '0.28';
+    c.style.opacity    = j === i ? '1' : '0.72';
     c.style.borderLeft = j === i ? `2px solid ${s.cs}` : `1px solid transparent`;
   });
 }
@@ -328,7 +328,7 @@ export function buildS17() {
       `font-family:'Courier New',monospace`,
       `pointer-events:none;user-select:none`,
       `transition:opacity .3s,border .2s`,
-      `opacity:${i === 0 ? '1' : '0.28'}`,
+      `opacity:${i === 0 ? '1' : '0.72'}`,
     ].join(';');
 
     const dateDiv = document.createElement('div');
