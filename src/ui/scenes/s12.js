@@ -620,7 +620,8 @@ export function setS12Mode(m) {
       `<div style="color:#3a6a5a;font-size:14px;margin-top:3px">STEAD earthquake vs noise</div>` +
       `<div style="font-size:12px;margin-top:4px;color:#3a5a3a">tribar &gt; baseline at all σ</div>` +
       `<div style="font-size:12px;color:#ffe600">peak gap +2.61% at σ=0.3</div>` +
-      `<div style="font-size:11px;margin-top:4px;color:#1a3a2a">K=128 · CYCLES=3 · 3 seeds · 7373 eq/noise</div>`;
+      `<div style="font-size:11px;margin-top:4px;color:#1a3a2a">K=128 · CYCLES=3 · 3 seeds · 7373 eq/noise</div>` +
+      `<div style="margin-top:6px"><a href="https://github.com/rwscarb/LiKeJennie/blob/main/src/experiments/poc_tribar_early_detection.py" target="_blank" rel="noopener" style="font-size:11px;color:#1a5040;text-decoration:none;pointer-events:auto" onmouseover="this.style.color='#00ff88'" onmouseout="this.style.color='#1a5040'">early detection →</a></div>`;
   }
 }
 
