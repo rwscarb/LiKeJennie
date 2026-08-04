@@ -349,6 +349,27 @@ afterUpdate(() => {
     el.innerHTML = hlCode(el.textContent);
     el.setAttribute('data-hl', '1');
   });
+
+  // Accordion: wrap content after each h1/h2 into a collapsible body, collapsed by default
+  document.querySelectorAll('.writeup article h1:not([data-acc]), .writeup article h2:not([data-acc])').forEach(hdr => {
+    hdr.setAttribute('data-acc', '1');
+    const body = document.createElement('div');
+    body.className = 'acc-body';
+    body.style.display = 'none';
+    let next = hdr.nextElementSibling;
+    while (next && next.tagName !== 'H1' && next.tagName !== 'H2') {
+      const tmp = next.nextElementSibling;
+      body.appendChild(next);
+      next = tmp;
+    }
+    hdr.insertAdjacentElement('afterend', body);
+    hdr.style.cursor = 'pointer';
+    hdr.addEventListener('click', () => {
+      const open = body.style.display !== 'none';
+      body.style.display = open ? 'none' : '';
+      hdr.classList.toggle('acc-open', !open);
+    });
+  });
 });
 </script>
 
@@ -591,11 +612,7 @@ afterUpdate(() => {
 <div class="hint">&larr; &rarr; arrow keys &nbsp;&middot;&nbsp; tabs or dots &nbsp;&middot;&nbsp; keys 1&ndash;9</div>
 
 <div class="writeup">
-  <div class="writeup-hdr writeup-toggle" on:click={() => writeupOpen = !writeupOpen}>
-    <span class="writeup-chevron" class:open={writeupOpen}>▶</span>
-    {active + 1} · JENNIE {active + 1} — how it works
-  </div>
-  {#if writeupOpen}
+  <div class="writeup-hdr">{active + 1} · JENNIE {active + 1} — how it works</div>
   <article>
     <h1>The Number</h1>
     <p>896 equals 2<sup>7</sup> × 7. To get 896, double 1 seven times, then multiply by 7.</p>
@@ -989,7 +1006,6 @@ complement {3,6}  × 55 Hz         →  E (perfect 5th above A)</code></pre>
     <p>55 Hz is A1 — two octaves below concert A (440 Hz). It is the lowest A in the standard bass guitar range. As the fundamental, it makes the harmonic series audible: the orbit traversal from 1 to 8 is literally the bottom four harmonics of A, followed by two chromatic color tones (G natural and C#) that make A major tonality explicit.</p>
     <p>No tuning was required. The orbit itself chose the notes.</p>
   </article>
-  {/if}
 </div>
 
 <div class="notes-section">
