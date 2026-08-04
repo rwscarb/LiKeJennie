@@ -18,7 +18,7 @@ const CS_RESULT = '#ffe600';
 const CS_DIM    = '#1a3a2a';
 const CS_BODY   = '#2a5a3a';
 
-const TOUR_DWELL = 3200;
+const TOUR_DWELL = 5500;
 
 const EVENTS = [
   {
@@ -151,7 +151,7 @@ export function buildS17() {
   _cur           = 0;
   _targetY       = _eventY[0];
 
-  camera.position.set(0, _eventY[0], 14);
+  camera.position.set(0, _eventY[0], 8);
   camera.lookAt(0, _eventY[0], 0);
   const controls = R.controls = mkControls(camera);
   controls.target.set(0, _eventY[0], 0);
@@ -260,16 +260,22 @@ export function buildS17() {
   }
   canvas.addEventListener('wheel', onWheel, { passive: false });
 
-  // Wire buttons (they're always in DOM)
+  // Wire buttons
   const prevBtn = document.getElementById('s17prev');
   const nextBtn = document.getElementById('s17next');
   const tourBtn = document.getElementById('s17tour');
-  function onPrev() { jumpTo(_cur - 1, true); }
-  function onNext() { jumpTo(_cur + 1, true); }
-  function onTour() { _touring ? stopTour() : startTour(); }
+  const zinBtn  = document.getElementById('s17zin');
+  const zoutBtn = document.getElementById('s17zout');
+  function onPrev()  { jumpTo(_cur - 1, true); }
+  function onNext()  { jumpTo(_cur + 1, true); }
+  function onTour()  { _touring ? stopTour() : startTour(); }
+  function onZIn()   { camera.position.setZ(Math.max(3, camera.position.z - 1.5)); }
+  function onZOut()  { camera.position.setZ(Math.min(20, camera.position.z + 1.5)); }
   prevBtn?.addEventListener('click', onPrev);
   nextBtn?.addEventListener('click', onNext);
   tourBtn?.addEventListener('click', onTour);
+  zinBtn?.addEventListener('click',  onZIn);
+  zoutBtn?.addEventListener('click', onZOut);
 
   // Init button states
   jumpTo(0);
@@ -299,8 +305,10 @@ export function buildS17() {
     _alive = false;
     stopTour();
     canvas.removeEventListener('wheel', onWheel);
-    prevBtn?.removeEventListener('click', onPrev);
-    nextBtn?.removeEventListener('click', onNext);
-    tourBtn?.removeEventListener('click', onTour);
+    prevBtn?.removeEventListener('click',  onPrev);
+    nextBtn?.removeEventListener('click',  onNext);
+    tourBtn?.removeEventListener('click',  onTour);
+    zinBtn?.removeEventListener('click',   onZIn);
+    zoutBtn?.removeEventListener('click',  onZOut);
   };
 }

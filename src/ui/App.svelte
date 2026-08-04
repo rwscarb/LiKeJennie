@@ -564,7 +564,9 @@ afterUpdate(() => {
       <button class="btn lit" id="s17prev">◀ PREV</button>
       <button class="btn lit" id="s17next">NEXT ▶</button>
       <button class="btn" id="s17tour">AUTO-TOUR</button>
-      <span class="stat">drag to orbit &nbsp;&middot;&nbsp; scroll to step through events &nbsp;&middot;&nbsp; PREV/NEXT or AUTO-TOUR</span>
+      <button class="btn" id="s17zin">＋ ZOOM</button>
+      <button class="btn" id="s17zout">－ ZOOM</button>
+      <span class="stat">scroll = step events &nbsp;&middot;&nbsp; drag = orbit &nbsp;&middot;&nbsp; ＋/－ = zoom</span>
     </div>
   </div>
 </div>
