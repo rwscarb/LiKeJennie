@@ -179,10 +179,11 @@ let _eventY   = [];
 let _cards    = [];
 let _alive    = false;
 
-// Stream → camera look-at offsets when focused
+// Stream → camera look-at target when focused (point camera at the card)
 function focusTarget(stream) {
-  const s = STREAMS[stream];
-  return { tx: s.x * 0.45, tz: s.z * 0.45 };
+  const s  = STREAMS[stream];
+  const cx = s.x < -1 ? s.x - 0.3 : s.x + 0.3;  // card anchor X
+  return { tx: cx, tz: s.z };
 }
 
 const TOUR_DWELL = 5500;
