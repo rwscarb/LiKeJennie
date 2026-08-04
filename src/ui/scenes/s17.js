@@ -480,6 +480,13 @@ export function buildS17() {
   }
   canvas.addEventListener('dblclick', onDblClick);
 
+  // ── Arrow key navigation ─────────────────────────────────────────────────────
+  function onKeyDown(e) {
+    if (e.key === 'ArrowDown') { e.preventDefault(); jumpTo(_cur + 1, true); }
+    if (e.key === 'ArrowUp')   { e.preventDefault(); jumpTo(_cur - 1, true); }
+  }
+  window.addEventListener('keydown', onKeyDown);
+
   // ── Button wiring ───────────────────────────────────────────────────────────
   const prevBtn  = document.getElementById('s17prev');
   const nextBtn  = document.getElementById('s17next');
@@ -555,5 +562,6 @@ export function buildS17() {
     tourBtn?.removeEventListener('click',  onTour);
     zinBtn?.removeEventListener('click',   onZIn);
     zoutBtn?.removeEventListener('click',  onZOut);
+    window.removeEventListener('keydown', onKeyDown);
   };
 }
