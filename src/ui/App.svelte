@@ -440,12 +440,14 @@ afterUpdate(() => {
       <div id="decode-panel"></div>
     </div>
     <button id="fsBtn2" on:click={fullscreen}>&#x26F6; FULL</button>
+    {#if active === 15}
     <button
       id="audioBtn"
       on:click={toggleAudio}
       title={audioMuted ? 'Unmute' : 'Mute'}
       style="opacity:{audioMuted ? 0.45 : 0.72}"
     >{audioMuted ? '🔇' : '🔊'}</button>
+    {/if}
   </div>
   <div class="ctrls">
     <div class="cset" class:on={active === 0}><span class="stat">drag to rotate &nbsp;&middot;&nbsp; hover a node</span><span class="stat" id="p1stat"></span></div>
@@ -570,7 +572,7 @@ afterUpdate(() => {
   <button
     class="nav-arr"
     on:click={() => goTo(active - 1)}
-    style="position:fixed;top:42px;left:14px;z-index:51;opacity:.65;font-size:.6rem;padding:.22rem .7rem;"
+    style="position:fixed;top:60px;left:14px;z-index:51;opacity:.65;font-size:.6rem;padding:.22rem .7rem;"
     on:mouseenter={e => e.currentTarget.style.opacity='1'}
     on:mouseleave={e => e.currentTarget.style.opacity='.7'}
   >← BACK</button>
