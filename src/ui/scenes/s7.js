@@ -177,16 +177,58 @@ export function buildS7() {
   ];
 
   // ── Rungs ────────────────────────────────────────────────────────────────
+  // Color-coded by complement pair: 1↔8 warm amber, 2↔7 cyan-blue, 4↔5 orange
+  const RUNG_PAIR_C = { 1: 0xBB8820, 2: 0x1890CC, 4: 0x1890CC, 5: 0xCC5533, 7: 0x3A50CC, 8: 0xCC5533 };
   for (let s = 0; s < STEPS; s++) {
+    const val  = ORBIT[s % M];
     const arr  = new Float32Array(6);
     const geo  = new THREE.BufferGeometry();
     const attr = new THREE.BufferAttribute(arr, 3);
     attr.setUsage(THREE.DynamicDrawUsage);
     geo.setAttribute('position', attr);
-    const mat = new THREE.LineBasicMaterial({ color: 0x0a0830, transparent: true, opacity: 0.18 });
+    const mat = new THREE.LineBasicMaterial({ color: RUNG_PAIR_C[val], transparent: true, opacity: 0.22 });
     R.disposables.push(geo, mat);
     scene.add(new THREE.Line(geo, mat));
     rungData.push({ attr, arr, mat, s });
+  }
+
+  // ── Corpus callosum — curved arcing bridges between the two strands ───────
+  // Each arc bows upward from Strand A → Strand B at each helix step,
+  // visualizing the cross-hemisphere connection. Complement pair colors.
+  const CORPUS_ARC_N = 9;    // arc resolution (points per arc)
+  const CORPUS_ARC_H = 0.50; // upward bow height in world units
+  const CORPUS_PAIR_C = { 1: 0xFFCC44, 2: 0x44DDFF, 4: 0x44DDFF, 5: 0xFF8855, 7: 0x7088FF, 8: 0xFF8855 };
+
+  let showCorpus = false;
+  const corpusArcData    = []; // { attr, arr, s, mat }
+  const corpusPulseMeshes = [];
+
+  for (let s = 0; s < STEPS; s++) {
+    const val = ORBIT[s % M];
+    const col = CORPUS_PAIR_C[val];
+    const arr  = new Float32Array(CORPUS_ARC_N * 3);
+    const geo  = new THREE.BufferGeometry();
+    const attr = new THREE.BufferAttribute(arr, 3);
+    attr.setUsage(THREE.DynamicDrawUsage);
+    geo.setAttribute('position', attr);
+    const mat = new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.60 });
+    R.disposables.push(geo, mat);
+    const line = new THREE.Line(geo, mat);
+    line.visible = false;
+    scene.add(line);
+    corpusArcData.push({ attr, arr, s, mat, line });
+
+    // Traveling pulse dot
+    const pgeo = new THREE.SphereGeometry(0.11, 8, 6);
+    const pmat = new THREE.MeshPhongMaterial({
+      color: col, emissive: col, emissiveIntensity: 1.0,
+      transparent: true, opacity: 0.85,
+    });
+    R.disposables.push(pgeo, pmat);
+    const pm = new THREE.Mesh(pgeo, pmat);
+    pm.visible = false;
+    scene.add(pm);
+    corpusPulseMeshes.push(pm);
   }
 
   // ── 6-nil rings ──────────────────────────────────────────────────────────
@@ -970,6 +1012,42 @@ export function buildS7() {
   scene.add(olv640Line);
   const olv640Lbl = makeOlvLbl('640', new THREE.Vector3(0.38, OLV_Y + 0.60, 0), '#660088', '12px');
 
+  // ── Complement corpus arcs — callosal bridges on the Oliver42 lower hemisphere ──
+  // Mirrors the orbit corpus arcs. Each arc bows DOWNWARD (away from CLK_Y bridge),
+  // connecting Strand A ↔ Strand B of the complement helix at each step.
+  // Visible only when both showCorpus and showOliver are active.
+  const COMP_CORPUS_ARC_N = 9;
+  const COMP_CORPUS_ARC_H = 0.50; // downward bow magnitude
+  const compCorpusData    = [];
+  const compCorpusPulseMeshes = [];
+
+  for (let s = 0; s < STEPS; s++) {
+    const val = COMP_SEQ[s % 2]; // 3 or 6
+    const col = val === 3 ? OLV_C3 : OLV_C6;
+    const arr  = new Float32Array(COMP_CORPUS_ARC_N * 3);
+    const geo  = new THREE.BufferGeometry();
+    const attr = new THREE.BufferAttribute(arr, 3);
+    attr.setUsage(THREE.DynamicDrawUsage);
+    geo.setAttribute('position', attr);
+    const mat = new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.55 });
+    R.disposables.push(geo, mat);
+    const line = new THREE.Line(geo, mat);
+    line.visible = false;
+    scene.add(line);
+    compCorpusData.push({ attr, arr, s, mat, line });
+
+    const pgeo = new THREE.SphereGeometry(0.10, 8, 6);
+    const pmat = new THREE.MeshPhongMaterial({
+      color: col, emissive: col, emissiveIntensity: 0.90,
+      transparent: true, opacity: 0.80,
+    });
+    R.disposables.push(pgeo, pmat);
+    const pm = new THREE.Mesh(pgeo, pmat);
+    pm.visible = false;
+    scene.add(pm);
+    compCorpusPulseMeshes.push(pm);
+  }
+
   const oliverHoverMeshes = [olvNode3, olvNode6, ...compMeshes, ...compMeshesB];
   let   lastOlvHl         = -1;
 
@@ -1019,6 +1097,10 @@ export function buildS7() {
     showOliver = on;
     olvAllObjs.forEach(o => { o.visible = on; });
     if (on) olvStartT = null;
+    // Sync complement corpus arcs with Oliver state
+    const compOn = on && showCorpus;
+    compCorpusData.forEach(d => { d.line.visible = compOn; });
+    compCorpusPulseMeshes.forEach(pm => { pm.visible = compOn; });
     document.getElementById('p8oliver')?.classList.toggle('lit', on);
     clearTimeout(_titleOscId);
     if (on) { _glitchTo(TITLE_O, _scheduleOscillation); }
@@ -1101,6 +1183,18 @@ export function buildS7() {
     document.getElementById('p8shade').classList.toggle('lit', showShading);
     shadeMesh.visible = showShading;
   };
+
+  const setCorpus = on => {
+    showCorpus = on;
+    corpusArcData.forEach(d => { d.line.visible = on; });
+    corpusPulseMeshes.forEach(pm => { pm.visible = on; });
+    // Complement corpus arcs only visible when Oliver42 is also on
+    const compOn = on && showOliver;
+    compCorpusData.forEach(d => { d.line.visible = compOn; });
+    compCorpusPulseMeshes.forEach(pm => { pm.visible = compOn; });
+    document.getElementById('p8corpus')?.classList.toggle('lit', on);
+  };
+  document.getElementById('p8corpus').onclick = () => setCorpus(!showCorpus);
 
   // ── Independent strand rotation controls ─────────────────────────────────
   // spinA/spinB: positive = CCW from above, negative = CW.
@@ -1522,8 +1616,39 @@ export function buildS7() {
       arr[0] = nodeX(s, 0,       rotA); arr[1] = y; arr[2] = nodeZ(s, 0,       rotA);
       arr[3] = nodeX(s, Math.PI, rotB); arr[4] = y; arr[5] = nodeZ(s, Math.PI, rotB);
       attr.needsUpdate = true;
-      mat.opacity = 0.10 + 0.10 * Math.abs(Math.sin(t * 0.75 - s * 0.28));
+      mat.opacity = showCorpus
+        ? 0.08 + 0.06 * Math.abs(Math.sin(t * 0.75 - s * 0.28)) // dim when corpus is on
+        : 0.18 + 0.14 * Math.abs(Math.sin(t * 0.75 - s * 0.28));
     });
+
+    // ── Corpus callosum arcs + pulse travelers ────────────────────────────
+    if (showCorpus) {
+      corpusArcData.forEach(({ attr, arr, s, mat }, i) => {
+        const y  = baseY(s) * breath;
+        const Ax = nodeX(s, 0,       rotA), Az = nodeZ(s, 0,       rotA);
+        const Bx = nodeX(s, Math.PI, rotB), Bz = nodeZ(s, Math.PI, rotB);
+        for (let k = 0; k < CORPUS_ARC_N; k++) {
+          const u      = k / (CORPUS_ARC_N - 1);
+          const bow    = CORPUS_ARC_H * Math.sin(u * Math.PI);
+          arr[k * 3]     = Ax + (Bx - Ax) * u;
+          arr[k * 3 + 1] = y + bow;
+          arr[k * 3 + 2] = Az + (Bz - Az) * u;
+        }
+        attr.needsUpdate = true;
+        mat.opacity = 0.45 + 0.20 * Math.abs(Math.sin(t * 0.5 - s * 0.30));
+
+        // Pulse: phase offset per step creates traveling wave across corpus
+        const pulseU  = ((t * 0.55 + s / STEPS) % 1.0);
+        const pulseBow = CORPUS_ARC_H * Math.sin(pulseU * Math.PI);
+        const pm = corpusPulseMeshes[i];
+        pm.position.set(
+          Ax + (Bx - Ax) * pulseU,
+          y + pulseBow,
+          Az + (Bz - Az) * pulseU,
+        );
+        pm.material.opacity = 0.5 + 0.5 * Math.sin(pulseU * Math.PI);
+      });
+    }
 
     nilRingData.forEach(({ attr, arr, s, N }) => {
       const r = helixR(s);
@@ -1696,6 +1821,37 @@ export function buildS7() {
       compRungAttr.needsUpdate  = true;
       compBBBAttr.needsUpdate   = true;
       compRungsABAttr.needsUpdate = true;
+
+      // ── Complement corpus arcs (lower hemisphere mirror of orbit corpus) ──
+      if (showCorpus) {
+        compCorpusData.forEach(({ attr, arr, s, mat }, i) => {
+          const cy = compY(s);
+          const Ax = nodeX(s, 0,       rotA), Az = nodeZ(s, 0,       rotA);
+          const Bx = nodeX(s, Math.PI, rotA), Bz = nodeZ(s, Math.PI, rotA);
+          for (let k = 0; k < COMP_CORPUS_ARC_N; k++) {
+            const u   = k / (COMP_CORPUS_ARC_N - 1);
+            // Bows downward — mirror of the upper corpus arcs which bow upward
+            const bow = -COMP_CORPUS_ARC_H * Math.sin(u * Math.PI);
+            arr[k * 3]     = Ax + (Bx - Ax) * u;
+            arr[k * 3 + 1] = cy + bow;
+            arr[k * 3 + 2] = Az + (Bz - Az) * u;
+          }
+          attr.needsUpdate = true;
+          mat.opacity = 0.40 + 0.20 * Math.abs(Math.sin(t * 0.5 - s * 0.30 + Math.PI));
+
+          // Phase-offset pulse traveling A→B (offset from orbit arcs by 0.5 phase)
+          const pulseU   = ((t * 0.55 + s / STEPS + 0.5) % 1.0);
+          const pulseBow = -COMP_CORPUS_ARC_H * Math.sin(pulseU * Math.PI);
+          const pm = compCorpusPulseMeshes[i];
+          pm.position.set(
+            Ax + (Bx - Ax) * pulseU,
+            cy + pulseBow,
+            Az + (Bz - Az) * pulseU,
+          );
+          pm.material.opacity = 0.4 + 0.5 * Math.sin(pulseU * Math.PI);
+        });
+      }
+
       // 640 axis: pulse opacity when wave is active
       olv640Mat.opacity = showWave
         ? 0.14 + 0.18 * (0.5 + 0.5 * Math.sin(waveT * 1.5))
@@ -1763,8 +1919,9 @@ export function buildS7() {
     R.labelRenderer.render(scene, camera);
   };
 
-  // Default state: OLIVER42 + WAVE + COLLAPSE on at load
+  // Default state: OLIVER42 + WAVE + COLLAPSE + CORPUS on at load
   setOliver(true);
+  setCorpus(true);
   showWave     = true; document.getElementById('p8wave')?.classList.add('lit');
   showCollapse = true; document.getElementById('p8collapse')?.classList.add('lit');
 }

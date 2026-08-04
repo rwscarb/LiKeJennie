@@ -3,7 +3,7 @@ import { get } from 'svelte/store';
 import { cur, goTo } from '../../lib/state.js';
 
 beforeEach(() => {
-  cur.set(7); // reset to default
+  cur.set(7); // reset to default (HELIX scene)
 });
 
 describe('goTo', () => {
@@ -17,8 +17,8 @@ describe('goTo', () => {
     expect(get(cur)).toBe(7);
   });
 
-  it('clamps: rejects index > 9', () => {
-    goTo(10);
+  it('clamps: rejects index >= 18', () => {
+    goTo(18);
     expect(get(cur)).toBe(7);
   });
 
@@ -32,8 +32,8 @@ describe('goTo', () => {
     expect(get(cur)).toBe(0);
   });
 
-  it('navigates to boundary 9', () => {
-    goTo(9);
-    expect(get(cur)).toBe(9);
+  it('navigates to boundary 17', () => {
+    goTo(17);
+    expect(get(cur)).toBe(17);
   });
 });

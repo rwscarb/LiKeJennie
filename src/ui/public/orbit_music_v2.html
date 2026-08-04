@@ -6,7 +6,7 @@
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 :root {
-  --bg:#040408; --fg:#00ff88; --dim:#0a2028; --cyan:#00e5ff;
+  --bg:#000; --fg:#00ff88; --dim:#0a2028; --cyan:#00e5ff;
   --orng:#ff9800; --muted:#1a6040; --panel:#040408;
 }
 html { overflow:hidden; height:100%; scrollbar-width:none; }
@@ -103,7 +103,7 @@ btn, .btn {
 }
 .seq-cell {
   border-radius:2px; cursor:pointer;
-  background:var(--dim); border:1px solid #0a1a10;
+  background:var(--dim); border:1px solid #0a2028;
   transition:background .08s;
   position:relative;
 }
@@ -123,7 +123,7 @@ btn, .btn {
 }
 .oct-cell {
   height:18px; border-radius:2px; cursor:pointer;
-  border:1px solid #0a1a10; background:var(--dim);
+  border:1px solid #0a2028; background:var(--dim);
   display:flex; align-items:center; justify-content:center;
   font-size:7px; font-family:'Courier New',monospace;
   color:var(--muted); transition:background .08s;
@@ -131,7 +131,7 @@ btn, .btn {
 .oct-cell.cursor { outline:1px solid #ffffff60; }
 .oct-cell[data-oct="2"]  { background:#00e5ff40; border-color:#00e5ff80; color:#00e5ff; }
 .oct-cell[data-oct="1"]  { background:#00e5ff18; border-color:#00e5ff40; color:#00e5ffaa; }
-.oct-cell[data-oct="0"]  { background:var(--dim); border-color:#0a1a10; color:var(--muted); }
+.oct-cell[data-oct="0"]  { background:var(--dim); border-color:#0a2028; color:var(--muted); }
 .oct-cell[data-oct="-1"] { background:#ff980018; border-color:#ff980040; color:#ff9800aa; }
 .oct-cell[data-oct="-2"] { background:#ff980040; border-color:#ff980080; color:#ff9800; }
 .row-label {
@@ -280,7 +280,7 @@ btn, .btn {
       <div class="preset-row" id="userPresets" style="margin-top:5px;min-height:0"></div>
       <div class="row" style="margin-top:6px;margin-bottom:0;gap:5px">
         <input id="presetNameInput" type="text" maxlength="12" placeholder="name…"
-          style="flex:1;font-family:'Courier New',monospace;font-size:var(--panel-fs);background:#020c08;border:1px solid var(--dim);color:#00ffcc;padding:2px 6px;border-radius:2px;letter-spacing:.06em;text-transform:uppercase" spellcheck="false">
+          style="flex:1;font-family:'Courier New',monospace;font-size:var(--panel-fs);background:var(--bg);border:1px solid var(--dim);color:var(--fg);padding:2px 6px;border-radius:2px;letter-spacing:.06em;text-transform:uppercase" spellcheck="false">
         <button class="btn" id="savePresetBtn">SAVE</button>
       </div>
     </div>
@@ -317,7 +317,7 @@ btn, .btn {
         <button class="btn" data-viz="scope">SCOPE</button>
         <button class="btn" data-viz="spiral">SPIRAL</button>
       </div>
-      <canvas id="vizCanvas" style="width:100%;display:block;border-radius:2px;background:#020608;cursor:grab"></canvas>
+      <canvas id="vizCanvas" style="width:100%;display:block;border-radius:2px;background:#000;cursor:grab"></canvas>
       <div style="font-size:calc(var(--panel-fs)*0.85);color:var(--muted);opacity:.45;margin-top:3px;letter-spacing:.08em">scroll·zoom · drag·pan · dbl·reset</div>
     </div>
   </div>
