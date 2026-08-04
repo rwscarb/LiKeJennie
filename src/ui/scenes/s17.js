@@ -239,19 +239,18 @@ let _cur      = 0;
 let _touring  = false;
 let _tourId   = null;
 let _targetY  = 0;
-let _targetZ  = 4;    // camera position Z
-let _targetTX = 0;    // camera target X pan
-let _targetTZ = 0;    // camera target Z (stream depth)
-let _zoomDist = 4;    // constant camera-to-card Z distance
+let _targetTX = 0;    // look-at X (stream X)
+let _targetTZ = 0;    // look-at Z (stream Z)
+let _zoomDist = 4;    // camera-to-target distance
+let _targetAz = 0;    // desired camera azimuth around Y axis
 let _eventY   = [];
 let _cards    = [];
 let _alive    = false;
 
-// Stream → camera look-at target when focused (point camera at the card)
-function focusTarget(stream) {
-  const s  = STREAMS[stream];
-  const cx = s.x < -1 ? s.x - 0.3 : s.x + 0.3;  // card anchor X
-  return { tx: cx, tz: s.z };
+// Azimuth that isolates stream — camera sits on outward radial from trunk
+function streamAzimuth(stream) {
+  const s = STREAMS[stream];
+  return (s.x === 0 && s.z === 0) ? 0 : Math.atan2(s.x, s.z);
 }
 
 const TOUR_DWELL = 5500;
@@ -269,10 +268,11 @@ function jumpTo(i, pauseTour = false) {
   if (pauseTour && _touring) stopTour();
   _cur      = Math.max(0, Math.min(EVENTS.length - 1, i));
   _targetY  = _eventY[_cur];
-  const ft  = focusTarget(EVENTS[_cur].stream);
-  _targetTX = ft.tx;
-  _targetTZ = ft.tz;
-  _targetZ  = ft.tz + _zoomDist;  // maintain constant camera-to-card depth
+  const s   = STREAMS[EVENTS[_cur].stream];
+  _targetTX = s.x < -1 ? s.x - 0.3 : s.x + 0.3;
+  _targetTZ = s.z;
+  _targetAz = streamAzimuth(EVENTS[_cur].stream);
+  _zoomDist = 4;
   highlightCard(_cur);
   document.getElementById('s17prev')?.classList.toggle('lit', _cur > 0);
   document.getElementById('s17next')?.classList.toggle('lit', _cur < EVENTS.length - 1);
@@ -321,7 +321,7 @@ export function buildS17() {
   _targetY    = _eventY[0];
   _targetTX   = 0;
   _targetTZ   = 0;
-  _targetZ    = 4;  // = _targetTZ(0) + _zoomDist(4)
+  _targetAz   = 0;
 
   camera.position.set(0, _eventY[0], 4);
   camera.lookAt(0, _eventY[0], 0);
@@ -467,8 +467,8 @@ export function buildS17() {
   function onPrev()  { jumpTo(_cur - 1, true); }
   function onNext()  { jumpTo(_cur + 1, true); }
   function onTour()  { _touring ? stopTour() : startTour(); }
-  function onZIn()  { _zoomDist = Math.max(1, _zoomDist - 2.5); _targetZ = _targetTZ + _zoomDist; }
-  function onZOut() { _zoomDist = Math.min(22, _zoomDist + 2.5); _targetTX = 0; _targetTZ = 0; _targetZ = _zoomDist; }
+  function onZIn()  { _zoomDist = Math.max(1, _zoomDist - 2.5); }
+  function onZOut() { _zoomDist = Math.min(22, _zoomDist + 2.5); _targetTX = 0; _targetTZ = 0; _targetAz = 0; }
   prevBtn?.addEventListener('click', onPrev);
   nextBtn?.addEventListener('click', onNext);
   tourBtn?.addEventListener('click', onTour);
@@ -495,29 +495,31 @@ export function buildS17() {
       const tgt  = controls.target;
       const LERP = 0.07;
 
-      // Lerp target Y
+      // Lerp look-at Y (camera tracks it rigidly)
       const dy = (_targetY - tgt.y) * LERP;
       if (Math.abs(dy) > 0.001) {
         controls.target.setY(tgt.y + dy);
         camera.position.setY(camera.position.y + dy);
       }
 
-      // Lerp camera Z (zoom)
-      const dz = (_targetZ - camera.position.z) * LERP;
-      if (Math.abs(dz) > 0.001) camera.position.setZ(camera.position.z + dz);
-
-      // Lerp camera target X (branch pan)
+      // Lerp look-at XZ toward stream position
       const dtx = (_targetTX - tgt.x) * LERP;
-      if (Math.abs(dtx) > 0.001) {
-        controls.target.setX(tgt.x + dtx);
-        camera.position.setX(camera.position.x + dtx);
-      }
-
-      // Lerp camera target Z (stream depth pan)
+      if (Math.abs(dtx) > 0.001) controls.target.setX(tgt.x + dtx);
       const dtz = (_targetTZ - tgt.z) * LERP;
-      if (Math.abs(dtz) > 0.001) {
-        controls.target.setZ(tgt.z + dtz);
-      }
+      if (Math.abs(dtz) > 0.001) controls.target.setZ(tgt.z + dtz);
+
+      // Lerp camera azimuth (Y-axis rotation) toward target stream angle
+      const cdx = camera.position.x - tgt.x;
+      const cdz = camera.position.z - tgt.z;
+      const curAz = Math.atan2(cdx, cdz);
+      let azDiff = _targetAz - curAz;
+      while (azDiff >  Math.PI) azDiff -= 2 * Math.PI;
+      while (azDiff < -Math.PI) azDiff += 2 * Math.PI;
+      const newAz = curAz + azDiff * LERP;
+
+      // Place camera at _zoomDist from target along azimuth
+      camera.position.x = tgt.x + _zoomDist * Math.sin(newAz);
+      camera.position.z = tgt.z + _zoomDist * Math.cos(newAz);
     }
   };
 
