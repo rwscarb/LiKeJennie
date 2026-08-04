@@ -458,6 +458,20 @@ export function buildS17() {
   }
   canvas.addEventListener('wheel', onWheel, { passive: false });
 
+  // ── Double-click card to select ─────────────────────────────────────────────
+  function onDblClick(e) {
+    const x = e.clientX, y = e.clientY;
+    for (let i = 0; i < _cards.length; i++) {
+      const r = _cards[i].getBoundingClientRect();
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
+        jumpTo(i, true);
+        _zoomDist = 1;
+        break;
+      }
+    }
+  }
+  canvas.addEventListener('dblclick', onDblClick);
+
   // ── Button wiring ───────────────────────────────────────────────────────────
   const prevBtn  = document.getElementById('s17prev');
   const nextBtn  = document.getElementById('s17next');
@@ -527,6 +541,7 @@ export function buildS17() {
     _alive = false;
     stopTour();
     canvas.removeEventListener('wheel', onWheel);
+    canvas.removeEventListener('dblclick', onDblClick);
     prevBtn?.removeEventListener('click',  onPrev);
     nextBtn?.removeEventListener('click',  onNext);
     tourBtn?.removeEventListener('click',  onTour);
