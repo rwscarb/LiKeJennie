@@ -438,11 +438,7 @@ export function buildS17() {
 
     const bodyDiv = document.createElement('div');
     bodyDiv.textContent = ev.body;
-    bodyDiv.style.cssText = [
-      `font-size:9px;color:#2a5a3a;line-height:1.4`,
-      `display:-webkit-box;-webkit-box-orient:vertical`,
-      `-webkit-line-clamp:5;overflow:hidden`,
-    ].join(';');
+    bodyDiv.style.cssText = `font-size:9px;color:#2a5a3a;line-height:1.4`;
     card.appendChild(bodyDiv);
 
     if (ev.stat) {
