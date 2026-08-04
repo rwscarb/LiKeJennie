@@ -480,10 +480,56 @@ export function buildS17() {
   }
   canvas.addEventListener('dblclick', onDblClick);
 
+  // ── Arrow key hints (lower-left) ─────────────────────────────────────────────
+  const keyHintBase = [
+    'font-family:"Courier New",monospace',
+    'font-size:9px',
+    'letter-spacing:.07em',
+    'background:#040408',
+    'border:1px solid #0a2028',
+    'color:#1a6040',
+    'border-radius:2px',
+    'padding:2px 7px',
+    'display:block',
+    'text-align:center',
+    'transition:color .1s,border-color .1s,box-shadow .1s',
+    'user-select:none',
+  ].join(';');
+  const keyHintWrap = document.createElement('div');
+  keyHintWrap.style.cssText = [
+    'position:absolute',
+    'bottom:10px',
+    'left:12px',
+    'z-index:6',
+    'display:flex',
+    'flex-direction:column',
+    'gap:3px',
+    'pointer-events:none',
+  ].join(';');
+  const kUp = document.createElement('span');
+  kUp.textContent = '▲';
+  kUp.style.cssText = keyHintBase;
+  const kDn = document.createElement('span');
+  kDn.textContent = '▼';
+  kDn.style.cssText = keyHintBase;
+  keyHintWrap.append(kUp, kDn);
+  canvas.parentElement.appendChild(keyHintWrap);
+
+  function flashKey(el) {
+    el.style.color = '#00ff88';
+    el.style.borderColor = '#00ff88';
+    el.style.boxShadow = '0 0 6px #00ff8840';
+    setTimeout(() => {
+      el.style.color = '';
+      el.style.borderColor = '';
+      el.style.boxShadow = '';
+    }, 160);
+  }
+
   // ── Arrow key navigation ─────────────────────────────────────────────────────
   function onKeyDown(e) {
-    if (e.key === 'ArrowDown') { e.preventDefault(); jumpTo(_cur + 1, true); }
-    if (e.key === 'ArrowUp')   { e.preventDefault(); jumpTo(_cur - 1, true); }
+    if (e.key === 'ArrowDown') { e.preventDefault(); jumpTo(_cur + 1, true); flashKey(kDn); }
+    if (e.key === 'ArrowUp')   { e.preventDefault(); jumpTo(_cur - 1, true); flashKey(kUp); }
   }
   window.addEventListener('keydown', onKeyDown);
 
@@ -563,5 +609,6 @@ export function buildS17() {
     zinBtn?.removeEventListener('click',   onZIn);
     zoutBtn?.removeEventListener('click',  onZOut);
     window.removeEventListener('keydown', onKeyDown);
+    keyHintWrap.remove();
   };
 }
