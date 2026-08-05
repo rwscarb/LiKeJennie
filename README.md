@@ -54,6 +54,8 @@ nearly closes on itself: the next structure to build.
 | 15 | ORBIT MUSIC | Heptagon WebAudio orbit arpeggio |
 | 16 | MUSIC | Extended orbit music sequencer |
 | 17 | TIME-TREE | Project timeline — four streams from origin |
+| 18 | JO BURROWS | Worm through filigree — hypotrochoid spirograph, lemons |
+| 19 | 3I/ATLAS | Third interstellar object; ω=128=K, retrograde, e=6.14 |
 
 ---
 
@@ -75,7 +77,7 @@ nearly closes on itself: the next structure to build.
 
 ## Penrose Tribar — Inter-Cycle Fold Structure
 
-The HELIX runs 3 complete orbit cycles (CYCLES=3, 18 nodes per strand + apex). Each cycle
+The HELIX runs 3 complete orbit cycles (18 nodes per strand + apex). Each cycle
 covers one full period of [1,2,4,8,7,5]. Nodes at the same orbit position across cycles
 form natural triangles — the same value recurring at p, p+M, and p+2M (M=6).
 
@@ -134,6 +136,40 @@ through the Penrose Tribar architecture and into seismology applications.
 | `poc_tribar_early_detection.py` | P-wave early detection — >8s warning before S-wave |
 | `poc_tribar_seismic_system.py` | Full streaming seismic detection system |
 | `poc_tribar_optuna.py` | Optuna HPO for Tribar hyperparameters |
+
+### Streaming Buffer / Seismic Detection Series (2026-08-05)
+
+Full experiment arc documented in `SEISMIC_DETECTION.md`.
+
+| File | Description |
+|------|-------------|
+| `poc_adaptive_buf.py` | Learnable DECAY/STRENGTH; gradient confirms attractor at 0.82–0.84 |
+| `poc_percycle_buf.py` | Per-cycle buffer params; marginal gain, not worth complexity |
+| `poc_streaming.py` | Streaming inference (single-0s training); precision drops OOD |
+| `poc_streaming_trained.py` | Streaming-aware training; warm [-1s,-0.5s] → classify 0s |
+| `poc_optuna.py` | Optuna HPO, 50 trials; best: threshold=0.48, decay=0.876 → 88.0%/95.7% |
+| `poc_orbit_ablation.py` | Orbit vs random vs identity perm; orbit high-variance, random stable |
+| `poc_random_perm_prod.py` | Production random perm, 5 seeds; 86.4%/97.9% mean |
+| `poc_orbit_ceiling.py` | Orbit ceiling, 10 seeds; best seed → 92.0%/89.9% |
+| `poc_perm_sweep.py` | Warmup-based perm selection; anti-predictive (negative result) |
+| `poc_early_detection.py` | Early detection at -0.5s; 84.4%/98.5% vs 87.7%/96.1% at 0s |
+| `poc_horizon_sweep.py` | Full horizon sweep; -0.5s sweet spot, -1s cliff, ~3.2pp/0.5s |
+| `poc_dual_horizon.py` | Dual-head (early@-0.5s + late@0s); and-gate → 89.8%/97.5% |
+| `poc_cycles_ablation.py` | CYCLES ∈ {1-6}; CYCLES=1 best mean 85.0%, CYCLES=3 was suboptimal |
+| `poc_c1_dual.py` | **Champion:** CYCLES=1 + dual and-gate → 92.3%/95.0% ±1.79% (5 seeds) |
+
+**Champion configuration:**
+```python
+CYCLES       = 1            # not 3; over-smoothing at higher depth
+BUF_DECAY    = 0.876
+BUF_STRENGTH = 1.429
+LR           = 2.78e-3
+THRESHOLD    = 0.480
+PERM         = torch.randperm(K)          # random fixed, seeded per run
+TRAIN_MODE   = "dual-horizon"             # loss = 0.5*CE(early) + 0.5*CE(late)
+EVAL_STRAT   = "and-gate"                 # both heads must agree
+# Result: 92.3% precision / 95.0% recall ±1.79%  (floor: 89.6% across 5 seeds)
+```
 
 ### Echo MoE (mixture-of-experts with orbit routing)
 
@@ -259,7 +295,13 @@ src/
     poc_ternary_*.py          # Ternary activation experiments
     poc_trib_*.py             # Tribonacci attractor experiments
     poc_jennie22.py           # jennie22 hypothesis
+    poc_adaptive_buf.py       # Streaming buffer series (see SEISMIC_DETECTION.md)
+    poc_streaming_trained.py  # Streaming-aware training
+    poc_optuna.py             # Optuna HPO (threshold=0.48, decay=0.876)
+    poc_early_detection.py    # Early detection at -0.5s before P-wave
+    poc_c1_dual.py            # Champion: CYCLES=1 + dual and-gate → 92.3%/95.0%
     TRIBONACCI_ATTRACTOR.md   # Tribonacci attractor writeup
+    SEISMIC_DETECTION.md      # Streaming buffer / seismic detection series writeup
     data/
       MNIST/                  # Fashion-MNIST raw files
       silk_research.md        # Silk / compass thread — orbit as signal conduit
@@ -285,3 +327,10 @@ The Penrose Tribar architecture (gated skip + orbit permutation + LayerNorm) out
 baseline MLP at every tested noise level on Fashion-MNIST and STEAD seismology datasets.
 Peak advantage at ambient noise (σ=0.3) — the operating regime of real seismic detection.
 Wall time: 61 seconds for the full seismology benchmark.
+
+The streaming buffer series extended this to real-time P-wave detection. Champion result
+(2026-08-05): CYCLES=1 + dual-horizon and-gate → **92.3% precision / 95.0% recall ±1.79%**
+across 5 seeds on STEAD chunk2, streaming-aware training, threshold=0.48. The orbit buffer
+detects P-waves **0.5 seconds before arrival** (84.4%/98.5%) at −3.2pp precision cost.
+Key findings: CYCLES=1 outperforms CYCLES=3 by 3.9pp (over-smoothing); and-gate consensus
+between early/late heads adds +2.1pp over single-head. See `SEISMIC_DETECTION.md`.
