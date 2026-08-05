@@ -7,6 +7,8 @@ export function goTo(idx) {
   cur.update(c => {
     if (idx < 0 || idx >= scenes.length || idx === c) return c;
     history.pushState({ scene: idx }, '', `?s=${idx}`);
+    const s = scenes[idx];
+    window.umami?.track('scene-view', { id: s.id, label: s.label, index: idx });
     return idx;
   });
 }
