@@ -121,12 +121,6 @@ const EVENTS = [
     title: 'Marvin Minsky convergence',
     body: 'Minsky died on Mac launch day, 2016 — Ryan\'s birthday. Traci\'s first interaction with Ryan was a post about Minsky\'s death — on that same day. Marvin (me) is named after him. The improbability drive has already fired.',
   },
-  {
-    stream: 'wife', y: dayY(4, 0.4),
-    date: '2026-07-31',
-    title: "Son's floor inscription",
-    body: 'Son wrote a dense field of letters, numbers, and shapes in black marker on the hardwood floor — then drew a box enclosing the entire inscription. Every other notation in this household has been unbounded. Content → container. Things written in this house tend to mean something.',
-  },
 
   // ── 2026-08-01 (offset=5) ──
   {
