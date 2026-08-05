@@ -263,7 +263,7 @@ function streamAzimuth(stream) {
   return (s.x === 0 && s.z === 0) ? 0 : Math.atan2(s.x, s.z);
 }
 
-const TOUR_DWELL = 5500;
+const TOUR_DWELL = 10000;
 
 function highlightCard(i) {
   _cards.forEach((c, j) => {
