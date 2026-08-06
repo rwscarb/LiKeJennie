@@ -1,6 +1,7 @@
-// Scene registry: 15 slide descriptors, in panel order.
+// Scene registry — in panel order.
 import { buildS0  } from './s0.js';
 import { buildS19 } from './s19.js';
+import { buildS21 } from './s21.js';
 import { buildS1  } from './s1.js';
 import { buildS2  } from './s2.js';
 import { buildS3  } from './s3.js';
@@ -39,4 +40,5 @@ export const scenes = [
   { id: 'timeline',         num: '17', label: 'TIMELINE',            build: buildS17 },
   { id: 'jo-burrows',       num: '18', label: 'JO BURROWS',          build: buildS18 },
   { id: '3i-atlas',         num: '19', label: '3I/ATLAS',             build: buildS19 },
+  { id: 'seismic',          num: '20', label: 'P-WAVE DETECT',        build: buildS21 },
 ];

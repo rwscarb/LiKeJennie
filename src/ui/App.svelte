@@ -627,6 +627,22 @@ afterUpdate(() => {
       <button class="btn" id="s17zout">－ ZOOM</button>
       <span class="stat">scroll = step events &nbsp;&middot;&nbsp; drag = orbit &nbsp;&middot;&nbsp; ＋/－ = zoom</span>
     </div>
+    <div class="cset" class:on={active === 17}>
+      <span class="stat">drag to orbit</span>
+    </div>
+    <div class="cset" class:on={active === 18}>
+      <span class="stat">drag to orbit</span>
+    </div>
+    <div class="cset" class:on={active === 19}>
+      <button class="btn" id="s21pause">⏸ PAUSE</button>
+      <button class="btn" id="s21slow">◀ SLOW</button>
+      <button class="btn" id="s21normal">▶ NORMAL</button>
+      <button class="btn lit" id="s21fast">▶▶ FAST</button>
+      <button class="btn" id="s21reset">↺ RESET</button>
+      <button class="btn" id="s21noise">σ 0.0</button>
+      <button class="btn" id="s21sound">🔊 SND</button>
+      <span class="stat">drag to orbit &nbsp;&middot;&nbsp; P-wave early detection · 1s window · &gt;8s S-wave warning</span>
+    </div>
   </div>
 </div>
 
