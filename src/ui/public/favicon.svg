@@ -1,9 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <!--
-    Orbit traversal: 1→2→4→8→7→5→1 as a closed polygon.
-    Nodes placed at their value position on a 9-point clock (value/9 × 360°).
-    V1=40° V2=80° V4=160° V5=200° V7=280° V8=320°
-    The 4→8 and 5→1 segments cross the center — creates a pinwheel, not a hexagram.
+    Two crossing orbit segments (4→8, 5→1) — the corpus callosum crossing.
+    Nodes at value-angle positions on a 9-point clock, r=10.
+    Crossing point lands near (16, 19.5); center dot marks 9 (fixed point).
   -->
   <defs>
     <radialGradient id="bg" cx="42%" cy="38%" r="72%">
@@ -14,23 +13,26 @@
 
   <rect width="32" height="32" rx="4" fill="url(#bg)"/>
 
-  <!-- Orbit traversal path: 1(22.8,8)→2(26.3,14.2)→4(19.6,25.9)→8(9.2,8)→7(5.7,14.2)→5(12.4,25.9)→close -->
-  <polygon
-    points="22.8,8 26.3,14.2 19.6,25.9 9.2,8 5.7,14.2 12.4,25.9"
-    fill="none" stroke="#00cc55" stroke-width="0.65" stroke-linejoin="round" opacity="0.5"/>
+  <!-- Peripheral arcs — orbit connections other than the two crossings (lower opacity) -->
+  <line x1="22.4" y1="8.3"  x2="25.8" y2="14.3" stroke="#00aa44" stroke-width="0.7" opacity="0.35"/>  <!-- 1→2 -->
+  <line x1="25.8" y1="14.3" x2="19.4" y2="25.4"  stroke="#00aa44" stroke-width="0.7" opacity="0.35"/>  <!-- 2→4 -->
+  <line x1="9.6"  y1="8.3"  x2="6.2"  y2="14.3"  stroke="#00aa44" stroke-width="0.7" opacity="0.35"/>  <!-- 8→7 -->
+  <line x1="6.2"  y1="14.3" x2="12.6" y2="25.4"  stroke="#00aa44" stroke-width="0.7" opacity="0.35"/>  <!-- 7→5 -->
 
-  <!-- Orbit nodes {1,2,4,8,7,5} at value-angle positions, r=10.5 -->
-  <circle cx="22.8" cy="8"    r="2.2" fill="#00ff88"/>  <!-- 1 @ 40° -->
-  <circle cx="26.3" cy="14.2" r="2.2" fill="#00ff88"/>  <!-- 2 @ 80° -->
-  <circle cx="19.6" cy="25.9" r="2.2" fill="#00ff88"/>  <!-- 4 @ 160° -->
-  <circle cx="12.4" cy="25.9" r="2.2" fill="#00ff88"/>  <!-- 5 @ 200° -->
-  <circle cx="5.7"  cy="14.2" r="2.2" fill="#00ff88"/>  <!-- 7 @ 280° -->
-  <circle cx="9.2"  cy="8"    r="2.2" fill="#00ff88"/>  <!-- 8 @ 320° -->
+  <!-- Crossing segments (corpus callosum) — full brightness -->
+  <line x1="19.4" y1="25.4" x2="9.6"  y2="8.3"  stroke="#00ff88" stroke-width="0.9"/>  <!-- 4→8 -->
+  <line x1="12.6" y1="25.4" x2="22.4" y2="8.3"  stroke="#00ff88" stroke-width="0.9"/>  <!-- 5→1 -->
 
-  <!-- Complement {3,6} at inner ring r=5, value-angle positions -->
-  <circle cx="20.3" cy="18.5" r="1.4" fill="#ffaa00"/>  <!-- 3 @ 120° -->
-  <circle cx="11.7" cy="18.5" r="1.4" fill="#ffaa00"/>  <!-- 6 @ 240° -->
+  <!-- 4 lobe-end nodes -->
+  <circle cx="22.4" cy="8.3"  r="2.0" fill="#00ff88"/>  <!-- 1 -->
+  <circle cx="19.4" cy="25.4" r="2.0" fill="#00ff88"/>  <!-- 4 -->
+  <circle cx="12.6" cy="25.4" r="2.0" fill="#00ff88"/>  <!-- 5 -->
+  <circle cx="9.6"  cy="8.3"  r="2.0" fill="#00ff88"/>  <!-- 8 -->
+
+  <!-- Side nodes (2, 7) — smaller -->
+  <circle cx="25.8" cy="14.3" r="1.4" fill="#00cc66"/>  <!-- 2 -->
+  <circle cx="6.2"  cy="14.3" r="1.4" fill="#00cc66"/>  <!-- 7 -->
 
   <!-- 9 — fixed point, center -->
-  <circle cx="16" cy="16" r="1.3" fill="#ffffff" opacity="0.82"/>
+  <circle cx="16" cy="16" r="1.3" fill="#ffffff" opacity="0.85"/>
 </svg>
