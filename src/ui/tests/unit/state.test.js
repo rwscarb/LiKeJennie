@@ -17,8 +17,8 @@ describe('goTo', () => {
     expect(get(cur)).toBe(7);
   });
 
-  it('clamps: rejects index >= 19', () => {
-    goTo(19);
+  it('clamps: rejects index >= 20', () => {
+    goTo(20);
     expect(get(cur)).toBe(7);
   });
 
@@ -32,8 +32,8 @@ describe('goTo', () => {
     expect(get(cur)).toBe(0);
   });
 
-  it('navigates to boundary 18', () => {
-    goTo(18);
-    expect(get(cur)).toBe(18);
+  it('navigates to boundary 19', () => {
+    goTo(19);
+    expect(get(cur)).toBe(19);
   });
 });
