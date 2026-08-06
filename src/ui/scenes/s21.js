@@ -167,14 +167,16 @@ export function buildS21() {
 
   // Bar labels — rotY=0, face straight toward camera (+Z direction)
   const FLOOR_Z = ACC_Z - 0.1;
-  mkSign('BASE 87.4%', ACC_CX - 1.3, FLOOR_Y, FLOOR_Z, TILT, 0, '#00e5ff', 12, 100, 38);
-  mkSign('TRI  88.4%', ACC_CX + 1.3, FLOOR_Y, FLOOR_Z, TILT, 0, '#00ff88', 12, 100, 38);
+  mkSign('H+0.0 98.3%', ACC_CX - 1.3, FLOOR_Y, FLOOR_Z, TILT, 0, '#00e5ff', 12, 120, 38);
+  mkSign('H-0.5 98.8%', ACC_CX + 1.3, FLOOR_Y, FLOOR_Z, TILT, 0, '#00ff88', 12, 120, 38);
+  mkSign('AUC (3-seed avg)', ACC_CX, FLOOR_Y - 0.35, FLOOR_Z, TILT, 0, '#446655', 10, 200, 30);
 
   // Floor labels — all rotY=0, TILT lean, at similar z so they read as a cohesive set.
   // SEISMOGRAM right edge ≈ x=3.17; P-WAVE left edge ≈ x=3.5 → 0.33 gap between them.
   mkSign('STREAM ORBIT',     ORBIT_CX, FLOOR_Y, 1.2,   TILT, 0, '#ffe600', 15, 256, 50);
   mkSign('SEISMOGRAM',       0.5,      FLOOR_Y, -0.5,  TILT, 0, '#33cc66', 15, 256, 50);
-  mkSign('P-WAVE DETECTION', 6.0,      FLOOR_Y, -0.5,  TILT, 0, '#00ff88', 14, 240, 46);
+  mkSign('PRE-P DETECTION', 6.0,      FLOOR_Y, -0.5,  TILT, 0, '#00ff88', 14, 240, 46);
+  mkSign('H-0.5s beats baseline', 6.0, FLOOR_Y - 0.35, -0.5, TILT, 0, '#336644', 10, 256, 30);
 
   // ── Waveform canvas plane ────────────────────────────────────────────────────
   const WV_CW = 1024, WV_CH = 256;
@@ -332,8 +334,8 @@ export function buildS21() {
       wnCtx.fillStyle = 'rgba(0,15,0,0.75)'; wnCtx.fillRect(2, 2, W-4, H-4);
       wnCtx.strokeStyle = '#162816'; wnCtx.lineWidth = 1; wnCtx.strokeRect(2, 2, W-4, H-4);
       wnCtx.fillStyle = '#1a4a1a'; wnCtx.font = '11px monospace'; wnCtx.textAlign = 'center';
-      wnCtx.fillText('AWAITING', W/2, 70);
-      wnCtx.fillText('P-ARRIVAL', W/2, 88);
+      wnCtx.fillText('MONITORING', W/2, 70);
+      wnCtx.fillText('PRE-P SIGNAL', W/2, 88);
     } else if (ph >= TS) {
       wnCtx.fillStyle = 'rgba(30,8,0,0.9)'; wnCtx.fillRect(2, 2, W-4, H-4);
       wnCtx.strokeStyle = '#ff980055'; wnCtx.lineWidth = 2; wnCtx.strokeRect(2, 2, W-4, H-4);
@@ -356,7 +358,7 @@ export function buildS21() {
   }
 
   // ── Accuracy bars ─────────────────────────────────────────────────────────────
-  const ACC_VALS   = [0.874, 0.884];
+  const ACC_VALS   = [0.983, 0.988];  // v2: H+0.0s AUC=0.983, H-0.5s AUC=0.988 (3-seed avg)
   const ACC_COLORS = [CC, CG];
   const accMeshes  = [], accMats = [];
 
@@ -791,6 +793,8 @@ export function buildS21() {
   let pSoundPlayed = false;   // one-shot audio flags per loop
   let sSoundPlayed = false;
   let shakeStart = -1;        // Date.now() when S-wave shake begins; -1 = inactive
+  let preShakePos = null;     // camera position saved before shake
+  let preShakeTarget = null;  // controls target saved before shake
 
   // ── Animation ─────────────────────────────────────────────────────────────────
   R.animFn = () => {
@@ -820,6 +824,8 @@ export function buildS21() {
     if (!sSoundPlayed && ph >= TS && ph < TS + 0.4) {
       sSoundPlayed = true;
       playSWave();
+      preShakePos    = camera.position.clone();
+      preShakeTarget = controls.target.clone();
       shakeStart = Date.now();
     }
 
@@ -919,12 +925,13 @@ export function buildS21() {
         const amp = 0.22 * env;
         const t = Date.now() * 0.001;
         camera.position.set(
-          0    + amp * Math.sin(t * 31.7 + 1.1),
-          4.6  + amp * Math.sin(t * 27.3 + 2.5),
-          10.8 + amp * Math.sin(t * 23.1 + 0.7),
+          preShakePos.x + amp * Math.sin(t * 31.7 + 1.1),
+          preShakePos.y + amp * Math.sin(t * 27.3 + 2.5),
+          preShakePos.z + amp * Math.sin(t * 23.1 + 0.7),
         );
       } else {
-        camera.position.set(0, 4.6, 10.8);
+        camera.position.copy(preShakePos);
+        controls.target.copy(preShakeTarget);
         shakeStart = -1;
       }
     }
