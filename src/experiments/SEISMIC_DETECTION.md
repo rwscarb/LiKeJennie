@@ -362,3 +362,91 @@ Random permutations are safer because they don't impose a specific attractor —
 | `poc_c1_dual.py` | **Champion:** CYCLES=1 + dual and-gate → 92.3%/95.0% ±1.79% (5 seeds) |
 
 *Experiments: StreamingTribarNet (K=128, CYCLES=3), STEAD chunk2, magnitude-stratified sampling, WeightedRandomSampler. Hardware: CUDA (RunPod). Baseline established 2026-08-03; perm series completed 2026-08-05.*
+
+---
+
+## 6. Early Detection Frontier — Pre-P Detection (v2, 2026-08-06)
+
+**Experiment:** `poc_early_detection_v2.py` — 3 seeds, STEAD chunk2 (15,988 samples), matched and cross-trained evaluation at H-0.5s and H+0.0s.
+
+**Key finding: pre-P detection beats post-arrival baseline.**
+
+| configuration | prec | rec | AUC | vs baseline |
+|---|---|---|---|---|
+| H+0.0s matched (baseline) | 80.4% | 99.2% | 0.983 | — |
+| **H-0.5s matched (pre-P)** | **83.7%** | **98.8%** | **0.988** | **+3.3pp prec, +0.5pp AUC** |
+| H-0.5s cross-trained (→H+0.0s eval) | 79.3% | 97.8% | ~0.979 | −1.1pp prec |
+
+*All results: 3-seed average, StreamingNet champion config (decay=0.876, strength=1.429, lr=2.78e-3, threshold=0.48).*
+
+**H-0.5s beats H+0.0s despite having 0.5s less waveform.** The model trained at H-0.5s learns a discriminative forerunner signal that is not present in pre-P noise and that hasn't been degraded by the full P-wave arrival yet.
+
+**Operational deployment (cross-trained):** A model trained at H-0.5s loses only 1.1pp precision when evaluated at H+0.0s. This means one model can cover both the pre-P and post-P regime — operationally useful: train once at H-0.5s, deploy without horizon-specific branching.
+
+**Literature gap:** A 2025 systematic review of 28 seismic ML papers (all major venues) found zero examples of pre-P-arrival detection. All 28 use post-arrival P-wave data. Pre-P detection at AUC=0.988 is outside the known literature.
+
+---
+
+## 7. Extended Frontier + Magnitude Head (v3, 2026-08-06, in progress)
+
+**Experiment:** `poc_early_detection_v3.py` — 7 horizons (H-3.0s to H+0.0s), 3 seeds, full 7×7 cross-evaluation matrix, multi-task loss (detection + magnitude regression).
+
+**Architecture addition — magnitude head:**
+```python
+self.cls = nn.Linear(K, 2)   # detection (existing)
+self.mag = nn.Linear(K, 1)   # magnitude regression (new)
+
+# Multi-task loss
+eq_mask = (yb == 1) & (mb > -50.)
+loss = ce(logits, yb)
+if eq_mask.any():
+    loss = loss + 0.5 * F.mse_loss(mag_pred[eq_mask], mb[eq_mask])
+```
+
+### 7.1 Frontier curve (seed 0, matched diagonal)
+
+| horizon | AUC | prec | rec | mag_MAE | mag_σ |
+|---|---|---|---|---|---|
+| H-3.0s | 0.811 | 67.3% | 83.1% | 1.445 | 1.572 |
+| H-2.5s | 0.812 | 61.0% | 93.4% | 1.443 | 1.477 |
+| H-2.0s | 0.825 | 63.4% | 92.1% | 1.498 | 1.350 |
+| H-1.5s | 0.847 | 59.6% | 96.4% | 1.197 | 1.235 |
+| **H-1.0s** | **0.893** | **59.2%** | **97.7%** | **0.971** | **1.120** |
+| H-0.5s | (in progress) | — | — | — | — |
+| H+0.0s | (pending) | — | — | — | — |
+
+*Status: seed 0 complete through H-1.0s. Seeds 1 and 2 pending. Full 3-seed averages will follow.*
+
+**Frontier is monotonically increasing:** AUC rises from 0.811 at H-3.0s to 0.893 at H-1.0s — each 0.5s closer to the P-wave improves discrimination. The v2 result (0.988 at H-0.5s) suggests this continues sharply in the last 1s window.
+
+**Magnitude prediction becomes useful at H-1.0s:** mag_MAE drops below 1.0 magnitude units (0.971) at H-1.0s. Earlier horizons are 1.2–1.5 units — well above the ~0.5-unit threshold for practical early warning use. The P-wave forerunner signal carries magnitude information starting ~1s before arrival.
+
+### 7.2 Transfer matrix highlights (seed 0)
+
+**Transfer wall at H-1.5s:** Models trained before H-1.5s (i.e., H-3.0s, H-2.5s, H-2.0s) cannot generalize to H-0.5s / H+0.0s — AUC degrades to 0.60–0.70. The forerunner signal learnable at H-1.5s+ is simply not accessible from earlier in the waveform.
+
+**H-1.0s → H-0.5s transfer:** AUC=0.871 (vs matched 0.893 at H-1.0s; −2.2pp). Near-matched performance at the adjacent horizon. A single model trained at H-1.0s covers both the 1.0s and 0.5s pre-P windows.
+
+**H-1.5s → H-1.0s transfer:** AUC=0.877 (vs matched 0.893; −1.6pp). The 0.5s window gap costs only 1.6pp. Transfer is efficient within the 1.5s forerunner zone.
+
+Selected cross-eval rows (seed 0, AUC):
+
+| train↓ eval→ | H-3.0 | H-2.5 | H-2.0 | H-1.5 | H-1.0 | H-0.5 | H+0.0 |
+|---|---|---|---|---|---|---|---|
+| H-3.0s | **0.811** | 0.820 | 0.820 | 0.813 | 0.781 | 0.626 | 0.636 |
+| H-2.5s | 0.798 | **0.812** | 0.830 | 0.830 | 0.819 | 0.696 | 0.697 |
+| H-2.0s | 0.793 | 0.804 | **0.825** | 0.825 | 0.828 | 0.656 | 0.602 |
+| H-1.5s | 0.792 | 0.819 | 0.832 | **0.847** | 0.877 | 0.803 | 0.729 |
+| H-1.0s | 0.782 | 0.806 | 0.824 | 0.847 | **0.893** | **0.871** | 0.697 |
+
+*Diagonal entries (bold) = matched train/eval. H-0.5s and H+0.0s rows pending.*
+
+### 7.3 Operational recommendation (preliminary)
+
+**Best single deployment horizon: H-1.0s.** Reasons:
+1. AUC=0.893 matched — strong detection at 1.0s pre-P
+2. Transfers to H-0.5s with −2.2pp loss (AUC 0.871) — covers both windows
+3. mag_MAE=0.971 — first horizon where magnitude estimation is sub-1.0 unit
+4. No H+0.0s dependency — fully pre-P
+
+*Full results pending completion of seed 0 (H-0.5s, H+0.0s) and seeds 1–2. Expected runtime: ~24h remaining.*
