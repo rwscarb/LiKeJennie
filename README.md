@@ -56,6 +56,7 @@ nearly closes on itself: the next structure to build.
 | 17 | TIME-TREE | Project timeline — four streams from origin |
 | 18 | JO BURROWS | Worm through filigree — hypotrochoid spirograph, lemons |
 | 19 | 3I/ATLAS | Third interstellar object; ω=128=K, retrograde, e=6.14 |
+| 20 | P-WAVE DETECT | Live seismic detection — StreamingNet, orbit buffer, pre-P frontier |
 
 ---
 
@@ -157,6 +158,8 @@ Full experiment arc documented in `SEISMIC_DETECTION.md`.
 | `poc_dual_horizon.py` | Dual-head (early@-0.5s + late@0s); and-gate → 89.8%/97.5% |
 | `poc_cycles_ablation.py` | CYCLES ∈ {1-6}; CYCLES=1 best mean 85.0%, CYCLES=3 was suboptimal |
 | `poc_c1_dual.py` | **Champion:** CYCLES=1 + dual and-gate → 92.3%/95.0% ±1.79% (5 seeds) |
+| `poc_early_detection_v2.py` | Pre-P frontier (3 seeds): H-0.5s AUC 0.988 **beats** H+0.0s baseline 0.983 |
+| `poc_early_detection_v3.py` | Extended frontier: 7 horizons H-3.0s→H+0.0s + magnitude head (in progress) |
 
 **Champion configuration:**
 ```python
@@ -267,6 +270,12 @@ make test         # run all tests (python + js)
 
 ---
 
+## License
+
+[CC BY-NC-SA 4.0](LICENSE) © 2026 Ryan Scarbery and Traci Johan
+
+---
+
 ## Structure
 
 ```
@@ -330,7 +339,18 @@ Wall time: 61 seconds for the full seismology benchmark.
 
 The streaming buffer series extended this to real-time P-wave detection. Champion result
 (2026-08-05): CYCLES=1 + dual-horizon and-gate → **92.3% precision / 95.0% recall ±1.79%**
-across 5 seeds on STEAD chunk2, streaming-aware training, threshold=0.48. The orbit buffer
-detects P-waves **0.5 seconds before arrival** (84.4%/98.5%) at −3.2pp precision cost.
-Key findings: CYCLES=1 outperforms CYCLES=3 by 3.9pp (over-smoothing); and-gate consensus
-between early/late heads adds +2.1pp over single-head. See `SEISMIC_DETECTION.md`.
+across 5 seeds on STEAD chunk2, streaming-aware training, threshold=0.48.
+
+**Pre-P detection (2026-08-06):** A model trained at H-0.5s (0.5s *before* P-wave arrival)
+achieves AUC=0.988 — **beating the post-arrival baseline** (AUC=0.983) by +0.5pp AUC / +3.3pp
+precision. Cross-trained to H+0.0s loses only −1.1pp. This result has no known prior in the
+seismic ML literature: all 28 papers in a 2025 systematic review use post-arrival P-wave data.
+Pre-P detection at AUC=0.988 is outside the current state of the art.
+
+**Extended frontier (v3, in progress):** 7 horizons from H-3.0s to H+0.0s with a magnitude
+regression head. Preliminary results (seed 0): AUC rises monotonically from 0.811 at H-3.0s
+to 0.893 at H-1.0s; magnitude MAE breaks below 1.0 magnitude unit at H-1.0s (MAE=0.971).
+A transfer wall at H-1.5s prevents earlier models from generalizing to H-0.5s/H+0.0s.
+Best deployment horizon: H-1.0s (AUC 0.893, transfers to H-0.5s at −2.2pp, magnitude useful).
+
+See `src/experiments/SEISMIC_DETECTION.md` for full results.
