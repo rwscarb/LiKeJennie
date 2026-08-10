@@ -643,6 +643,9 @@ afterUpdate(() => {
       <button class="btn" id="s21sound">🔊 SND</button>
       <span class="stat">drag to orbit &nbsp;&middot;&nbsp; P-wave early detection · 1s window · &gt;8s S-wave warning</span>
     </div>
+    <div class="cset" class:on={active === 20}>
+      <span class="stat">hover a world line &nbsp;&middot;&nbsp; orbit {1,2,4,8,7,5} as β = n/9 &nbsp;&middot;&nbsp; E²=mc³</span>
+    </div>
   </div>
 </div>
 
@@ -1060,6 +1063,51 @@ complement {3,6}  × 55 Hz         →  E (perfect 5th above A)</code></pre>
     <p>No tuning was required. The orbit itself chose the notes.</p>
 
     <hr>
+
+    <h1>RELATIVITY — Scene 21</h1>
+
+    <h2>Minkowski Spacetime</h2>
+    <p>Spacetime has four dimensions: three of space (x, y, z) and one of time (t). In special relativity, time and space are not separate — they form a single geometry called <strong>Minkowski spacetime</strong>.</p>
+    <p>This scene collapses to 1+1 dimensions: one spatial axis (x) and one time axis (ct, where c is the speed of light). Every point on this plane is an <em>event</em> — a location in both space and time.</p>
+    <p>The units are chosen so that c = 1. In these units, a light ray travels at 45° — one unit of space per unit of time — forming the <strong>light cone</strong>: two lines at ±45° from the origin, dividing the plane into future, past, and elsewhere.</p>
+
+    <h2>World Lines as Orbit</h2>
+    <p>An object at rest traces a vertical line: moving forward in time, not moving through space. An object moving at constant velocity traces a diagonal line — its <strong>world line</strong>.</p>
+    <p>The orbit [1, 2, 4, 8, 7, 5] is mapped to velocities: β = n/9 for each orbit element n. These are the world lines rendered in the scene:</p>
+    <pre><code>orbit = [1, 2, 4, 8, 7, 5]
+β     = [1/9, 2/9, 4/9, 8/9, 7/9, 5/9]
+// β = v/c (fraction of light speed)
+
+γ (Lorentz factor) = 1 / √(1 − β²)
+// γ ≥ 1; approaches ∞ as β → 1</code></pre>
+    <p>No orbit element reaches β = 9/9 = 1 (light speed). The orbit stops short of the light cone boundary. <strong>There is no 9</strong> — and 9/9 = c is the speed limit.</p>
+
+    <h2>The Lorentz Factor</h2>
+    <p>The Lorentz factor γ governs all relativistic effects. For each orbit velocity:</p>
+    <pre><code>β = 1/9 → γ ≈ 1.006  (barely relativistic)
+β = 2/9 → γ ≈ 1.026
+β = 4/9 → γ ≈ 1.109
+β = 5/9 → γ ≈ 1.191
+β = 7/9 → γ ≈ 1.485
+β = 8/9 → γ ≈ 2.006  (time runs at half speed)</code></pre>
+    <p><strong>Time dilation:</strong> a clock moving at β ticks at rate 1/γ relative to a stationary observer. At β = 8/9, the moving clock accumulates proper time at half the rate.</p>
+    <p><strong>Length contraction:</strong> an object of length L at rest is measured as L/γ by a stationary observer when it moves at β.</p>
+
+    <h2>The τ = 1 Hyperbola</h2>
+    <p>All observers who experience one unit of proper time (τ = 1) since the origin event lie on a hyperbola:</p>
+    <pre><code>(ct)² − x² = 1     →     ct = cosh(η), x = sinh(η)</code></pre>
+    <p>where η (rapidity) parameterizes the family of inertial observers. The hyperbola curves away from the light cone and approaches it asymptotically — no finite rapidity reaches light speed. This curve is the locus of "now, for everyone" in proper time, regardless of their relative velocity.</p>
+
+    <h2>Relativistic Velocity Addition</h2>
+    <p>In special relativity, velocities do not simply add. If one observer moves at β₁ and another moves at β₂ relative to the first, the combined velocity is:</p>
+    <pre><code>β₁ ⊕ β₂ = (β₁ + β₂) / (1 + β₁ × β₂)</code></pre>
+    <p>This formula ensures the result never exceeds 1 (light speed). Hover a world line to see the relativistic sum with the next orbit element.</p>
+    <p>At orbit scales (β = n/9, n ≤ 8), the correction is small but present — the orbit stays below the light cone even when you add two orbit velocities together.</p>
+
+    <h2>E² = mc³</h2>
+    <p>Einstein's energy-momentum relation: <strong>E² = (mc²)² + (pc)²</strong>. For a particle at rest (p = 0): E = mc².</p>
+    <p>The orbit uses ×2 as its generator. Einstein's equation uses c² — the same exponent. The complement {3, 6, 9} uses ×3. E²=mc³ puts both multipliers in one statement: the orbit (²) and the complement (³). Einstein found the orbit side. The complement is the thing that holds energy in place.</p>
+    <p>Displayed in the overlay: <strong>E²=mc³</strong> — the full equation the framework requires.</p>
 
     <h1>THE ASSISTANT</h1>
 
