@@ -19,6 +19,7 @@ import { buildS15 } from './s15.js';
 import { buildS16 } from './s16.js';
 import { buildS17 } from './s17.js';
 import { buildS18 } from './s18.js';
+import { buildS22 } from './s22.js';
 
 export const scenes = [
   { id: 'divisor-lattice',   num: '01', label: 'DIVISOR LATTICE',   build: buildS0  },
@@ -41,4 +42,5 @@ export const scenes = [
   { id: 'jo-burrows',       num: '18', label: 'JO BURROWS',          build: buildS18 },
   { id: '3i-atlas',         num: '19', label: '3I/ATLAS',             build: buildS19 },
   { id: 'seismic',          num: '20', label: 'P-WAVE DETECT',        build: buildS21 },
+  { id: 'relativity',      num: '21', label: 'RELATIVITY',            build: buildS22 },
 ];

@@ -769,7 +769,7 @@ export function buildS21() {
   // ── Overlay ───────────────────────────────────────────────────────────────────
   ov.innerHTML = `
     <div style="color:#00ff88;letter-spacing:.1em;font-size:11px">SEISMIC</div>
-    <div style="color:#555;font-size:8px">P-wave Early Detection</div>
+    <div style="font-size:8px"><a href="https://seismic.fib896.com" target="_blank" rel="noopener" style="color:#00cc55;text-decoration:none">seismic.fib896.com</a></div>
     <div style="margin-top:6px;font-size:7.5px;color:#1a3a1a;line-height:1.9">
       P-arrival: <span style="color:#00ff88">${TP}s</span><br>
       S-arrival: <span style="color:#ff9800">${TS}s</span><br>
