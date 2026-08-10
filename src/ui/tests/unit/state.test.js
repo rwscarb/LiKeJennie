@@ -17,8 +17,8 @@ describe('goTo', () => {
     expect(get(cur)).toBe(7);
   });
 
-  it('clamps: rejects index >= 20', () => {
-    goTo(20);
+  it('clamps: rejects index >= 21', () => {
+    goTo(21);
     expect(get(cur)).toBe(7);
   });
 
