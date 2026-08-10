@@ -165,12 +165,14 @@ export function buildS18() {
     for (let _s = 0; _s < stepsThisFrame && stepIdx < pts.length; _s++) {
       visitedThisPass.push(stepIdx);
 
-      // Eat lemon?
+      // Eat lemon — one per frame: stop advancing after the first bite
       if (lemons.has(stepIdx)) {
         scene.remove(lemons.get(stepIdx));
         lemons.delete(stepIdx);
         flashT = 18;
         spawnLemon(pts, stepIdx);
+        stepIdx++;
+        break;
       }
 
       stepIdx++;
