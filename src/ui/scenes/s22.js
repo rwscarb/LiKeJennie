@@ -61,6 +61,7 @@ function sampleY(meas) {
 // ── Mode state (module-level so exports can access it) ────────────────────────
 let _mode      = 'spacetime';
 let _measuring = false;
+let _dsSpeed   = 1.0;    // DS animation speed multiplier; [ = slower, ] = faster
 let _dsState   = null;   // set by buildS22; referenced by exports
 
 export function setS22Mode(mode) {
@@ -113,6 +114,7 @@ export function toggleS22Measure() {
 export function buildS22() {
   _mode      = 'spacetime';
   _measuring = false;
+  _dsSpeed   = 1.0;
   _dsState   = null;
 
   const canvas = R.canvas, ov = R.ov;
@@ -334,6 +336,19 @@ export function buildS22() {
     if (R.cur !== 20) return;
     htip();
     wlMats.forEach(m => { m.opacity = 0.65; });
+  });
+
+  // [ / ] speed controls for DS mode
+  document.addEventListener('keydown', (e) => {
+    if (R.cur !== 20 || _mode !== 'dslits') return;
+    if (e.key === '[') {
+      _dsSpeed = Math.max(0.2, _dsSpeed / 1.35);
+    } else if (e.key === ']') {
+      _dsSpeed = Math.min(8.0, _dsSpeed * 1.35);
+    } else {
+      return;
+    }
+    e.preventDefault();
   });
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -618,12 +633,13 @@ export function buildS22() {
     }
 
     // ── Double-slit ────────────────────────────────────────────────────────────
+    const dsdt = dt * _dsSpeed;
 
     // Source pulse glow
     srcMat.emissiveIntensity = 2.5 + 1.5 * ((Math.sin(stElapsed * 5) + 1) / 2);
 
     // Spawn primary wave
-    if (stElapsed - lastWaveT > WAVE_PERIOD) {
+    if (stElapsed - lastWaveT > WAVE_PERIOD / _dsSpeed) {
       lastWaveT = stElapsed;
       spawnWave(DS_SRC_X, 0, DS_BAR_X - DS_SRC_X, 'primary');
     }
@@ -631,7 +647,7 @@ export function buildS22() {
     // Update all active waves
     wavePool.forEach(w => {
       if (!w.line.visible) return;
-      w.r += WAVE_SPEED * dt;
+      w.r += WAVE_SPEED * dsdt;
 
       if (w.type === 'primary' && w.r >= w.maxR) {
         w.line.visible = false;
@@ -655,7 +671,7 @@ export function buildS22() {
     });
 
     // Spawn particle
-    if (stElapsed - lastPartT > PART_PERIOD) {
+    if (stElapsed - lastPartT > PART_PERIOD / _dsSpeed) {
       lastPartT = stElapsed;
       spawnParticle();
     }
@@ -665,7 +681,7 @@ export function buildS22() {
     const tBarFrac = (DS_BAR_X - DS_SRC_X) / totalD;   // fraction at barrier
     partPool.forEach(p => {
       if (!p.active) return;
-      p.t += dt / PART_DUR;
+      p.t += dsdt / PART_DUR;
       if (p.t >= 1) {
         // Land: add dot
         addDot(p.targetY);
@@ -684,11 +700,12 @@ export function buildS22() {
     });
 
     if (R.clkDisplay) {
-      const measStr = _measuring ? ' · measuring' : ' · wave';
+      const measStr  = _measuring ? ' · measuring' : ' · wave';
+      const speedStr = _dsSpeed === 1.0 ? '' : ` · ${_dsSpeed.toFixed(1)}×`;
       R.clkDisplay.innerHTML =
         `<div style="color:#00ff88;letter-spacing:.1em">21 · DOUBLE SLIT</div>` +
         `<div style="color:#1a4a2a;margin-top:3px;font-size:8px">` +
-        `dots: ${dotCount}${measStr}</div>`;
+        `dots: ${dotCount}${measStr}${speedStr}</div>`;
     }
   };
 }
