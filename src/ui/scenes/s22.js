@@ -68,6 +68,9 @@ export function setS22Mode(mode) {
   _mode = mode;
   _dsState.stGroup.visible = (mode === 'spacetime');
   _dsState.dsGroup.visible = (mode === 'dslits');
+  // CSS2DRenderer doesn't always respect group.visible — toggle DOM elements directly
+  _dsState.stLbls.forEach(el => { el.style.display = mode === 'spacetime' ? '' : 'none'; });
+  _dsState.dsLbls.forEach(el => { el.style.display = mode === 'dslits'    ? '' : 'none'; });
   const { camera, controls } = _dsState;
   if (mode === 'dslits') {
     camera.position.set(0, 0, 16);
@@ -129,6 +132,8 @@ export function buildS22() {
   // ═══════════════════════════════════════════════════════════════════════════
   const stGroup = new THREE.Group();
   scene.add(stGroup);
+  const stLbls = [];   // DOM elements of spacetime CSS2D objects (for explicit visibility toggle)
+  const dsLbls = [];   // DOM elements of DS CSS2D objects
 
   // ct / x axes
   const axLine = (a, b, color, opacity = 0.16) => {
@@ -211,6 +216,7 @@ export function buildS22() {
     nlbl.position.set(topX, H + 0.55, 0);
     stGroup.add(nlbl);
     R.css2dObjects.push(nlbl);
+    stLbls.push(ndiv);
 
     const bdiv = document.createElement('div');
     bdiv.className = 'node-lbl';
@@ -220,6 +226,7 @@ export function buildS22() {
     blbl.position.set(topX, H + 0.20, 0);
     stGroup.add(blbl);
     R.css2dObjects.push(blbl);
+    stLbls.push(bdiv);
   });
 
   // τ = 1 proper-time hyperbola
@@ -247,6 +254,7 @@ export function buildS22() {
     tlbl.position.set(-0.25, SCALE + 0.18, 0);
     stGroup.add(tlbl);
     R.css2dObjects.push(tlbl);
+    stLbls.push(tdiv);
   }
 
   // γ marker dots where each world line pierces the τ = 1 hyperbola
@@ -273,6 +281,7 @@ export function buildS22() {
     o.position.copy(pos);
     stGroup.add(o);
     R.css2dObjects.push(o);
+    stLbls.push(div);
   };
   axLbl('ct', new THREE.Vector3(0.3,  H + 0.7, 0), '#ffffff66', '10px');
   axLbl('x',  new THREE.Vector3(H + 0.7, 0.3,  0), '#ffffff66', '10px');
@@ -517,12 +526,13 @@ export function buildS22() {
   const mkDSLbl = (txt, pos) => {
     const div = document.createElement('div');
     div.className = 'node-lbl';
-    div.style.cssText = 'font-size:8px;color:#33558888';
+    div.style.cssText = 'font-size:9px;color:#6699cc;letter-spacing:.05em';
     div.textContent = txt;
     const o = new CSS2DObject(div);
     o.position.copy(pos);
     dsGroup.add(o);
     R.css2dObjects.push(o);
+    dsLbls.push(div);
   };
   mkDSLbl('source',   new THREE.Vector3(DS_SRC_X,  DS_BH + 0.45, 0));
   mkDSLbl('barrier',  new THREE.Vector3(DS_BAR_X,  DS_BH + 0.45, 0));
@@ -533,13 +543,13 @@ export function buildS22() {
     if (_mode === 'dslits') {
       ov.innerHTML = `
         <div style="color:#00ff88;letter-spacing:.1em;font-size:11px">DOUBLE SLIT</div>
-        <div style="font-size:8px;color:#226644;margin-top:2px">instrument-dependent visibility</div>
-        <div style="margin-top:7px;font-size:7.5px;color:#1a3a1a;line-height:1.9">
+        <div style="font-size:8px;color:#44bb88;margin-top:2px">instrument-dependent visibility</div>
+        <div style="margin-top:7px;font-size:8px;color:#88ccaa;line-height:1.9">
           ${_measuring
-            ? '<span style="color:#4488ff">MEASURING ✓</span><br>which-path known<br>wave → particle<br>2 bands = classical'
+            ? '<span style="color:#66aaff">MEASURING ✓</span><br>which-path known<br>wave → particle<br>2 bands = classical'
             : '<span style="color:#00ff88">WAVE MODE</span><br>which-path unknown<br>fringes = interference<br>orbit still visible'}
         </div>
-        <div style="margin-top:6px;font-size:7px;color:#1a2a1a;line-height:1.8">
+        <div style="margin-top:6px;font-size:7.5px;color:#558877;line-height:1.8">
           I(y) ∝ cos²(πDy/λL)<br>
           dots: ${dotCount} / ${DOT_MAX}<br>
           the instrument selects
@@ -547,13 +557,13 @@ export function buildS22() {
     } else {
       ov.innerHTML = `
         <div style="color:#ffcc44;letter-spacing:.1em;font-size:11px">RELATIVITY</div>
-        <div style="font-size:9px;color:#88661a;margin-top:2px;letter-spacing:.05em">E² = mc³</div>
-        <div style="margin-top:7px;font-size:7.5px;color:#4a3a10;line-height:1.9">
+        <div style="font-size:9px;color:#cc9933;margin-top:2px;letter-spacing:.05em">E² = mc³</div>
+        <div style="margin-top:7px;font-size:8px;color:#aa8844;line-height:1.9">
           ${ORBIT.map((n, i) =>
             `<span style="color:${CSTR[i]}">${n}/9c</span> γ=${GAMMA[i].toFixed(3)}`
           ).join('<br>')}
         </div>
-        <div style="margin-top:6px;font-size:7px;color:#3a3020;line-height:1.8">
+        <div style="margin-top:6px;font-size:7.5px;color:#775533;line-height:1.8">
           γ = 1/√(1−β²)<br>
           τ=1 hyperbola dashed<br>
           hover → Lorentz ⊕
@@ -563,7 +573,7 @@ export function buildS22() {
 
   // ── Store state for exports ───────────────────────────────────────────────────
   _dsState = {
-    stGroup, dsGroup, camera, controls,
+    stGroup, dsGroup, camera, controls, stLbls, dsLbls,
     resetDots, resetWaves, resetParticles, updateScreenTex, updateOverlay,
   };
 
