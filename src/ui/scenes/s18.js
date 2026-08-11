@@ -140,8 +140,8 @@ export function buildS18() {
   const visitedThisPass = [];
 
   resetDimLine(pts.length);
-  // Seed a few lemons
-  for (let i = 0; i < 6; i++) spawnLemon(pts, Math.floor((pts.length / 6) * i));
+  // Seed a single lemon ahead of the worm
+  spawnLemon(pts, Math.floor(pts.length / 6));
 
   const hintStyle = 'color:#8a6020;font-size:.95em;line-height:1.7';
   function updateLabel() {
@@ -212,7 +212,7 @@ export function buildS18() {
       resetDimLine(pts.length);
 
       lemons.forEach(m => scene.remove(m)); lemons.clear();
-      for (let i = 0; i < 6; i++) spawnLemon(pts, Math.floor((pts.length / 6) * i));
+      spawnLemon(pts, Math.floor(pts.length / 6));
       updateLabel();
     }
 
