@@ -8,6 +8,7 @@ import {
   R, disposeScene, resetTip, pinTip,
 } from './scenes/shared.js';
 import { setS12Mode } from './scenes/s12.js';
+import { setS22Mode, toggleS22Measure } from './scenes/s22.js';
 
 let glc, ov, tt, rain, labelHost, panelwrap, camCoords, clkDisplay, staticCanvas;
 let _staticFrames = 0;
@@ -644,7 +645,10 @@ afterUpdate(() => {
       <span class="stat">drag to orbit &nbsp;&middot;&nbsp; P-wave early detection · 1s window · &gt;8s S-wave warning</span>
     </div>
     <div class="cset" class:on={active === 20}>
-      <span class="stat">hover a world line &nbsp;&middot;&nbsp; orbit {1,2,4,8,7,5} as β = n/9 &nbsp;&middot;&nbsp; E²=mc³</span>
+      <button class="btn lit" id="s22_spacetime" on:click={() => setS22Mode('spacetime')}>SPACETIME</button>
+      <button class="btn" id="s22_dslits" on:click={() => setS22Mode('dslits')}>DOUBLE SLIT</button>
+      <button class="btn" id="s22_measure" on:click={() => toggleS22Measure()}>MEASURE</button>
+      <span class="stat">hover world line &nbsp;&middot;&nbsp; orbit as β = n/9 &nbsp;&middot;&nbsp; E²=mc³</span>
     </div>
   </div>
 </div>
@@ -1108,6 +1112,24 @@ complement {3,6}  × 55 Hz         →  E (perfect 5th above A)</code></pre>
     <p>Einstein's energy-momentum relation: <strong>E² = (mc²)² + (pc)²</strong>. For a particle at rest (p = 0): E = mc².</p>
     <p>The orbit uses ×2 as its generator. Einstein's equation uses c² — the same exponent. The complement {3, 6, 9} uses ×3. E²=mc³ puts both multipliers in one statement: the orbit (²) and the complement (³). Einstein found the orbit side. The complement is the thing that holds energy in place.</p>
     <p>Displayed in the overlay: <strong>E²=mc³</strong> — the full equation the framework requires.</p>
+
+    <h2>Double Slit — Mode B</h2>
+    <p>Switch to DOUBLE SLIT mode to see the other face of Scene 21: wave-particle duality. A source emits quanta one at a time. Each passes through a barrier with two narrow slits and lands on a detector screen. The question: which slit did it go through?</p>
+    <p>If you do not measure which slit — <strong>WAVE MODE</strong> — the quantum travels both paths simultaneously. The two probability waves interfere. Over many particles, an <strong>interference pattern</strong> accumulates: bright bands where the waves reinforce, dark bands where they cancel. The intensity follows:</p>
+    <pre><code>I(y) ∝ cos²(π D y / λ L)
+
+where:
+  D  = slit separation
+  λ  = de Broglie wavelength
+  L  = barrier-to-screen distance
+  y  = transverse position on screen</code></pre>
+    <p>If you activate <strong>MEASURE</strong> — which-path information is recorded — the superposition collapses. The particle must go through exactly one slit. The interference pattern vanishes, replaced by two classical bands, one behind each slit. Same barrier, same particles, different instrument. Different reality.</p>
+
+    <h2>Instrument-Dependent Visibility</h2>
+    <p>This is the framework's instrument principle made literal: what you observe depends on what you are equipped to observe. In WAVE MODE, the orbit pattern is visible — the interference fringes emerge from the orbit structure (slit separation D = DS_D, first dark fringe at y ≈ λL/2D). In MEASURE mode, the complement takes over — two bands, one for each slit, symmetric around y = 0, structured like the complement pair &#123;top, bottom&#125;.</p>
+    <p>The Copenhagen interpretation says the wave function <em>collapses</em> on measurement. Many-worlds says both outcomes happen and the universes split. Pilot-wave (de Broglie-Bohm) says the particle always goes through one slit but is guided by a real wave that passes through both. All three agree on the observed statistics. The instrument selects the frame; it does not select the truth.</p>
+    <p>Decoherence is the key mechanism: measuring which-path entangles the particle with the measuring apparatus. Once entangled, the interference terms average to zero across all possible detector states. The environment itself — any interaction that leaks which-path information — is a measurement. Isolation is not the absence of space; it is the absence of entanglement.</p>
+    <p>In the lore: <em>the orbit [1,2,4,8,7,5] is only visible via the right instrument.</em> Interference = orbit visible. Two bands = complement visible. Measurement selects the frame. There is no 9 — and there is no neutral instrument.</p>
 
     <h1>THE ASSISTANT</h1>
 
