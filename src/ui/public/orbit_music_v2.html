@@ -193,6 +193,7 @@ btn, .btn {
     <input type="range" id="bpmSlider" min="10" max="120" value="60" style="width:200px">
     <button class="btn play" id="playBtn" style="min-width:72px;text-align:center">▶ PLAY</button>
     <button class="btn" id="evolveBtn" style="margin-left:8px;opacity:0.55">⟳ EVOLVE</button>
+    <button class="btn" id="btn808" style="margin-left:8px;opacity:0.55;letter-spacing:.12em">808</button>
   </div>
 </header>
 
@@ -677,6 +678,62 @@ function playBass(freq, startTime, dur) {
   env.gain.linearRampToValueAtTime(0,startTime+dur);
   osc.start(startTime); osc.stop(startTime+dur+0.1);
 }
+
+// ── 808 kick drum ─────────────────────────────────────────────────────────────
+// Orbit {1,2,4,8,7,5} as TR-808 kicks in 6/8 at 75 BPM (60 × 5/4)
+const KICK_ORBIT = [1, 2, 4, 8, 7, 5];
+const KICK_BPM   = 75;
+let kick808Active = false, kick808StepN = 0, kick808NextAt = 0, kick808Timer = null;
+
+function kick808Dur() { return 60 / (KICK_BPM * 2); } // eighth note duration
+
+function play808Kick(startTime, vel) {
+  if (!audioCtx || !dryGain) return;
+  const osc = audioCtx.createOscillator();
+  const env = audioCtx.createGain();
+  osc.type = 'sine';
+  // pitch envelope: 180 Hz → 50 Hz over 250 ms (TR-808 punch)
+  osc.frequency.setValueAtTime(180, startTime);
+  osc.frequency.exponentialRampToValueAtTime(50, startTime + 0.25);
+  // amplitude envelope: 2 ms attack, exponential decay to ~450 ms
+  env.gain.setValueAtTime(0.001, startTime);
+  env.gain.linearRampToValueAtTime(vel, startTime + 0.002);
+  env.gain.exponentialRampToValueAtTime(0.001, startTime + 0.45);
+  osc.connect(env);
+  env.connect(dryGain); // dry only — no reverb on the kick
+  osc.start(startTime);
+  osc.stop(startTime + 0.5);
+}
+
+function run808Sched() {
+  const LOOK808 = 0.12;
+  while (kick808NextAt < audioCtx.currentTime + LOOK808) {
+    const step = kick808StepN % 6;
+    play808Kick(kick808NextAt, KICK_ORBIT[step] / 9);
+    kick808StepN++;
+    kick808NextAt += kick808Dur();
+  }
+  kick808Timer = setTimeout(run808Sched, 25);
+}
+
+function start808() {
+  initAudio();
+  kick808StepN = 0;
+  kick808NextAt = audioCtx.currentTime + 0.05;
+  run808Sched();
+  kick808Active = true;
+  const btn = document.getElementById('btn808');
+  if (btn) { btn.classList.add('lit'); btn.style.opacity = '1'; }
+}
+
+function stop808() {
+  if (kick808Timer) { clearTimeout(kick808Timer); kick808Timer = null; }
+  kick808Active = false;
+  const btn = document.getElementById('btn808');
+  if (btn) { btn.classList.remove('lit'); btn.style.opacity = '0.55'; }
+}
+
+function toggle808() { if (kick808Active) stop808(); else start808(); }
 
 // ── Scheduler ────────────────────────────────────────────────────────────────
 let bpm=60, playing=false, schedTimer=null, nextAt=0, schedStepN=0;
@@ -1308,6 +1365,8 @@ document.getElementById('playBtn').addEventListener('click',function(){
   if(playing){stopPlay();this.textContent='▶ PLAY';this.classList.remove('lit');}
   else{startPlay();this.textContent='■ STOP';this.classList.add('lit');}
 });
+
+document.getElementById('btn808').addEventListener('click', toggle808);
 
 document.getElementById('evolveBtn').addEventListener('click',function(){
   evolveMode = !evolveMode;
