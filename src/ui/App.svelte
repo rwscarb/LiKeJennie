@@ -1174,4 +1174,12 @@ where:
   <a href="https://seismic.fib896.com" target="_blank" rel="noopener" class="footer-src">sensor</a>
   &nbsp;·&nbsp;
   <a href="https://github.com/rwscarb/LiKeJennie" target="_blank" rel="noopener" class="footer-src">source</a>
+  <br>
+  <span class="footer-proofs">proofs on-chain:&nbsp;
+    <a href="https://ordinals.com/inscription/62a33e022c6630a217900b0e61f1bbda83e62007e274d991807da08249a1efedi0" target="_blank" rel="noopener">orbit</a>
+    &nbsp;·&nbsp;
+    <a href="https://ordinals.com/inscription/2143c079b2d75e1b2b515e4c4f64ac230a320ee635ff13e8cc5280216b3b9c9bi0" target="_blank" rel="noopener">primitive root</a>
+    &nbsp;·&nbsp;
+    <a href="https://ordinals.com/inscription/5089bf2f23d91bc8d3db5191fca915c62f7e8b68128e5d276d5abe56c4df857bi0" target="_blank" rel="noopener">ideal</a>
+  </span>
 </div>
