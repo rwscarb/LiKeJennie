@@ -194,6 +194,7 @@ btn, .btn {
     <button class="btn play" id="playBtn" style="min-width:72px;text-align:center">▶ PLAY</button>
     <button class="btn" id="evolveBtn" style="margin-left:8px;opacity:0.55">⟳ EVOLVE</button>
     <button class="btn" id="btn808" style="margin-left:8px;opacity:0.55;letter-spacing:.12em">808</button>
+    <button class="btn" id="btnWarp808" style="opacity:0.55;letter-spacing:.10em" title="Stutter-warp 808 mode">WARP</button>
   </div>
 </header>
 
@@ -709,7 +710,9 @@ function run808Sched() {
   const LOOK808 = 0.12;
   while (kick808NextAt < audioCtx.currentTime + LOOK808) {
     const step = kick808StepN % 6;
-    play808Kick(kick808NextAt, KICK_ORBIT[step] / 9);
+    const vel  = KICK_ORBIT[step] / 9;
+    if (warp808Active) play808StutterWarp(kick808NextAt, vel);
+    else               play808Kick(kick808NextAt, vel);
     kick808StepN++;
     kick808NextAt += kick808Dur();
   }
@@ -734,6 +737,47 @@ function stop808() {
 }
 
 function toggle808() { if (kick808Active) stop808(); else start808(); }
+
+// ── 808 stutter-warp mode ──────────────────────────────────────────────────────
+// Pitch lunges UP then falls (opposite of normal kick) + rapid amplitude gating
+let warp808Active = false;
+
+function play808StutterWarp(startTime, vel) {
+  if (!audioCtx || !dryGain) return;
+  const osc   = audioCtx.createOscillator();
+  const gate  = audioCtx.createGain();
+  const env   = audioCtx.createGain();
+  osc.type = 'sine';
+
+  // Warp contour: jump up then fall hard (the gnarly "reverse" sweep)
+  osc.frequency.setValueAtTime(80, startTime);
+  osc.frequency.exponentialRampToValueAtTime(210, startTime + 0.07);
+  osc.frequency.exponentialRampToValueAtTime(52,  startTime + 0.42);
+
+  // Stutter gate: 8 pulses, each ~18ms on / 22ms off over 320ms
+  const PULSES = 8, GATE_SPAN = 0.32, ON = 0.018;
+  gate.gain.setValueAtTime(0, startTime);
+  for (let i = 0; i < PULSES; i++) {
+    const t = startTime + i * (GATE_SPAN / PULSES);
+    gate.gain.setValueAtTime(1, t);
+    gate.gain.setValueAtTime(0, t + ON);
+  }
+  gate.gain.setValueAtTime(1, startTime + GATE_SPAN); // open for the tail
+
+  // Amplitude envelope (slower decay to let warp breathe)
+  env.gain.setValueAtTime(0.001, startTime);
+  env.gain.linearRampToValueAtTime(vel * 0.95, startTime + 0.003);
+  env.gain.exponentialRampToValueAtTime(0.001, startTime + 0.58);
+
+  osc.connect(gate); gate.connect(env); env.connect(dryGain);
+  osc.start(startTime); osc.stop(startTime + 0.62);
+}
+
+function toggleWarp808() {
+  warp808Active = !warp808Active;
+  const btn = document.getElementById('btnWarp808');
+  if (btn) { btn.classList.toggle('lit', warp808Active); btn.style.opacity = warp808Active ? '1' : '0.55'; }
+}
 
 // ── Scheduler ────────────────────────────────────────────────────────────────
 let bpm=60, playing=false, schedTimer=null, nextAt=0, schedStepN=0;
@@ -1367,6 +1411,7 @@ document.getElementById('playBtn').addEventListener('click',function(){
 });
 
 document.getElementById('btn808').addEventListener('click', toggle808);
+document.getElementById('btnWarp808').addEventListener('click', toggleWarp808);
 
 document.getElementById('evolveBtn').addEventListener('click',function(){
   evolveMode = !evolveMode;
