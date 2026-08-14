@@ -270,6 +270,20 @@ make test         # run all tests (python + js)
 
 ---
 
+## On-Chain Proofs
+
+The three Lean 4 formal proofs are permanently inscribed on Bitcoin (2026-08-14):
+
+| Proof | Inscription |
+|-------|------------|
+| [orbit_proof.lean](research/orbit_proof.lean) — mod-9 doubling orbit, period 6, complement {0,3,6} | [62a33e0…i0](https://ordinals.com/inscription/62a33e022c6630a217900b0e61f1bbda83e62007e274d991807da08249a1efedi0) |
+| [primitive_root_proof.lean](research/primitive_root_proof.lean) — 2 is a primitive root mod 9 | [2143c07…i0](https://ordinals.com/inscription/2143c079b2d75e1b2b515e4c4f64ac230a320ee635ff13e8cc5280216b3b9c9bi0) |
+| [ideal_proof.lean](research/ideal_proof.lean) — ideal structure of the complement {0,3,6} in ℤ/9ℤ | [5089bf2…i0](https://ordinals.com/inscription/5089bf2f23d91bc8d3db5191fca915c62f7e8b68128e5d276d5abe56c4df857bi0) |
+
+Inscription IDs: [`tags/inscriptions.json`](tags/inscriptions.json)
+
+---
+
 ## License
 
 [CC BY-NC-SA 4.0](LICENSE) © 2026 Ryan Scarbery and Traci Johan

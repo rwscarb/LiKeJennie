@@ -1,0 +1,23 @@
+{
+  "orbit_proof.lean": {
+    "inscription_id": "62a33e022c6630a217900b0e61f1bbda83e62007e274d991807da08249a1efedi0",
+    "reveal_tx": "62a33e022c6630a217900b0e61f1bbda83e62007e274d991807da08249a1efed",
+    "ordinals_url": "https://ordinals.com/inscription/62a33e022c6630a217900b0e61f1bbda83e62007e274d991807da08249a1efedi0",
+    "ordinalsbot_order": "b5d5d996-6073-439d-b3a3-758e18afd58b",
+    "inscribed_at": "2026-08-14T01:00:00Z"
+  },
+  "primitive_root_proof.lean": {
+    "inscription_id": "2143c079b2d75e1b2b515e4c4f64ac230a320ee635ff13e8cc5280216b3b9c9bi0",
+    "reveal_tx": "2143c079b2d75e1b2b515e4c4f64ac230a320ee635ff13e8cc5280216b3b9c9b",
+    "ordinals_url": "https://ordinals.com/inscription/2143c079b2d75e1b2b515e4c4f64ac230a320ee635ff13e8cc5280216b3b9c9bi0",
+    "ordinalsbot_order": "5bb17a49-d58f-4c09-bc72-2e02e98c3e81",
+    "inscribed_at": "2026-08-14T01:15:00Z"
+  },
+  "ideal_proof.lean": {
+    "inscription_id": "5089bf2f23d91bc8d3db5191fca915c62f7e8b68128e5d276d5abe56c4df857bi0",
+    "reveal_tx": "5089bf2f23d91bc8d3db5191fca915c62f7e8b68128e5d276d5abe56c4df857b",
+    "ordinals_url": "https://ordinals.com/inscription/5089bf2f23d91bc8d3db5191fca915c62f7e8b68128e5d276d5abe56c4df857bi0",
+    "ordinalsbot_order": "cb6dc819-f38d-4cf8-a930-ed37426cf056",
+    "inscribed_at": "2026-08-14T01:15:00Z"
+  }
+}
