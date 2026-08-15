@@ -270,11 +270,11 @@ export function buildS19() {
       .attr('width', 172).attr('height', 52).attr('rx', 3)
       .attr('fill', '#050a14').attr('stroke', '#1e2448').attr('stroke-width', 1);
     og.append('text').attr('x', lx + 4).attr('y', ly + 12)
-      .text('from Galactic Center').attr('fill', '#6870b8').attr('font-size', 9).attr('font-family','monospace');
+      .text('from Galactic Center').attr('fill', '#8898d0').attr('font-size', 9).attr('font-family','monospace');
     og.append('text').attr('x', lx + 4).attr('y', ly + 26)
-      .text('Sagittarius · 7–14 Gyr').attr('fill', '#505090').attr('font-size', 8.5).attr('font-family','monospace');
+      .text('Sagittarius · 7–14 Gyr').attr('fill', '#7070b8').attr('font-size', 8.5).attr('font-family','monospace');
     og.append('text').attr('x', lx + 4).attr('y', ly + 39)
-      .text('thick disk origin').attr('fill', '#404070').attr('font-size', 8).attr('font-family','monospace');
+      .text('thick disk origin').attr('fill', '#6868a0').attr('font-size', 8).attr('font-family','monospace');
   }
 
   // ── Sun ──────────────────────────────────────────────────────────────────
@@ -423,7 +423,7 @@ export function buildS19() {
     .attr('fill', 'rgba(4,8,20,0.85)').attr('stroke', 'rgba(255,255,255,0.07)');
 
   fwG.append('text').attr('x', FW_X + 10).attr('y', FW_Y + 20)
-    .text('FRAMEWORK').attr('fill', '#4060a0').attr('font-size', 9)
+    .text('FRAMEWORK').attr('fill', '#6088c8').attr('font-size', 9)
     .attr('font-family', 'monospace').attr('letter-spacing', '0.1em');
 
   const fwRows = [
@@ -447,26 +447,26 @@ export function buildS19() {
   const SB_X = 22, SB_Y = H - 28;
   svg.append('line').attr('x1', SB_X).attr('y1', SB_Y)
     .attr('x2', SB_X + AU).attr('y2', SB_Y)
-    .attr('stroke', '#404040').attr('stroke-width', 1);
+    .attr('stroke', '#707070').attr('stroke-width', 1);
   svg.append('line').attr('x1', SB_X).attr('y1', SB_Y - 5)
     .attr('x2', SB_X).attr('y2', SB_Y + 5).attr('stroke', '#404040').attr('stroke-width', 1);
   svg.append('line').attr('x1', SB_X + AU).attr('y1', SB_Y - 5)
     .attr('x2', SB_X + AU).attr('y2', SB_Y + 5).attr('stroke', '#404040').attr('stroke-width', 1);
   svg.append('text').attr('x', SB_X + AU / 2).attr('y', SB_Y - 8)
     .text('1 AU').attr('text-anchor', 'middle')
-    .attr('fill', '#404040').attr('font-size', 8.5).attr('font-family', 'monospace');
+    .attr('fill', '#909090').attr('font-size', 8.5).attr('font-family', 'monospace');
 
   // ── Retrograde indicator ─────────────────────────────────────────────────
   svg.append('text').attr('x', 14).attr('y', 20)
     .text('↻ retrograde  (i = 175.12°)')
-    .attr('fill', '#2a6080').attr('font-size', 9).attr('font-family', 'monospace');
+    .attr('fill', '#4ab8d8').attr('font-size', 9).attr('font-family', 'monospace');
 
   // ── Overlay text ─────────────────────────────────────────────────────────
   R.ov.innerHTML =
     `<div style="color:#00e5ff;letter-spacing:.1em;font-weight:bold">19 · 3I/ATLAS</div>` +
-    `<div style="color:#2a5a70;margin-top:3px;font-size:8px">third interstellar object</div>` +
-    `<div style="color:#1a4050;font-size:7.5px;margin-top:1px">e = 6.141 · v∞ = 58 km/s</div>` +
-    `<div style="color:#1a4050;font-size:7.5px">ω = 128.02° = K</div>`;
+    `<div style="color:#4a9ab8;margin-top:3px;font-size:8px">third interstellar object</div>` +
+    `<div style="color:#4a8090;font-size:7.5px;margin-top:1px">e = 6.141 · v∞ = 58 km/s</div>` +
+    `<div style="color:#4a8090;font-size:7.5px">ω = 128.02° = K</div>`;
 
   // ── Resize observer ──────────────────────────────────────────────────────
   const ro = new ResizeObserver(() => {
