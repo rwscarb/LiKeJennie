@@ -1320,6 +1320,14 @@ document.addEventListener('keydown', function(e) {
   if (e.target.tagName === 'INPUT') return;
   if (e.code === 'Space') { e.preventDefault(); document.getElementById('playBtn').click(); }
   if (e.code === 'KeyF') toggleVizFullscreen();
+  if (document.fullscreenElement && (e.code === 'ArrowLeft' || e.code === 'ArrowRight')) {
+    e.preventDefault();
+    const modes = ['tunnel','bars','mirror','scope','spiral'];
+    const idx = modes.indexOf(vizMode);
+    vizMode = modes[(idx + (e.code === 'ArrowRight' ? 1 : -1) + modes.length) % modes.length];
+    document.querySelectorAll('[data-viz]').forEach(b => b.classList.toggle('lit', b.dataset.viz === vizMode));
+    resetVizNav();
+  }
 });
 
 // ── Prevent focus-scroll on sliders (stops panel bounce) ─────────────────────
