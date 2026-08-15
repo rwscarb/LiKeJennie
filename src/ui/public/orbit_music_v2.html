@@ -6,8 +6,8 @@
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 :root {
-  --bg:#050a06; --fg:#adc4b6; --dim:#0e1910; --cyan:#78d4b6;
-  --orng:#d4845a; --muted:#3d5544; --panel:#070e09; --accent:#00ff88;
+  --bg:#080808; --fg:#c0c0c4; --dim:#181818; --cyan:#5ab8e0;
+  --orng:#d4845a; --muted:#68686e; --panel:#0d0d0e; --accent:#00ff88;
 }
 body {
   background:var(--bg); color:var(--fg);
@@ -70,7 +70,7 @@ btn, .btn {
 }
 .seq-cell {
   border-radius:2px; cursor:pointer;
-  background:var(--dim); border:1px solid #0a1a10;
+  background:var(--dim); border:1px solid #181820;
   transition:background .08s;
 }
 .seq-cell.on { background:var(--on-col,#00ff8880); border-color:var(--on-col,#00ff88); }
@@ -85,7 +85,7 @@ btn, .btn {
 }
 .drum-cell {
   border-radius:2px; cursor:pointer;
-  background:var(--dim); border:1px solid #0a1a10;
+  background:var(--dim); border:1px solid #181820;
   transition:background .08s;
   position:relative;
 }
@@ -131,9 +131,7 @@ btn, .btn {
     <button class="btn" id="backBtn" onclick="window.parent?.postMessage('orbit:back','*')" style="opacity:0.5;padding:4px 8px">← BACK</button>
     <span id="bpmVal" style="font-size:9px;color:var(--muted)">120 BPM</span>
     <input type="range" id="bpmSlider" min="60" max="240" value="120" style="width:80px">
-    <button class="btn" id="stanzaBtn" title="1/4 break after each stanza · 5-voice 3/4 echo">STANZA</button>
     <button class="btn play" id="playBtn">▶ PLAY</button>
-    <button class="btn" id="btnWarp808" style="opacity:0.55;letter-spacing:.10em" title="Stutter-warp 808 kick mode">WARP</button>
   </div>
 </header>
 
@@ -173,9 +171,26 @@ btn, .btn {
     </div>
   </div>
 
+  <!-- EQ -->
+  <div class="section">
+    <div class="section-title">EQ</div>
+    <div class="row"><label>bass</label>
+      <input type="range" id="eqBassSlider" min="-12" max="12" step="0.5" value="0">
+      <span class="val" id="eqBassVal">0 dB</span>
+    </div>
+    <div class="row"><label>mid</label>
+      <input type="range" id="eqMidSlider" min="-12" max="12" step="0.5" value="0">
+      <span class="val" id="eqMidVal">0 dB</span>
+    </div>
+    <div class="row"><label>treble</label>
+      <input type="range" id="eqTrebSlider" min="-12" max="12" step="0.5" value="0">
+      <span class="val" id="eqTrebVal">0 dB</span>
+    </div>
+  </div>
+
   <!-- TR-808 Drums -->
   <div class="section">
-    <div class="section-title">TR-808 &nbsp;<span style="color:#1a2a1a;font-size:8px">kick · snare · hat · clap</span></div>
+    <div class="section-title">TR-808 &nbsp;<span style="color:#1e1e28;font-size:8px">kick · snare · hat · clap</span></div>
     <div class="row">
       <label>vol</label>
       <input type="range" id="drumVolSlider" min="0" max="1" step=".01" value=".70">
@@ -193,11 +208,10 @@ btn, .btn {
     </div>
   </div>
 
-  <!-- Freq display -->
+  <!-- Keyboard -->
   <div class="section">
-    <div class="section-title">HARMONICS</div>
-    <div class="freq-bars" id="freqBars"></div>
-    <div class="note-names" id="noteNames"></div>
+    <div class="section-title">KEYBOARD</div>
+    <canvas id="keyCanvas" style="width:100%;height:56px;display:block;border-radius:2px"></canvas>
   </div>
 
   <!-- Melody presets -->
@@ -212,9 +226,20 @@ btn, .btn {
     </div>
   </div>
 
+  <!-- Saved presets -->
+  <div class="section">
+    <div class="section-title">SAVED PRESETS</div>
+    <div class="row" style="gap:4px">
+      <input id="presetNameIn" type="text" placeholder="name…" maxlength="40"
+        style="flex:1;background:var(--dim);border:1px solid var(--muted);color:var(--fg);font-family:'Courier New',monospace;font-size:9px;padding:3px 6px;outline:none;">
+      <button class="btn" id="savePresetBtn">SAVE</button>
+    </div>
+    <div id="savedPresetList" style="display:flex;flex-direction:column;gap:3px;margin-top:4px"></div>
+  </div>
+
   <!-- Melody step sequencer -->
   <div class="section" style="flex:1">
-    <div class="section-title">STEP SEQUENCER &nbsp;<span style="color:#1a3a1a">16 steps · 6 orbit notes</span></div>
+    <div class="section-title">STEP SEQUENCER &nbsp;<span style="color:#1e1e2e">16 steps · 6 orbit notes</span></div>
     <div style="display:grid;grid-template-columns:34px 1fr;gap:4px">
       <div id="rowLabels" style="display:flex;flex-direction:column;gap:2px"></div>
       <div class="seq-grid" id="seqGrid"></div>
@@ -269,11 +294,6 @@ const D_ROWS = 4;
 let drumSeq = Array.from({length:D_ROWS}, () => Array(STEPS).fill(false));
 let drumVol = 0.70;
 const drumCells = [];
-
-// ── Stanza mode ───────────────────────────────────────────────────────────────
-// Adds a 1/4 bar (4 steps) after each 16-step stanza.
-// At that boundary: 5-voice canon in 3/4 time — complement→orbit echo.
-let stanzaMode = false;
 
 // ── Melody presets ────────────────────────────────────────────────────────────
 const PRESETS = {
@@ -405,23 +425,47 @@ function renderDrumGrid() {
     }
 }
 
-// ── Freq bars ─────────────────────────────────────────────────────────────────
-const freqBars  = document.getElementById('freqBars');
-const noteNames = document.getElementById('noteNames');
-const bars=[], nameEls=[];
-for (let i=0; i<ROWS; i++) {
-  const b=document.createElement('div');
-  b.className='freq-bar'; b.style.background=stepColor(i,.55);
-  freqBars.appendChild(b); bars.push(b);
-  const n=document.createElement('div');
-  n.className='note-name'; n.textContent=NOTE_NAMES[i];
-  n.style.color=stepColor(i,.40);
-  noteNames.appendChild(n); nameEls.push(n);
-}
+// ── Note level tracker ────────────────────────────────────────────────────────
 const barLevels = Array(ROWS).fill(0);
+
+// ── Keyboard canvas ───────────────────────────────────────────────────────────
+const keyCanvas = document.getElementById('keyCanvas');
+const kctx = keyCanvas ? keyCanvas.getContext('2d') : null;
+function resizeKeyCanvas() {
+  if (!keyCanvas) return;
+  keyCanvas.width  = Math.round(keyCanvas.offsetWidth  * devicePixelRatio);
+  keyCanvas.height = Math.round(keyCanvas.offsetHeight * devicePixelRatio);
+}
+resizeKeyCanvas();
+if (keyCanvas) new ResizeObserver(resizeKeyCanvas).observe(keyCanvas);
+
+function drawKeys() {
+  if (!kctx || !keyCanvas.width) return;
+  const KW = keyCanvas.width, KH = keyCanvas.height;
+  kctx.clearRect(0, 0, KW, KH);
+  const kw = KW / ROWS;
+  const textH = Math.ceil(KH * 0.30);
+  const keyH  = KH - textH;
+  for (let i = 0; i < ROWS; i++) {
+    const lv = Math.min(barLevels[i], 1);
+    const x  = Math.round(i * kw) + 1;
+    const w  = Math.round((i + 1) * kw) - x - 1;
+    kctx.fillStyle = stepColor(i, 0.09 + lv * 0.52);
+    kctx.fillRect(x, 0, w, keyH);
+    if (lv > 0.05) {
+      kctx.fillStyle = stepColor(i, 0.78);
+      kctx.fillRect(x, 0, w, Math.max(2, keyH * lv * 0.32));
+    }
+    kctx.fillStyle = lv > 0.15 ? '#ffffff' : stepColor(i, 0.42);
+    kctx.font = `${Math.max(7, Math.round(KH * 0.18))}px "Courier New"`;
+    kctx.textAlign = 'center'; kctx.textBaseline = 'middle';
+    kctx.fillText(NOTE_NAMES[i], x + w / 2, keyH + textH / 2);
+  }
+}
 
 // ── Web Audio ─────────────────────────────────────────────────────────────────
 let audioCtx=null, masterGain, wetGain, dryGain, delayL, delayR;
+let eqBass, eqMid, eqTreb;
 let analyser=null, freqData=null, waveData=null;
 let waveform='triangle', reverbAmt=0.25, bassAmt=0.18, detuneAmt=3;
 
@@ -429,7 +473,13 @@ function initAudio() {
   if (audioCtx) { if (audioCtx.state==='suspended') audioCtx.resume(); return; }
   audioCtx = new (window.AudioContext||window.webkitAudioContext)();
   masterGain = audioCtx.createGain(); masterGain.gain.value=0.60;
-  masterGain.connect(audioCtx.destination);
+  eqBass = audioCtx.createBiquadFilter();
+  eqBass.type='lowshelf'; eqBass.frequency.value=100; eqBass.gain.value=0;
+  eqMid = audioCtx.createBiquadFilter();
+  eqMid.type='peaking'; eqMid.frequency.value=1000; eqMid.Q.value=1; eqMid.gain.value=0;
+  eqTreb = audioCtx.createBiquadFilter();
+  eqTreb.type='highshelf'; eqTreb.frequency.value=8000; eqTreb.gain.value=0;
+  masterGain.connect(eqBass); eqBass.connect(eqMid); eqMid.connect(eqTreb); eqTreb.connect(audioCtx.destination);
   analyser = audioCtx.createAnalyser();
   analyser.fftSize = 2048; analyser.smoothingTimeConstant = 0.82;
   masterGain.connect(analyser);
@@ -463,28 +513,6 @@ function playNote(freq, startTime, dur, vol=0.28, wt=waveform) {
   env.gain.setValueAtTime(vol*0.80,startTime+dur*0.30);
   env.gain.linearRampToValueAtTime(0,startTime+dur);
   osc.start(startTime); osc.stop(startTime+dur+0.1);
-}
-
-// 5-voice 3/4 canon fired at the 1/4 break boundary.
-// Each voice starts threeBeat/5 later and decays in volume.
-// Echoes the first 12 steps (3 beats = 3/4) of the melody pattern.
-function playStanzaEcho(time) {
-  if (!stanzaMode || !audioCtx) return;
-  const dur  = stepDur();
-  // 3 voices, each offset by 1 step — stays within the 4-step break window
-  const mult = Math.pow(2, octave);
-  const gains = [0.12, 0.07, 0.04];
-  for (let layer = 0; layer < 3; layer++) {
-    const t0 = time + layer * dur;
-    const g  = gains[layer];
-    for (let step = 0; step < STEPS; step++) {
-      const t = t0 + step * dur;
-      for (let r = 0; r < ROWS; r++) {
-        if (!grid[r][step]) continue;
-        playNote(FREQS[r] * mult, t, dur * 0.55, g);
-      }
-    }
-  }
 }
 
 function playBass(freq, startTime, dur) {
@@ -584,48 +612,10 @@ function play808Clap(t) {
 }
 
 function schedDrum(row, t) {
-  if (row===0) { if (warp808Active) play808StutterWarp(t, drumVol); else play808Kick(t); }
+  if (row===0) play808Kick(t);
   else if (row===1) play808Snare(t);
   else if (row===2) play808Hat(t);
   else if (row===3) play808Clap(t);
-}
-
-// ── 808 stutter-warp mode ─────────────────────────────────────────────────────
-let warp808Active = false;
-
-function play808StutterWarp(startTime, vel) {
-  if (!audioCtx || !dryGain) return;
-  const osc  = audioCtx.createOscillator();
-  const gate = audioCtx.createGain();
-  const env  = audioCtx.createGain();
-  osc.type = 'sine';
-
-  osc.frequency.setValueAtTime(90, startTime);
-  osc.frequency.exponentialRampToValueAtTime(210, startTime + 0.07);
-  osc.frequency.exponentialRampToValueAtTime(70,  startTime + 0.42);
-
-  // Ramp gate on/off (2ms edges) to kill zipper/click artifacts
-  const PULSES = 6, GATE_SPAN = 0.28, ON = 0.020, RAMP = 0.002;
-  gate.gain.setValueAtTime(0.001, startTime);
-  for (let i = 0; i < PULSES; i++) {
-    const t = startTime + i * (GATE_SPAN / PULSES);
-    gate.gain.linearRampToValueAtTime(1, t + RAMP);
-    gate.gain.linearRampToValueAtTime(0.001, t + ON);
-  }
-  gate.gain.linearRampToValueAtTime(1, startTime + GATE_SPAN + RAMP);
-
-  env.gain.setValueAtTime(0.001, startTime);
-  env.gain.linearRampToValueAtTime(vel * 0.95, startTime + 0.003);
-  env.gain.exponentialRampToValueAtTime(0.001, startTime + 0.58);
-
-  osc.connect(gate); gate.connect(env); env.connect(dryGain);
-  osc.start(startTime); osc.stop(startTime + 0.62);
-}
-
-function toggleWarp808() {
-  warp808Active = !warp808Active;
-  const btn = document.getElementById('btnWarp808');
-  if (btn) { btn.classList.toggle('lit', warp808Active); btn.style.opacity = warp808Active ? '1' : '0.55'; }
 }
 
 // ── Scheduler ─────────────────────────────────────────────────────────────────
@@ -661,16 +651,8 @@ function scheduleStep(step, time) {
 }
 
 function runSched() {
-  const totalSteps = stanzaMode ? STEPS + 4 : STEPS;
   while (nextAt < audioCtx.currentTime + LOOK) {
-    const step = schedStepN % totalSteps;
-    if (step < STEPS) {
-      scheduleStep(step, nextAt);
-    } else if (step === STEPS) {
-      // First step of the 1/4 break — fire the 5-voice 3/4 echo
-      playStanzaEcho(nextAt);
-    }
-    // Steps STEPS+1 through STEPS+3: silence
+    scheduleStep(schedStepN % STEPS, nextAt);
     schedStepN++;
     nextAt += stepDur();
   }
@@ -747,11 +729,8 @@ function drawFrame(ts) {
   _updateDrumDots();
 
   if (playing && audioCtx) {
-    const totalSteps = stanzaMode ? STEPS + 4 : STEPS;
     const elapsed=(audioCtx.currentTime-(nextAt-schedStepN*stepDur()));
-    const rawStep = Math.floor(elapsed/stepDur()) % totalSteps;
-    animStep = rawStep < STEPS ? rawStep : STEPS - 1; // hold on step 15 during break
-    if(animStep<0) animStep=0;
+    animStep = Math.max(0, Math.floor(elapsed/stepDur()) % STEPS);
   }
 
   // ── Geiss feedback warp ───────────────────────────────────────────────────
@@ -821,7 +800,7 @@ function drawFrame(ts) {
   const curOrbitStep = playing ? Math.floor(animStep / (STEPS/6)) % 6 : -1;
 
   ctx.beginPath(); ctx.arc(OX,OY,OR,0,Math.PI*2);
-  ctx.strokeStyle='#061408'; ctx.lineWidth=16; ctx.stroke();
+  ctx.strokeStyle='#080810'; ctx.lineWidth=16; ctx.stroke();
 
   for(let i=0;i<6;i++){
     const[fx,fy]=orbitXY(i),[tx,ty]=orbitXY((i+1)%6);
@@ -849,7 +828,7 @@ function drawFrame(ts) {
     ctx.fillStyle=active?'#fff':'#061408'; ctx.strokeStyle=col;
     ctx.lineWidth=1.5; ctx.fill();ctx.stroke();
     ctx.font=`bold ${active?14:10}px 'Courier New'`;
-    ctx.fillStyle=active?'#020c08':col;
+    ctx.fillStyle=active?'#06060e':col;
     ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText(String(ORBIT[i]),x,y);
     if(active){
@@ -876,7 +855,7 @@ function drawFrame(ts) {
       }
       ctx.beginPath();
       ctx.arc(drumDotX[dr], drumDotY, 3, 0, Math.PI*2);
-      ctx.fillStyle = lv>0.1 ? col : '#0a1810';
+      ctx.fillStyle = lv>0.1 ? col : '#0c0c18';
       ctx.strokeStyle = col+'44';
       ctx.lineWidth=0.8; ctx.fill(); ctx.stroke();
       ctx.font='6px "Courier New"'; ctx.textAlign='center';
@@ -889,11 +868,8 @@ function drawFrame(ts) {
   curStep = animStep;
   renderGrid(); renderDrumGrid();
 
-  // ── Freq bars update ──────────────────────────────────────────────────────
-  for(let i=0;i<ROWS;i++){
-    bars[i].style.height=(barLevels[i]*32+1)+'px';
-    nameEls[i].classList.toggle('active',barLevels[i]>0.1);
-  }
+  // ── Keyboard update ───────────────────────────────────────────────────────
+  drawKeys();
 
   // ── Expanding ring pulses (Geiss) ─────────────────────────────────────────
   for (let i = pulses.length - 1; i >= 0; i--) {
@@ -932,8 +908,6 @@ function schedDrumWithLevel(row, t) {
 }
 
 // ── Control wiring ────────────────────────────────────────────────────────────
-document.getElementById('btnWarp808').addEventListener('click', toggleWarp808);
-
 document.getElementById('playBtn').addEventListener('click', function() {
   if(playing){stopPlay();this.textContent='▶ PLAY';this.classList.remove('lit');}
   else{startPlay();this.textContent='■ STOP';this.classList.add('lit');}
@@ -941,16 +915,6 @@ document.getElementById('playBtn').addEventListener('click', function() {
 
 document.getElementById('bpmSlider').addEventListener('input', function() {
   bpm=+this.value; document.getElementById('bpmVal').textContent=bpm+' BPM';
-});
-
-document.getElementById('stanzaBtn').addEventListener('click', function() {
-  stanzaMode = !stanzaMode;
-  this.classList.toggle('lit', stanzaMode);
-  // Reset scheduler on mode change so step count is consistent
-  if (playing) { stopPlay(); startPlay();
-    document.getElementById('playBtn').textContent='■ STOP';
-    document.getElementById('playBtn').classList.add('lit');
-  }
 });
 
 document.getElementById('reverbSlider').addEventListener('input', function() {
@@ -998,9 +962,119 @@ document.querySelectorAll('[data-dpreset]').forEach(btn => {
   });
 });
 
+document.getElementById('eqBassSlider').addEventListener('input', function() {
+  const v = +this.value;
+  document.getElementById('eqBassVal').textContent = (v>0?'+':'')+v+' dB';
+  if (eqBass) eqBass.gain.value = v;
+});
+document.getElementById('eqMidSlider').addEventListener('input', function() {
+  const v = +this.value;
+  document.getElementById('eqMidVal').textContent = (v>0?'+':'')+v+' dB';
+  if (eqMid) eqMid.gain.value = v;
+});
+document.getElementById('eqTrebSlider').addEventListener('input', function() {
+  const v = +this.value;
+  document.getElementById('eqTrebVal').textContent = (v>0?'+':'')+v+' dB';
+  if (eqTreb) eqTreb.gain.value = v;
+});
+
+// ── Saved presets (localStorage) ──────────────────────────────────────────────
+const STORAGE_KEY = 'orbitSavedPresets';
+
+function getStoredPresets() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}'); } catch(e) { return {}; }
+}
+
+function captureState() {
+  return { grid: grid.map(r=>[...r]), drumSeq: drumSeq.map(r=>[...r]),
+           bpm, waveform, octave, reverbAmt, bassAmt, detuneAmt };
+}
+
+function restoreState(s) {
+  if (s.grid)   { grid   = s.grid.map(r=>[...r]);   }
+  if (s.drumSeq){ drumSeq= s.drumSeq.map(r=>[...r]); }
+  if (s.bpm !== undefined) {
+    bpm = s.bpm;
+    document.getElementById('bpmSlider').value = bpm;
+    document.getElementById('bpmVal').textContent = bpm+' BPM';
+  }
+  if (s.waveform) {
+    waveform = s.waveform;
+    document.querySelectorAll('[data-wave]').forEach(b => b.classList.toggle('lit', b.dataset.wave===waveform));
+  }
+  if (s.octave !== undefined) {
+    octave = s.octave;
+    document.getElementById('octVal').textContent = octave>0?'+'+octave:octave;
+  }
+  if (s.reverbAmt !== undefined) {
+    reverbAmt = s.reverbAmt;
+    document.getElementById('reverbSlider').value = reverbAmt;
+    document.getElementById('reverbVal').textContent = Math.round(reverbAmt*100)+'%';
+    if (wetGain) wetGain.gain.value = reverbAmt;
+  }
+  if (s.bassAmt !== undefined) {
+    bassAmt = s.bassAmt;
+    document.getElementById('bassSlider').value = bassAmt;
+    document.getElementById('bassVal').textContent = Math.round(bassAmt*100)+'%';
+  }
+  if (s.detuneAmt !== undefined) {
+    detuneAmt = s.detuneAmt;
+    document.getElementById('detuneSlider').value = detuneAmt;
+    document.getElementById('detuneVal').textContent = detuneAmt+'¢';
+  }
+  renderGrid(); renderDrumGrid();
+}
+
+function renderSavedPresets() {
+  const list  = document.getElementById('savedPresetList');
+  const saved = getStoredPresets();
+  list.innerHTML = '';
+  const names = Object.keys(saved);
+  if (!names.length) {
+    list.innerHTML = '<span style="font-size:8px;color:var(--muted);opacity:.5">no presets saved</span>';
+    return;
+  }
+  names.forEach(name => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:4px;align-items:center;';
+    const nameEl = document.createElement('span');
+    nameEl.style.cssText = 'flex:1;font-size:9px;color:var(--fg);letter-spacing:.05em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+    nameEl.textContent = name;
+    const loadBtn = document.createElement('button');
+    loadBtn.className='btn'; loadBtn.textContent='LOAD';
+    loadBtn.addEventListener('click', () => {
+      restoreState(saved[name]);
+      if (playing) { stopPlay(); startPlay();
+        document.getElementById('playBtn').textContent='■ STOP';
+        document.getElementById('playBtn').classList.add('lit');
+      }
+    });
+    const delBtn = document.createElement('button');
+    delBtn.className='btn'; delBtn.textContent='✕'; delBtn.style.padding='4px 6px';
+    delBtn.addEventListener('click', () => {
+      const s = getStoredPresets(); delete s[name];
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch(e){}
+      renderSavedPresets();
+    });
+    row.appendChild(nameEl); row.appendChild(loadBtn); row.appendChild(delBtn);
+    list.appendChild(row);
+  });
+}
+
+document.getElementById('savePresetBtn').addEventListener('click', () => {
+  const name = document.getElementById('presetNameIn').value.trim();
+  if (!name) return;
+  const saved = getStoredPresets();
+  saved[name] = captureState();
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(saved)); } catch(e){}
+  document.getElementById('presetNameIn').value = '';
+  renderSavedPresets();
+});
+
 // ── Defaults ─────────────────────────────────────────────────────────────────
 applyPreset('zen');
 applyDrumPreset('four4');
+renderSavedPresets();
 
 // ── Visualizer canvas ─────────────────────────────────────────────────────────
 const vizCanvas = document.getElementById('vizCanvas');
