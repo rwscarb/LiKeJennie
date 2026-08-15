@@ -1280,19 +1280,26 @@ function drawViz() {
 
   } else if (vizMode === 'spiral') {
     vctx.fillStyle=`hsla(${(hueBase+60)|0},70%,7%,0.11)`; vctx.fillRect(0,0,VW,VH);
-    const turns=3, rMax=Math.min(VW,VH)*0.46*vizUserScale;
+    // Golden-angle sunflower — true Fibonacci point distribution
+    const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5)); // ≈ 137.5°
+    // Audio energy drives breathe: low energy = tight (inward), high = loose (expanded)
+    const energy = freqData.slice(0, Math.floor(freqData.length * 0.55))
+                           .reduce((a,b)=>a+b,0) / (freqData.length * 0.55 * 255);
+    const breathe = 0.45 + energy * 1.10; // 0.45 (tight/silent) → 1.55 (loose/loud)
+    const rMax = Math.min(VW,VH) * 0.48 * vizUserScale * breathe;
     vctx.save(); vctx.translate(cx,cy);
     for(let i=0;i<maxBin;i++){
-      const t=i/maxBin;
-      const angle=t*turns*Math.PI*2+vizRot;
-      const r=t*rMax;
-      const v=freqData[i]/255;
-      const x=Math.cos(angle)*r, y=Math.sin(angle)*r;
-      const size=Math.max(1, v*5*vizUserScale);
-      const hue=(hueBase+t*180+vizRot*30)%360;
+      const t = i/maxBin;
+      const r = Math.sqrt(t) * rMax;  // sqrt = even radial density (sunflower)
+      const angle = i * GOLDEN_ANGLE + vizRot;
+      const v = freqData[i]/255;
+      if (v < 0.01) continue;
+      const x = Math.cos(angle)*r, y = Math.sin(angle)*r;
+      const size = Math.max(0.8, v * 6 * vizUserScale);
+      const hue = (hueBase + t*200 + vizRot*40) % 360;
       vctx.beginPath();
       vctx.arc(x,y,size,0,Math.PI*2);
-      vctx.fillStyle=`hsla(${hue|0},88%,${50+v*28|0}%,${(0.4+v*0.55).toFixed(2)})`;
+      vctx.fillStyle=`hsla(${hue|0},90%,${48+v*30|0}%,${(0.35+v*0.60).toFixed(2)})`;
       vctx.fill();
     }
     vctx.restore();
