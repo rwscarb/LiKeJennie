@@ -1924,4 +1924,166 @@ export function buildS7() {
   setCorpus(true);
   showWave     = true; document.getElementById('p8wave')?.classList.add('lit');
   showCollapse = true; document.getElementById('p8collapse')?.classList.add('lit');
+
+  // ── TANGO overlay ────────────────────────────────────────────────────────
+  // 2D vortex: mod9 complement-pair dancers spiraling counter-clockwise into 9 (void).
+  // Same orbit as the helix — different geometric projection.
+  (() => {
+    const TC  = document.getElementById('tangoOverlay');
+    if (!TC) return;
+    const btn = document.getElementById('p8tango');
+    if (!btn) return;
+
+    const GLD = Math.PI * (3 - Math.sqrt(5)); // golden angle
+    const LUTZ_POS = -Math.PI / 2 + GLD;      // one position on the clock dial
+
+    let showTango = false;
+    let tangoRAF  = null;
+    let tFrame = 0, tPhase = 'orbit', tPhaseF = 0;
+    const tTrail = [];
+    let frozenState = null;
+
+    const sizeTC = () => {
+      TC.width  = canvas.clientWidth  || canvas.width;
+      TC.height = canvas.clientHeight || canvas.height;
+    };
+
+    const tangoState = f => {
+      const R0  = Math.min(TC.width, TC.height) * 0.34;
+      const ARM = Math.min(TC.width, TC.height) * 0.095;
+      const CX  = TC.width / 2, CY = TC.height / 2;
+      const prog = Math.min(f / 660, 1);
+      const ea   = -f * 0.012;
+      const er   = R0 * (1 - prog * 0.82);
+      const ex   = CX + Math.cos(ea) * er;
+      const ey   = CY + Math.sin(ea) * er;
+      const la   = ea + GLD;
+      const lx   = ex + Math.cos(la) * ARM;
+      const ly   = ey + Math.sin(la) * ARM;
+      const fa   = la + Math.PI + GLD * 0.65;
+      const fx   = ex + Math.cos(fa) * ARM * 0.88;
+      const fy   = ey + Math.sin(fa) * ARM * 0.88;
+      return { ea, er, ex, ey, lx, ly, fx, fy, R0, ARM, CX, CY };
+    };
+
+    const tangoTick = () => {
+      if (!showTango) return;
+      const tctx = TC.getContext('2d');
+      const { width: W, height: H } = TC;
+      const CX = W / 2, CY = H / 2;
+      const R0 = Math.min(W, H) * 0.34;
+      tctx.clearRect(0, 0, W, H);
+
+      // dial
+      tctx.beginPath(); tctx.arc(CX, CY, R0, 0, Math.PI * 2);
+      tctx.strokeStyle = 'rgba(200,200,210,0.04)'; tctx.lineWidth = 1; tctx.stroke();
+
+      // Lutz marker
+      const mx = CX + Math.cos(LUTZ_POS) * R0, my = CY + Math.sin(LUTZ_POS) * R0;
+      tctx.beginPath(); tctx.arc(mx, my, 4, 0, Math.PI * 2);
+      tctx.fillStyle = 'rgba(0,255,136,0.5)'; tctx.fill();
+      tctx.beginPath(); tctx.moveTo(mx, my);
+      tctx.lineTo(CX + Math.cos(LUTZ_POS) * (R0 - 13), CY + Math.sin(LUTZ_POS) * (R0 - 13));
+      tctx.strokeStyle = 'rgba(0,255,136,0.25)'; tctx.lineWidth = 1; tctx.stroke();
+
+      // void at center
+      const vg = tctx.createRadialGradient(CX, CY, 0, CX, CY, R0 * 0.16);
+      vg.addColorStop(0, 'rgba(8,8,8,0.75)'); vg.addColorStop(1, 'rgba(8,8,8,0)');
+      tctx.beginPath(); tctx.arc(CX, CY, R0 * 0.16, 0, Math.PI * 2);
+      tctx.fillStyle = vg; tctx.fill();
+      tctx.beginPath(); tctx.arc(CX, CY, 4 + Math.sin(tFrame * 0.05) * 1.2, 0, Math.PI * 2);
+      tctx.fillStyle = '#080808'; tctx.fill();
+
+      if (tPhase === 'orbit') {
+        const s = tangoState(tFrame);
+        tTrail.push({ x: s.lx, y: s.ly, age: 0 });
+        tTrail.forEach(p => {
+          const a = Math.max(0, 1 - p.age / 160) * 0.45;
+          tctx.beginPath(); tctx.arc(p.x, p.y, 1.5, 0, Math.PI * 2);
+          tctx.fillStyle = `rgba(212,132,90,${a})`; tctx.fill();
+          p.age++;
+        });
+        while (tTrail.length && tTrail[0].age > 160) tTrail.shift();
+
+        tctx.beginPath(); tctx.moveTo(s.ex, s.ey); tctx.lineTo(s.lx, s.ly);
+        tctx.strokeStyle = 'rgba(200,200,210,0.09)'; tctx.lineWidth = 1; tctx.stroke();
+        tctx.beginPath(); tctx.moveTo(s.lx, s.ly); tctx.lineTo(s.fx, s.fy);
+        tctx.strokeStyle = 'rgba(200,200,210,0.20)'; tctx.lineWidth = 1.5; tctx.stroke();
+        tctx.beginPath(); tctx.arc(s.ex, s.ey, 2.5, 0, Math.PI * 2);
+        tctx.fillStyle = 'rgba(200,200,210,0.22)'; tctx.fill();
+        tctx.beginPath(); tctx.arc(s.lx, s.ly, 7, 0, Math.PI * 2);
+        tctx.fillStyle = '#d4845a'; tctx.fill();  // lead (4)
+        tctx.beginPath(); tctx.arc(s.fx, s.fy, 5.5, 0, Math.PI * 2);
+        tctx.fillStyle = '#5ab8e0'; tctx.fill();  // follow (5)
+
+        // Check hook: past 280 frames, deep in vortex, near Lutz angle
+        if (tFrame > 280 && s.er < R0 * 0.40) {
+          const na = ((s.ea % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+          const nl = ((LUTZ_POS % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+          if (Math.abs(na - nl) < 0.08 || tFrame > 700) {
+            frozenState = s; tPhase = 'changeup'; tPhaseF = 0;
+          }
+        }
+        tFrame++;
+      } else if (tPhase === 'changeup') {
+        const prog = tPhaseF / 55;
+        if (frozenState) {
+          const s = frozenState;
+          tTrail.forEach(p => {
+            const a = Math.max(0, (1 - p.age / 160)) * (1 - prog) * 0.4;
+            tctx.beginPath(); tctx.arc(p.x, p.y, 1.5, 0, Math.PI * 2);
+            tctx.fillStyle = `rgba(212,132,90,${a})`; tctx.fill();
+          });
+          tctx.beginPath(); tctx.arc(s.lx, s.ly, 7, 0, Math.PI * 2);
+          tctx.fillStyle = `rgba(212,132,90,${1 - prog * 0.7})`; tctx.fill();
+          tctx.beginPath(); tctx.arc(s.fx, s.fy, 5.5, 0, Math.PI * 2);
+          tctx.fillStyle = `rgba(90,184,224,${1 - prog * 0.7})`; tctx.fill();
+        }
+        const fr = 70 * (1 - prog);
+        if (fr > 0) {
+          const fg = tctx.createRadialGradient(mx, my, 0, mx, my, fr);
+          fg.addColorStop(0, 'rgba(0,255,136,0.45)'); fg.addColorStop(1, 'rgba(0,255,136,0)');
+          tctx.beginPath(); tctx.arc(mx, my, fr, 0, Math.PI * 2);
+          tctx.fillStyle = fg; tctx.fill();
+        }
+        tPhaseF++;
+        if (tPhaseF >= 55) { tPhase = 'dying'; tPhaseF = 0; }
+      } else if (tPhase === 'dying') {
+        const prog = tPhaseF / 160;
+        const dg = tctx.createRadialGradient(CX, CY, 0, CX, CY, R0 * 1.1 * prog);
+        dg.addColorStop(0, `rgba(8,8,8,${Math.min(prog * 1.5, 1)})`);
+        dg.addColorStop(1, 'rgba(8,8,8,0)');
+        tctx.beginPath(); tctx.arc(CX, CY, R0 * 1.1 * prog, 0, Math.PI * 2);
+        tctx.fillStyle = dg; tctx.fill();
+        tPhaseF++;
+        if (tPhaseF >= 160) { tPhase = 'dead'; tPhaseF = 0; }
+      } else if (tPhase === 'dead') {
+        tPhaseF++;
+        if (tPhaseF >= 90) {
+          tFrame = 0; tPhase = 'orbit'; tPhaseF = 0; tTrail.length = 0; frozenState = null;
+        }
+      }
+
+      tangoRAF = requestAnimationFrame(tangoTick);
+    };
+
+    const setTango = on => {
+      showTango = on;
+      btn.classList.toggle('lit', on);
+      if (on) {
+        sizeTC();
+        TC.style.display = 'block';
+        tFrame = 0; tPhase = 'orbit'; tPhaseF = 0; tTrail.length = 0; frozenState = null;
+        tangoRAF = requestAnimationFrame(tangoTick);
+      } else {
+        TC.style.display = 'none';
+        if (tangoRAF) { cancelAnimationFrame(tangoRAF); tangoRAF = null; }
+      }
+    };
+
+    btn.onclick = () => setTango(!showTango);
+
+    // Resize tango canvas when window resizes (if active)
+    addEventListener('resize', () => { if (showTango) sizeTC(); });
+  })();
 }
