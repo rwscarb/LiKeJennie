@@ -692,7 +692,7 @@ while n not in seen:
     <h2>Echo Pairs</h2>
     <p>Each orbit value has one echo value. Add an orbit value to its echo value to get 9.</p>
     <p>1↔8 &nbsp;·&nbsp; 2↔7 &nbsp;·&nbsp; 4↔5</p>
-    <p>This visualization uses two strands in harmony. Strand A carries the orbit values. Strand B carries the echo values. Strand B is offset by π radians (180°) from Strand A.</p>
+    <p>This visualization uses two strands in harmony. <strong>Tim Crews</strong> (Strand A) carries the orbit values. <strong>Steve Olin</strong> (Strand B) carries the echo values. Strand B is offset by π radians (180°) from Strand A — counterphase, inseparable.</p>
     <p>Each rung connects a node on Strand A to its echo node on Strand B.</p>
     <p>The orbit values form two groups: &#123;2, 4, 7&#125; with sum 13, and &#123;5, 8&#125; with sum 13. Both groups have the same sum.</p>
 

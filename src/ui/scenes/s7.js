@@ -1109,7 +1109,8 @@ export function buildS7() {
 
   // ── HUD ──────────────────────────────────────────────────────────────────
   ov.innerHTML =
-    `<div style="color:#4ac880;letter-spacing:.1em">08 · JENNIE φ</div>` +
+    `<div style="color:#4ac880;letter-spacing:.1em">08 · HARMONY</div>` +
+    `<div style="color:#c0c0c0;font-size:7px;margin-top:2px;letter-spacing:.06em">Tim Crews · Steve Olin</div>` +
     `<div style="color:#FFD700;font-size:8px;margin-top:2px">896 = 2<sup>7</sup>×7 · τ=16 · φ-step</div>` +
     `<div style="color:#4a9068;font-size:7.5px;margin-top:2px">1→2→4→8→7→5 (×2 mod 9)</div>` +
     `<div style="font-size:7.5px;margin-top:2px">` +
