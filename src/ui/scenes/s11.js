@@ -1,282 +1,212 @@
 /**
- * OLIVER 42 — Scene 11 — STANDING WAVE
+ * OLIVER 42 — Scene 11 — FOLD INTO INFINITY
  *
- * Canonical form (Wife's sketch 2026-08-15):
- *   [small ∞ loop] ← top tip
- *        X         ← upper void crossing
- *   [large lemon]  ← standing wave body
- *        X         ← lower void crossing
- *   [small ∞ loop] ← bottom tip
+ * The clock is logically prior to the ∞. The lemniscate is the double-folded clock.
  *
- * Vertical axis. Lopsided perfectly. Clock back-to-back at equator, no gap.
- * Pluck along clock, never at 6 or 12.
- * Forward ×2 mod9: 1→2→4→8→7→5. Backward ×5 mod9: 1→5→7→8→4→2.
+ * Animated fold sequence (Wife's door diagram, 2026-08-15):
+ *   [clock L] | [clock R]   ← 2 clocks, side by side
+ *              ↓ 1st fold ("Folding time")
+ *       [clock L][clock R]  ← back-to-back (forward / backward orbit)
+ *              ↓ 2nd fold
+ *             ∞              ← fold into infinity
  */
 import { THREE, CSS2DObject, R, mkCamera, mkControls } from './shared.js';
 
 const C_FWD  = 0xaa44ff;
 const C_BWD  = 0xff44cc;
-const C_BODY = 0x443366;
+const C_LINE = 0x553377;
 const CS_FWD = '#cc66ff';
 const CS_BWD = '#ff88ee';
+const CS_LIN = '#774499';
 
 const ORBIT_FWD = [1, 2, 4, 8, 7, 5];
 const ORBIT_BWD = [1, 5, 7, 8, 4, 2];
 
-// Lemon: vertical axis (Y), tips at (0, ±LEMON_L, 0), widest at (±LEMON_W, 0, 0)
-const LEMON_L  = 5.0;
-const LEMON_W  = 1.9;
-const CLOCK_R  = 1.5;
-const CLOCK_Y  = 0.0;     // flat — in the same plane as the lemon (fold = the 2D origami crease)
-const TIP_A    = 1.0;     // tip lemniscate radius
-const N_ARC    = 192;
-const TIP_SEGS = 256;
+const CLOCK_R  = 2.2;    // clock ring radius
+const D_MAX    = 5.4;    // half-separation when unfolded
+const LEM_A    = 3.8;    // lemniscate semi-axis
+const N_CURVE  = 320;    // curve segments
 
-// Vertical lemon arcs (long axis = Y).
-// Derived from horizontal arc math with x↔y swap.
-// right=true: right arc (x>0), right=false: left arc (x<0)
-function lemonArcPts(L, W, N, right) {
-  const c  = (W * W - L * L) / (2 * W);   // < 0 for lemon (L > W)
-  const rc = (W * W + L * L) / (2 * W);
-  const pts = [];
-  if (right) {
-    // Horizontal-upper arc gives (hx: L-axis, hy: W-axis); swap → (x=hy, y=hx)
-    const thL = Math.atan2(-c, -L);
-    const thR = Math.atan2(-c,  L);
-    for (let i = 0; i <= N; i++) {
-      const th = thL + (thR - thL) * (i / N);
-      const hx = rc * Math.cos(th);          // along original L axis → becomes Y
-      const hy = c  + rc * Math.sin(th);     // along original W axis → becomes X
-      pts.push(new THREE.Vector3(hy, hx, 0));
-    }
-  } else {
-    const thL = Math.atan2( c, -L);
-    const thR = Math.atan2( c,  L);
-    for (let i = 0; i <= N; i++) {
-      const th = thL + (thR - thL) * (i / N);
-      const hx = rc * Math.cos(th);
-      const hy = -c + rc * Math.sin(th);
-      pts.push(new THREE.Vector3(hy, hx, 0));
-    }
-  }
-  return pts;
+const CYCLE_T  = 16.0;   // seconds per full fold cycle
+// Phase breakpoints (0-1)
+const P_UNFOLDED = 0.30;  // end of unfolded dwell
+const P_FOLD1    = 0.45;  // end of 1st fold animation
+const P_BTB      = 0.55;  // end of back-to-back dwell
+const P_FOLD2    = 0.70;  // end of 2nd fold animation
+const P_INF      = 0.93;  // end of ∞ dwell
+// 0.93-1.0: return to unfolded
+
+// Clock node angles: offset by π/6 so never at 12 or 6 (per lore)
+const NODE_ANGLES_FWD = ORBIT_FWD.map((_, i) => Math.PI / 2 + Math.PI / 6 - (i / 6) * Math.PI * 2);
+const NODE_ANGLES_BWD = ORBIT_BWD.map((_, i) => Math.PI / 2 - Math.PI / 6 + (i / 6) * Math.PI * 2);
+
+function ease(t) { const c = Math.min(Math.max(t, 0), 1); return c < 0.5 ? 2*c*c : 1 - Math.pow(-2*c+2,2)/2; }
+
+// Bernoulli lemniscate point (standard parameterization)
+function lemPt(t) {
+  const s = Math.sin(t), c = Math.cos(t), d = 1 + s * s;
+  return new THREE.Vector3(LEM_A * c / d, LEM_A * s * c / d, 0);
 }
 
-// Tip lemniscate in XY plane (the flat), centered at (0, cy).
-// Vertical figure-8: crosses at (0, cy), loops extend to (0, cy±A).
-// The ∞ flows through the flat — same plane as the lemon.
-function tipLemPt(t, A, cy) {
-  const s = Math.sin(t), cs = Math.cos(t);
-  const d = 1 + s * s;
-  return new THREE.Vector3(A * s * cs / d, cy + A * cs / d, 0);
-}
-
-function arcLerp(pts, frac) {
-  const clamped = ((frac % 1) + 1) % 1;
-  const raw = clamped * (pts.length - 1);
-  const i0  = Math.floor(raw);
-  const i1  = Math.min(i0 + 1, pts.length - 1);
-  return new THREE.Vector3().lerpVectors(pts[i0], pts[i1], raw - i0);
+// Interpolate a single point between circle-on-clock and lemniscate
+// circleAngle: angle on clock ring, cx: clock center x
+// lemT: corresponding t parameter on lemniscate
+function blendPt(circleAngle, cx, lemT, blend) {
+  const cp = new THREE.Vector3(cx + CLOCK_R * Math.cos(circleAngle), CLOCK_R * Math.sin(circleAngle), 0);
+  const lp = lemPt(lemT);
+  return cp.lerp(lp, blend);
 }
 
 export function buildS11() {
   const scene  = R.scene  = new THREE.Scene();
   R.camera     = mkCamera();
-  R.camera.position.set(0, 0, 16);   // looking straight at the flat (XY plane)
+  R.camera.position.set(0, 0, 18);
   R.camera.lookAt(0, 0, 0);
   R.controls   = mkControls(R.camera);
-  R.controls.autoRotate      = true;
-  R.controls.autoRotateSpeed = 0.20;
+  R.controls.autoRotate      = false;   // flat 2D view by default; user can orbit
 
-  scene.add(new THREE.AmbientLight(0x060414, 3.5));
-  const pl1 = new THREE.PointLight(C_FWD, 2.2, 22); pl1.position.set( 3,  6,  5); scene.add(pl1);
-  const pl2 = new THREE.PointLight(C_BWD, 1.8, 22); pl2.position.set(-3, -6, -5); scene.add(pl2);
+  scene.add(new THREE.AmbientLight(0x080418, 3.0));
+  const pl1 = new THREE.PointLight(C_FWD, 1.8, 22); pl1.position.set(-4, 4, 6); scene.add(pl1);
+  const pl2 = new THREE.PointLight(C_BWD, 1.5, 22); pl2.position.set( 4, -4, 6); scene.add(pl2);
 
-  // ── Vertical lemon body ───────────────────────────────────────────────────────
-  // rightPts: (0,-L) → right side → (0,+L)  [going upward on right]
-  // leftPts:  (0,-L) → left side  → (0,+L)  [going upward on left]
-  const rightPts = lemonArcPts(LEMON_L, LEMON_W, N_ARC, true);
-  const leftPts  = lemonArcPts(LEMON_L, LEMON_W, N_ARC, false);
-
-  function addTube(pts, color, radius, opacity) {
-    const curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.5);
-    const geo   = new THREE.TubeGeometry(curve, pts.length, radius, 5, false);
-    const mat   = new THREE.MeshPhongMaterial({
-      color, emissive: color, emissiveIntensity: 0.20,
-      transparent: true, opacity, shininess: 40,
-    });
-    R.disposables.push(geo, mat);
-    scene.add(new THREE.Mesh(geo, mat));
-    return mat;
-  }
-
-  const rightMat = addTube(rightPts, C_BODY, 0.055, 0.72);
-  const leftMat  = addTube(leftPts,  C_BODY, 0.055, 0.72);
-
-  // Lemon tips (vertical: top and bottom)
-  for (const sy of [-1, 1]) {
-    const g = new THREE.SphereGeometry(0.10, 12, 8);
-    const m = new THREE.MeshPhongMaterial({ color: 0x6633aa, emissive: 0x6633aa, emissiveIntensity: 1.0, transparent: true, opacity: 0.90 });
-    R.disposables.push(g, m);
-    const mesh = new THREE.Mesh(g, m); mesh.position.set(0, sy * LEMON_L, 0);
-    scene.add(mesh);
-  }
-
-  // X crossings at top and bottom junctions (void/9 points)
-  for (const sy of [-1, 1]) {
-    const g = new THREE.TorusGeometry(0.18, 0.035, 8, 36);
-    const m = new THREE.MeshBasicMaterial({ color: 0x2a1a44, transparent: true, opacity: 0.55 });
-    R.disposables.push(g, m);
-    const mesh = new THREE.Mesh(g, m); mesh.position.set(0, sy * LEMON_L, 0);
-    scene.add(mesh);
-  }
-
-  // ── Tip lemniscates (XZ plane, at top and bottom) ────────────────────────────
-  function addTipLem(cy, color) {
+  // ── Helper: dynamic tube (updated each frame) ─────────────────────────────────
+  function mkDynamicTube(N, color, tubeR, opacity) {
     const pts = [];
-    for (let i = 0; i <= TIP_SEGS; i++) pts.push(tipLemPt((i / TIP_SEGS) * Math.PI * 2, TIP_A, cy));
-    const curve = new THREE.CatmullRomCurve3(pts, true, 'catmullrom', 0.5);
-    const geo   = new THREE.TubeGeometry(curve, TIP_SEGS, 0.028, 5, true);
-    const mat   = new THREE.MeshPhongMaterial({ color, emissive: color, emissiveIntensity: 0.30, transparent: true, opacity: 0.50 });
+    for (let i = 0; i <= N; i++) pts.push(new THREE.Vector3(0, 0, 0));
+    const curve  = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.5);
+    const geo    = new THREE.TubeGeometry(curve, N, tubeR, 5, false);
+    const mat    = new THREE.MeshPhongMaterial({ color, emissive: color, emissiveIntensity: 0.25, transparent: true, opacity });
     R.disposables.push(geo, mat);
-    scene.add(new THREE.Mesh(geo, mat));
-  }
-  addTipLem( LEMON_L, C_FWD);  // top ∞ — forward
-  addTipLem(-LEMON_L, C_BWD);  // bottom ∞ — backward
-
-  // ── Traveler spheres ─────────────────────────────────────────────────────────
-  function mkSphere(r, color) {
-    const g = new THREE.SphereGeometry(r, 14, 9);
-    const m = new THREE.MeshPhongMaterial({ color, emissive: color, emissiveIntensity: 1.0, transparent: true, opacity: 0.95 });
-    R.disposables.push(g, m);
-    const mesh = new THREE.Mesh(g, m); scene.add(mesh);
-    return mesh;
-  }
-  const travFwd    = mkSphere(0.17, C_FWD);
-  const travBwd    = mkSphere(0.17, C_BWD);
-  const tipTravFwd = mkSphere(0.13, C_FWD);
-  const tipTravBwd = mkSphere(0.13, C_BWD);
-
-  const TAIL = 22;
-  function mkTail(color) {
-    const arr  = new Float32Array((TAIL + 1) * 3);
-    const geo  = new THREE.BufferGeometry();
-    const attr = new THREE.BufferAttribute(arr, 3);
-    attr.setUsage(THREE.DynamicDrawUsage);
-    geo.setAttribute('position', attr);
-    const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.28 });
-    R.disposables.push(geo, mat);
-    scene.add(new THREE.Line(geo, mat));
-    return { arr, attr, geo, hist: [] };
-  }
-  function pushTail(tail, pos) {
-    tail.hist.push(pos.clone());
-    if (tail.hist.length > TAIL) tail.hist.shift();
-    for (let i = 0; i < tail.hist.length; i++) {
-      tail.arr[i*3] = tail.hist[i].x; tail.arr[i*3+1] = tail.hist[i].y; tail.arr[i*3+2] = tail.hist[i].z;
-    }
-    tail.attr.needsUpdate = true;
-    tail.geo.setDrawRange(0, tail.hist.length);
-  }
-  const tailFwd = mkTail(C_FWD);
-  const tailBwd = mkTail(C_BWD);
-
-  // Full lemon contour CW (viewed from +Z):
-  // right arc bottom→top + reversed left arc top→bottom
-  const contour = [...rightPts, ...[...leftPts].reverse()];
-
-  // ── Back-to-back clock in the flat (XY plane, z=0) ───────────────────────────
-  // The model is 2D origami. The clock is drawn once in the flat plane.
-  // Folding the paper along the lemon's vertical axis brings front and back together.
-  // Front face = forward orbit; back face = mirror = backward orbit. No Z separation.
-  function addClockRing(z, color, opacity) {
-    const geo = new THREE.TorusGeometry(CLOCK_R, 0.022, 6, 80);
-    const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity });
-    R.disposables.push(geo, mat);
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.z = z;
+    const mesh   = new THREE.Mesh(geo, mat);
     scene.add(mesh);
-  }
-  addClockRing( 0.015, C_FWD, 0.55);   // front face (fold front)
-  addClockRing(-0.015, C_BWD, 0.40);   // back face (fold back, mirror)
-
-  // Clock nodes in XZ plane. Rotate by π/6 so nodes never land at 12 (north) or 6 (south).
-  // Angles in XZ plane: a=0 → +X (east), a=π/2 → +Z (front), etc.
-  // Offset by π/6 from "north" (which in XZ would be -Z pointing toward camera)
-  const nodeAngles = ORBIT_FWD.map((_, i) => -Math.PI / 2 + Math.PI / 6 + (i / 6) * Math.PI * 2);
-  const fwdNodeMats = [], bwdNodeMats = [];
-
-  for (let i = 0; i < 6; i++) {
-    const a  = nodeAngles[i];
-    const nx = CLOCK_R * Math.cos(a);
-    const ny = CLOCK_R * Math.sin(a);
-
-    // Front face node (in XY flat)
-    { const g = new THREE.SphereGeometry(0.095, 10, 7);
-      const m = new THREE.MeshPhongMaterial({ color: C_FWD, emissive: C_FWD, emissiveIntensity: 0.22, transparent: true, opacity: 0.72 });
-      R.disposables.push(g, m);
-      const mesh = new THREE.Mesh(g, m); mesh.position.set(nx, ny, 0.016); scene.add(mesh);
-      fwdNodeMats.push(m); }
-
-    // Back face node — x-mirrored (folding reverses left/right → backward orbit)
-    { const g = new THREE.SphereGeometry(0.095, 10, 7);
-      const m = new THREE.MeshPhongMaterial({ color: C_BWD, emissive: C_BWD, emissiveIntensity: 0.22, transparent: true, opacity: 0.55 });
-      R.disposables.push(g, m);
-      const mesh = new THREE.Mesh(g, m); mesh.position.set(-nx, ny, -0.016); scene.add(mesh);
-      bwdNodeMats.push(m); }
-
-    // Label
-    { const div = document.createElement('div');
-      div.textContent = String(ORBIT_FWD[i]);
-      div.style.cssText = `font-family:'Courier New',monospace;font-size:10px;font-weight:bold;color:${CS_FWD};pointer-events:none;user-select:none`;
-      const lbl = new CSS2DObject(div);
-      lbl.position.set(nx * 1.32, ny * 1.32, 0.02);
-      scene.add(lbl); R.css2dObjects.push(lbl); }
+    return { curve, geo, mat, mesh, pts, N };
   }
 
-  // Dynamic clock hands sweeping in XY flat plane
-  function mkHand(z, color) {
-    const arr  = new Float32Array([0, 0, z, CLOCK_R * 0.82, 0, z]);
+  function updateTube(tube, newPts) {
+    for (let i = 0; i < tube.pts.length; i++) tube.pts[i].copy(newPts[i]);
+    tube.curve.points = tube.pts;
+    const ng = new THREE.TubeGeometry(tube.curve, tube.N, tube.geo.parameters.tubularSegments > 0 ? 0.045 : 0.045, 5, false);
+    tube.mesh.geometry.dispose();
+    tube.mesh.geometry = ng;
+    R.disposables.push(ng);
+  }
+
+  // ── Clock ring geometry (updated positions each frame) ───────────────────────
+  function mkRingLine(color, opacity) {
+    const arr  = new Float32Array((N_CURVE + 1) * 3);
     const geo  = new THREE.BufferGeometry();
     const attr = new THREE.BufferAttribute(arr, 3);
     attr.setUsage(THREE.DynamicDrawUsage);
     geo.setAttribute('position', attr);
-    const mat  = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.92 });
+    const mat  = new THREE.LineBasicMaterial({ color, transparent: true, opacity });
     R.disposables.push(geo, mat);
-    const line = new THREE.Line(geo, mat); scene.add(line);
-    return { arr, attr };
+    const line = new THREE.Line(geo, mat);
+    scene.add(line);
+    return { arr, attr, mat };
   }
-  const handFwd = mkHand( 0.018, C_FWD);
-  const handBwd = mkHand(-0.018, C_BWD);
 
-  // ── Center void (equator crossing, in the flat) ──────────────────────────────
-  { const g = new THREE.TorusGeometry(0.20, 0.038, 8, 40);
-    const m = new THREE.MeshBasicMaterial({ color: 0x2a1a44, transparent: true, opacity: 0.55 });
+  const ringL = mkRingLine(C_FWD, 0.80);  // left clock ring
+  const ringR = mkRingLine(C_BWD, 0.70);  // right clock ring
+  const lemRing = mkRingLine(0xaa44ff, 0.0);  // lemniscate (fades in)
+
+  // ── Node spheres ─────────────────────────────────────────────────────────────
+  function mkNodes(color) {
+    const nodes = [];
+    for (let i = 0; i < 6; i++) {
+      const g = new THREE.SphereGeometry(0.14, 10, 7);
+      const m = new THREE.MeshPhongMaterial({ color, emissive: color, emissiveIntensity: 0.25, transparent: true, opacity: 0.85 });
+      R.disposables.push(g, m);
+      const mesh = new THREE.Mesh(g, m); scene.add(mesh);
+      nodes.push({ mesh, mat: m });
+    }
+    return nodes;
+  }
+  const nodesL = mkNodes(C_FWD);
+  const nodesR = mkNodes(C_BWD);
+
+  // ── Node labels (left clock only, visible during unfolded state) ──────────────
+  const labelDivs = ORBIT_FWD.map((v, i) => {
+    const div = document.createElement('div');
+    div.textContent = String(v);
+    div.style.cssText = `font-family:'Courier New',monospace;font-size:11px;font-weight:bold;color:${CS_FWD};pointer-events:none;user-select:none;transition:opacity 0.4s`;
+    const lbl = new CSS2DObject(div);
+    scene.add(lbl); R.css2dObjects.push(lbl);
+    return { lbl, div };
+  });
+  const labelDivsR = ORBIT_BWD.map((v, i) => {
+    const div = document.createElement('div');
+    div.textContent = String(v);
+    div.style.cssText = `font-family:'Courier New',monospace;font-size:11px;font-weight:bold;color:${CS_BWD};pointer-events:none;user-select:none;transition:opacity 0.4s`;
+    const lbl = new CSS2DObject(div);
+    scene.add(lbl); R.css2dObjects.push(lbl);
+    return { lbl, div };
+  });
+
+  // ── Fold line (vertical, center) ──────────────────────────────────────────────
+  { const g = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0,  3.5, 0),
+      new THREE.Vector3(0, -3.5, 0),
+    ]);
+    const m = new THREE.LineBasicMaterial({ color: C_LINE, transparent: true, opacity: 0.0 });
     R.disposables.push(g, m);
-    scene.add(new THREE.Mesh(g, m)); }   // already in XY plane by default
+    const line = new THREE.Line(g, m); scene.add(line);
+    // Store for animation
+    R._foldLineMat = m; }
+
+  // ── Traveler on lemniscate (visible in ∞ state) ───────────────────────────────
+  const travGeo = new THREE.SphereGeometry(0.18, 12, 8);
+  const travMat = new THREE.MeshPhongMaterial({ color: C_FWD, emissive: C_FWD, emissiveIntensity: 1.0, transparent: true, opacity: 0.0 });
+  R.disposables.push(travGeo, travMat);
+  const traveler = new THREE.Mesh(travGeo, travMat);
+  scene.add(traveler);
+
+  // Traveler tail
+  const TAIL = 20;
+  const tailArr  = new Float32Array((TAIL + 1) * 3);
+  const tailGeo  = new THREE.BufferGeometry();
+  const tailAttr = new THREE.BufferAttribute(tailArr, 3);
+  tailAttr.setUsage(THREE.DynamicDrawUsage);
+  tailGeo.setAttribute('position', tailAttr);
+  const tailMat = new THREE.LineBasicMaterial({ color: C_FWD, transparent: true, opacity: 0.0 });
+  R.disposables.push(tailGeo, tailMat);
+  scene.add(new THREE.Line(tailGeo, tailMat));
+  const tailHist = [];
+
+  // Left traveler (visible during unfolded/fold1 states)
+  const lTravMat = new THREE.MeshPhongMaterial({ color: C_FWD, emissive: C_FWD, emissiveIntensity: 1.0, transparent: true, opacity: 0.0 });
+  const lTravMesh = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 7), lTravMat);
+  R.disposables.push(lTravMesh.geometry, lTravMat); scene.add(lTravMesh);
+  const rTravMat = new THREE.MeshPhongMaterial({ color: C_BWD, emissive: C_BWD, emissiveIntensity: 1.0, transparent: true, opacity: 0.0 });
+  const rTravMesh = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 7), rTravMat);
+  R.disposables.push(rTravMesh.geometry, rTravMat); scene.add(rTravMesh);
+
+  // ── Void / center marker ──────────────────────────────────────────────────────
+  const voidGeo = new THREE.TorusGeometry(0.22, 0.035, 8, 40);
+  const voidMat = new THREE.MeshBasicMaterial({ color: 0x2a1a44, transparent: true, opacity: 0.0 });
+  R.disposables.push(voidGeo, voidMat);
+  scene.add(new THREE.Mesh(voidGeo, voidMat));
   { const div = document.createElement('div');
-    div.textContent = '9';
-    div.style.cssText = `font-family:'Courier New',monospace;font-size:9px;color:#333355;pointer-events:none;user-select:none`;
+    div.textContent = '9'; div.id = 's11_void';
+    div.style.cssText = `font-family:'Courier New',monospace;font-size:9px;color:#333355;pointer-events:none;user-select:none;opacity:0;transition:opacity 0.4s`;
     const lbl = new CSS2DObject(div); lbl.position.set(0.28, 0.10, 0);
     scene.add(lbl); R.css2dObjects.push(lbl); }
 
   // ── Overlay ──────────────────────────────────────────────────────────────────
   R.ov.innerHTML =
     `<div style="color:${CS_FWD};letter-spacing:.1em">11 · OLIVER 42</div>` +
-    `<div style="color:#553377;font-size:11px;margin-top:3px">∞ · 🍋 · ∞  vertical</div>` +
-    `<div style="font-size:10px;margin-top:5px;line-height:1.9">` +
-      `<span style="color:${CS_FWD}">↑</span> ×2: 1·2·4·8·7·5<br>` +
-      `<span style="color:${CS_BWD}">↓</span> ×5: 1·5·7·8·4·2<br>` +
-      `<span style="color:#553377">⊗</span> 9 = void · two X crossings` +
+    `<div style="font-size:11px;margin-top:4px;line-height:1.9">` +
+      `<span style="color:${CS_FWD}">×2</span> 1·2·4·8·7·5<br>` +
+      `<span style="color:${CS_BWD}">×5</span> 1·5·7·8·4·2<br>` +
+      `<span style="color:#553377">9</span> = void · fold line` +
     `</div>` +
     `<div style="margin-top:8px;padding-top:5px;border-top:1px solid #1a0830">` +
-      `<span id="s11_state" style="font-family:'Courier New',monospace;font-size:13px;color:${CS_FWD};letter-spacing:.09em">↑1 ↓1</span>` +
+      `<span id="s11_phase" style="font-family:'Courier New',monospace;font-size:12px;color:${CS_FWD};letter-spacing:.09em">2 clocks</span>` +
     `</div>`;
 
   if (R.clkDisplay) {
     R.clkDisplay.innerHTML =
       `<div style="color:#aa44ff;letter-spacing:.1em">11 · OLIVER 42</div>` +
-      `<div style="color:#553377;margin-top:3px;font-size:8px">∞·🍋·∞</div>`;
+      `<div style="color:#553377;margin-top:3px;font-size:8px">fold into ∞</div>`;
   }
 
   const rotBtn = document.getElementById('p11rot');
@@ -285,76 +215,179 @@ export function buildS11() {
     rotBtn.classList.toggle('lit', R.controls.autoRotate);
   };
 
+  // ── Pre-compute lemniscate curve points ───────────────────────────────────────
+  const lemPts = [];
+  for (let i = 0; i <= N_CURVE; i++) lemPts.push(lemPt((i / N_CURVE) * Math.PI * 2));
+
+  // Map each of the 6 forward orbit nodes to lemniscate t-values
+  // Left lobe (backward orbit, t ∈ [π/2, 3π/2], roughly x < 0): 3 nodes
+  // Right lobe (forward orbit, t ∈ [-π/2, π/2], roughly x > 0): 3 nodes
+  // Map fwd nodes to right lobe (t ∈ [-π/2, π/2]), spaced evenly
+  const LEM_T_FWD = [0, Math.PI/3, 2*Math.PI/3, Math.PI, 4*Math.PI/3, 5*Math.PI/3];
+
   // ── Animation ─────────────────────────────────────────────────────────────────
-  const LOOP_T  = 9.0;
-  const TIP_T   = 2.8;
-  const ORBIT_T = LOOP_T / 6;
-  let   startTime = null;
+  let startTime  = null;
+  let travT      = 0;
+  const TRAV_SPD = 0.35;  // rad/s for clock traveler
+
+  function updateRing(ring, cx, t_frac) {
+    for (let i = 0; i <= N_CURVE; i++) {
+      const t = (i / N_CURVE) * Math.PI * 2;
+      const x = cx + CLOCK_R * Math.cos(t);
+      const y = CLOCK_R * Math.sin(t);
+      ring.arr[i * 3]     = x;
+      ring.arr[i * 3 + 1] = y;
+      ring.arr[i * 3 + 2] = 0;
+    }
+    ring.attr.needsUpdate = true;
+  }
+
+  function updateLemRing(ring, blend) {
+    for (let i = 0; i <= N_CURVE; i++) {
+      const t  = (i / N_CURVE) * Math.PI * 2;
+      // Circle form (two overlapping circles collapsed to one)
+      const cx = CLOCK_R * Math.cos(t), cy = CLOCK_R * Math.sin(t);
+      const lp = lemPt(t);
+      ring.arr[i * 3]     = cx + (lp.x - cx) * blend;
+      ring.arr[i * 3 + 1] = cy + (lp.y - cy) * blend;
+      ring.arr[i * 3 + 2] = 0;
+    }
+    ring.attr.needsUpdate = true;
+  }
 
   R.animFn = (now) => {
     if (startTime === null) startTime = now;
     const elapsed = (now - startTime) / 1000;
+    const p = (elapsed % CYCLE_T) / CYCLE_T;  // 0-1
 
-    // ── Lemon travelers (opposite directions) ────────────────────────────────
-    const frac    = (elapsed / LOOP_T) % 1;
-    const posFwd  = arcLerp(contour, frac);
-    const posBwd  = arcLerp(contour, 1 - frac);
-    travFwd.position.copy(posFwd);
-    travBwd.position.copy(posBwd);
-    pushTail(tailFwd, posFwd);
-    pushTail(tailBwd, posBwd);
-
-    // Standing wave glow peaks when travelers cross
-    const wave = Math.abs(Math.cos(frac * Math.PI * 2));
-    rightMat.emissiveIntensity = 0.12 + 0.30 * wave;
-    leftMat.emissiveIntensity  = 0.12 + 0.30 * wave;
-
-    // ── Tip lemniscate travelers ──────────────────────────────────────────────
-    const tipFrac = (elapsed / TIP_T) % 1;
-    tipTravFwd.position.copy(tipLemPt( tipFrac * Math.PI * 2, TIP_A,  LEMON_L));
-    tipTravBwd.position.copy(tipLemPt(-tipFrac * Math.PI * 2, TIP_A, -LEMON_L));
-
-    // ── Clock (XZ plane sweep) ────────────────────────────────────────────────
-    const rawStep  = (elapsed / ORBIT_T) % 6;
-    const orbitIdx = Math.floor(rawStep) % 6;
-    const stepFrac = rawStep - Math.floor(rawStep);
-
-    const aFrom = nodeAngles[orbitIdx];
-    const aTo   = nodeAngles[(orbitIdx + 1) % 6];
-    let dA = aTo - aFrom;
-    if (dA >  Math.PI) dA -= Math.PI * 2;
-    if (dA < -Math.PI) dA += Math.PI * 2;
-    const handAngle = aFrom + dA * stepFrac;
-
-    // Hands sweep in XY plane (the flat)
-    const hx = CLOCK_R * 0.82 * Math.cos(handAngle);
-    const hy = CLOCK_R * 0.82 * Math.sin(handAngle);
-
-    handFwd.arr[3] =  hx; handFwd.arr[4] =  hy; handFwd.arr[5] =  0.018;
-    handFwd.attr.needsUpdate = true;
-    handBwd.arr[3] = -hx; handBwd.arr[4] =  hy; handBwd.arr[5] = -0.018;  // x-mirrored = backward
-    handBwd.attr.needsUpdate = true;
-
-    // Node highlights
-    const bwdIdx = (6 - orbitIdx) % 6;
-    for (let i = 0; i < 6; i++) {
-      fwdNodeMats[i].emissiveIntensity = (i === orbitIdx) ? 1.3 : 0.18;
-      fwdNodeMats[i].opacity           = (i === orbitIdx) ? 1.0 : 0.62;
-      bwdNodeMats[i].emissiveIntensity = (i === bwdIdx)   ? 1.0 : 0.18;
-      bwdNodeMats[i].opacity           = (i === bwdIdx)   ? 0.90 : 0.48;
+    // ── Determine animation phase ─────────────────────────────────────────────
+    let phase = 'UNFOLDED', phaseT = 0;
+    if (p < P_UNFOLDED) {
+      phase = 'UNFOLDED'; phaseT = p / P_UNFOLDED;
+    } else if (p < P_FOLD1) {
+      phase = 'FOLD1'; phaseT = ease((p - P_UNFOLDED) / (P_FOLD1 - P_UNFOLDED));
+    } else if (p < P_BTB) {
+      phase = 'BTB'; phaseT = (p - P_FOLD1) / (P_BTB - P_FOLD1);
+    } else if (p < P_FOLD2) {
+      phase = 'FOLD2'; phaseT = ease((p - P_BTB) / (P_FOLD2 - P_BTB));
+    } else if (p < P_INF) {
+      phase = 'INF'; phaseT = (p - P_FOLD2) / (P_INF - P_FOLD2);
+    } else {
+      phase = 'RETURN'; phaseT = ease((p - P_INF) / (1 - P_INF));
     }
 
-    // HUD
-    const fwdVal = ORBIT_FWD[orbitIdx];
-    const bwdVal = ORBIT_BWD[(6 - orbitIdx) % 6];
-    const cycle  = (Math.floor(elapsed / LOOP_T) % 42) + 1;
-    const el = document.getElementById('s11_state');
-    if (el) el.textContent = `↑${fwdVal} ↓${bwdVal}  [${String(cycle).padStart(2,'0')}/42]`;
+    // Clock separation D
+    let D = D_MAX;
+    if      (phase === 'FOLD1')  D = D_MAX * (1 - phaseT);
+    else if (phase === 'BTB')    D = 0;
+    else if (phase === 'FOLD2')  D = 0;
+    else if (phase === 'INF')    D = 0;
+    else if (phase === 'RETURN') D = D_MAX * phaseT;
+
+    // Blend for second fold (0=two circles, 1=lemniscate)
+    const fold2Blend = (phase === 'FOLD2') ? phaseT :
+                       (phase === 'INF')   ? 1.0    :
+                       (phase === 'RETURN') ? 1.0 - phaseT : 0.0;
+
+    // ── Clock ring visibility ────────────────────────────────────────────────
+    const showClocks = (phase !== 'INF' && phase !== 'RETURN') ? 1.0 : Math.max(0, 1 - phaseT);
+    const showFold2  = fold2Blend;
+    const showLem    = fold2Blend;
+
+    const clockOpacity = showClocks * (phase === 'FOLD2' ? (1 - phaseT) : 1.0);
+
+    if (phase !== 'INF' && phase !== 'RETURN') {
+      updateRing(ringL, -D, p);
+      updateRing(ringR,  D, p);
+    }
+    updateLemRing(lemRing, fold2Blend);
+
+    ringL.mat.opacity = clockOpacity * 0.80;
+    ringR.mat.opacity = clockOpacity * 0.70;
+    lemRing.mat.opacity = showLem * 0.85;
+    voidMat.opacity = fold2Blend * 0.55;
+
+    // ── Node positions ────────────────────────────────────────────────────────
+    const nodeAlpha = (phase === 'FOLD2') ? (1 - phaseT) :
+                      (phase === 'INF' || phase === 'RETURN') ? 0 : 1;
+    for (let i = 0; i < 6; i++) {
+      const aL = NODE_ANGLES_FWD[i];
+      const aR = NODE_ANGLES_BWD[i];
+      const lx = -D + CLOCK_R * Math.cos(aL);
+      const ly = CLOCK_R * Math.sin(aL);
+      const rx =  D + CLOCK_R * Math.cos(aR);
+      const ry = CLOCK_R * Math.sin(aR);
+      nodesL[i].mesh.position.set(lx, ly, 0);
+      nodesR[i].mesh.position.set(rx, ry, 0);
+      nodesL[i].mat.opacity = nodeAlpha * 0.85;
+      nodesR[i].mat.opacity = nodeAlpha * 0.80;
+      // Labels
+      labelDivs[i].lbl.position.set(lx * 1.28, ly * 1.28, 0.01);
+      labelDivs[i].div.style.opacity = String(Math.min(nodeAlpha * 1.3, 1));
+      labelDivsR[i].lbl.position.set(rx * 1.28, ry * 1.28, 0.01);
+      labelDivsR[i].div.style.opacity = String(Math.min(nodeAlpha * 1.2, 1));
+    }
+
+    // ── Fold line visibility ──────────────────────────────────────────────────
+    if (R._foldLineMat) {
+      const flAlpha = (phase === 'FOLD1') ? phaseT * 0.7 :
+                      (phase === 'BTB')   ? 0.7 - phaseT * 0.5 :
+                      (phase === 'FOLD2') ? 0.2 * (1 - phaseT) : 0;
+      R._foldLineMat.opacity = flAlpha;
+    }
+
+    // ── Void/9 visibility ─────────────────────────────────────────────────────
+    const voidDiv = document.getElementById('s11_void');
+    if (voidDiv) voidDiv.style.opacity = String(fold2Blend);
+
+    // ── Clock travelers (during UNFOLDED and FOLD1) ───────────────────────────
+    const lTravAlpha = (phase === 'UNFOLDED' || phase === 'FOLD1') ? 0.92 :
+                       (phase === 'RETURN') ? phaseT * 0.92 : 0;
+    travT += (elapsed - (travT > 0 ? 0 : elapsed)) * 0 + TRAV_SPD / 60;
+    const tAngle = elapsed * TRAV_SPD;
+    lTravMesh.position.set(-D + CLOCK_R * Math.cos(tAngle), CLOCK_R * Math.sin(tAngle), 0);
+    rTravMesh.position.set( D + CLOCK_R * Math.cos(-tAngle + Math.PI), CLOCK_R * Math.sin(-tAngle + Math.PI), 0);
+    lTravMat.opacity = lTravAlpha;
+    rTravMat.opacity = lTravAlpha * 0.85;
+
+    // ── Lemniscate traveler (during INF and RETURN) ───────────────────────────
+    const lemTravAlpha = (phase === 'INF') ? Math.min(phaseT * 3, 0.95) :
+                         (phase === 'RETURN') ? 0.95 * (1 - phaseT) : 0;
+    const lemTravT = elapsed * 0.8;
+    traveler.position.copy(lemPt(lemTravT));
+    travMat.opacity = lemTravAlpha;
+
+    // Tail
+    if (lemTravAlpha > 0.01) {
+      tailHist.push(traveler.position.clone());
+      if (tailHist.length > TAIL) tailHist.shift();
+      for (let i = 0; i < tailHist.length; i++) {
+        tailArr[i*3] = tailHist[i].x; tailArr[i*3+1] = tailHist[i].y; tailArr[i*3+2] = tailHist[i].z;
+      }
+      tailAttr.needsUpdate = true;
+      tailGeo.setDrawRange(0, tailHist.length);
+      tailMat.opacity = lemTravAlpha * 0.35;
+    } else {
+      tailMat.opacity = 0;
+      tailHist.length = 0;
+    }
+
+    // ── HUD phase label ───────────────────────────────────────────────────────
+    const phaseEl = document.getElementById('s11_phase');
+    if (phaseEl) {
+      const labels = {
+        UNFOLDED: '2 clocks', FOLD1: 'folding time →',
+        BTB: 'back to back', FOLD2: '2nd fold →',
+        INF: 'fold into ∞', RETURN: '↺',
+      };
+      phaseEl.textContent = labels[phase] || '';
+    }
 
     if (R.clkDisplay) {
+      const cycle = (Math.floor(elapsed / CYCLE_T) % 42) + 1;
       R.clkDisplay.innerHTML =
         `<div style="color:#aa44ff;letter-spacing:.1em">11 · OLIVER 42</div>` +
-        `<div style="color:#553377;margin-top:3px;font-size:8px">↑${fwdVal} · ↓${bwdVal}</div>`;
+        `<div style="color:#553377;margin-top:3px;font-size:8px">cycle ${String(cycle).padStart(2,'0')}/42</div>`;
     }
   };
 }
