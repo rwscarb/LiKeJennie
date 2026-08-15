@@ -27,7 +27,7 @@ const ORBIT_BWD = [1, 5, 7, 8, 4, 2];
 const LEMON_L  = 5.0;
 const LEMON_W  = 1.9;
 const CLOCK_R  = 1.5;
-const CLOCK_Y  = 0.012;   // back-to-back, no gap — essentially coincident equatorial planes
+const CLOCK_Y  = 0.0;     // flat — in the same plane as the lemon (fold = the 2D origami crease)
 const TIP_A    = 1.0;     // tip lemniscate radius
 const N_ARC    = 192;
 const TIP_SEGS = 256;
@@ -62,11 +62,13 @@ function lemonArcPts(L, W, N, right) {
   return pts;
 }
 
-// Tip lemniscate in XZ plane at height y = cy
+// Tip lemniscate in XY plane (the flat), centered at (0, cy).
+// Vertical figure-8: crosses at (0, cy), loops extend to (0, cy±A).
+// The ∞ flows through the flat — same plane as the lemon.
 function tipLemPt(t, A, cy) {
   const s = Math.sin(t), cs = Math.cos(t);
   const d = 1 + s * s;
-  return new THREE.Vector3(A * cs / d, cy, A * s * cs / d);
+  return new THREE.Vector3(A * s * cs / d, cy + A * cs / d, 0);
 }
 
 function arcLerp(pts, frac) {
@@ -80,7 +82,7 @@ function arcLerp(pts, frac) {
 export function buildS11() {
   const scene  = R.scene  = new THREE.Scene();
   R.camera     = mkCamera();
-  R.camera.position.set(0, 1.5, 16);
+  R.camera.position.set(0, 0, 16);   // looking straight at the flat (XY plane)
   R.camera.lookAt(0, 0, 0);
   R.controls   = mkControls(R.camera);
   R.controls.autoRotate      = true;
@@ -183,19 +185,20 @@ export function buildS11() {
   // right arc bottom→top + reversed left arc top→bottom
   const contour = [...rightPts, ...[...leftPts].reverse()];
 
-  // ── Back-to-back clock at equator (horizontal, XZ plane) ────────────────────
-  // Torus in XY plane by default — rotate X by 90° to lay flat in XZ
-  function addClockRing(y, color, opacity) {
-    const geo  = new THREE.TorusGeometry(CLOCK_R, 0.022, 6, 80);
-    const mat  = new THREE.MeshBasicMaterial({ color, transparent: true, opacity });
+  // ── Back-to-back clock in the flat (XY plane, z=0) ───────────────────────────
+  // The model is 2D origami. The clock is drawn once in the flat plane.
+  // Folding the paper along the lemon's vertical axis brings front and back together.
+  // Front face = forward orbit; back face = mirror = backward orbit. No Z separation.
+  function addClockRing(z, color, opacity) {
+    const geo = new THREE.TorusGeometry(CLOCK_R, 0.022, 6, 80);
+    const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity });
     R.disposables.push(geo, mat);
     const mesh = new THREE.Mesh(geo, mat);
-    mesh.rotation.x = Math.PI / 2;   // lay flat in XZ plane
-    mesh.position.y = y;
+    mesh.position.z = z;
     scene.add(mesh);
   }
-  addClockRing( CLOCK_Y, C_FWD, 0.55);
-  addClockRing(-CLOCK_Y, C_BWD, 0.42);
+  addClockRing( 0.015, C_FWD, 0.55);   // front face (fold front)
+  addClockRing(-0.015, C_BWD, 0.40);   // back face (fold back, mirror)
 
   // Clock nodes in XZ plane. Rotate by π/6 so nodes never land at 12 (north) or 6 (south).
   // Angles in XZ plane: a=0 → +X (east), a=π/2 → +Z (front), etc.
@@ -206,51 +209,51 @@ export function buildS11() {
   for (let i = 0; i < 6; i++) {
     const a  = nodeAngles[i];
     const nx = CLOCK_R * Math.cos(a);
-    const nz = CLOCK_R * Math.sin(a);
+    const ny = CLOCK_R * Math.sin(a);
 
-    // Front (above equator)
+    // Front face node (in XY flat)
     { const g = new THREE.SphereGeometry(0.095, 10, 7);
       const m = new THREE.MeshPhongMaterial({ color: C_FWD, emissive: C_FWD, emissiveIntensity: 0.22, transparent: true, opacity: 0.72 });
       R.disposables.push(g, m);
-      const mesh = new THREE.Mesh(g, m); mesh.position.set(nx,  CLOCK_Y, nz); scene.add(mesh);
+      const mesh = new THREE.Mesh(g, m); mesh.position.set(nx, ny, 0.016); scene.add(mesh);
       fwdNodeMats.push(m); }
 
-    // Back (below equator, x-mirrored)
+    // Back face node — x-mirrored (folding reverses left/right → backward orbit)
     { const g = new THREE.SphereGeometry(0.095, 10, 7);
-      const m = new THREE.MeshPhongMaterial({ color: C_BWD, emissive: C_BWD, emissiveIntensity: 0.22, transparent: true, opacity: 0.58 });
+      const m = new THREE.MeshPhongMaterial({ color: C_BWD, emissive: C_BWD, emissiveIntensity: 0.22, transparent: true, opacity: 0.55 });
       R.disposables.push(g, m);
-      const mesh = new THREE.Mesh(g, m); mesh.position.set(-nx, -CLOCK_Y, nz); scene.add(mesh);
+      const mesh = new THREE.Mesh(g, m); mesh.position.set(-nx, ny, -0.016); scene.add(mesh);
       bwdNodeMats.push(m); }
 
-    // Labels for forward orbit values — float slightly above
+    // Label
     { const div = document.createElement('div');
       div.textContent = String(ORBIT_FWD[i]);
       div.style.cssText = `font-family:'Courier New',monospace;font-size:10px;font-weight:bold;color:${CS_FWD};pointer-events:none;user-select:none`;
       const lbl = new CSS2DObject(div);
-      lbl.position.set(nx * 1.30, 0.25, nz * 1.30);
+      lbl.position.set(nx * 1.32, ny * 1.32, 0.02);
       scene.add(lbl); R.css2dObjects.push(lbl); }
   }
 
-  // Dynamic clock hands sweeping in XZ plane
-  function mkHand(y, color) {
-    const arr  = new Float32Array([0, y, 0, CLOCK_R * 0.82, y, 0]);
+  // Dynamic clock hands sweeping in XY flat plane
+  function mkHand(z, color) {
+    const arr  = new Float32Array([0, 0, z, CLOCK_R * 0.82, 0, z]);
     const geo  = new THREE.BufferGeometry();
     const attr = new THREE.BufferAttribute(arr, 3);
     attr.setUsage(THREE.DynamicDrawUsage);
     geo.setAttribute('position', attr);
-    const mat  = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.90 });
+    const mat  = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.92 });
     R.disposables.push(geo, mat);
     const line = new THREE.Line(geo, mat); scene.add(line);
     return { arr, attr };
   }
-  const handFwd = mkHand( CLOCK_Y, C_FWD);
-  const handBwd = mkHand(-CLOCK_Y, C_BWD);
+  const handFwd = mkHand( 0.018, C_FWD);
+  const handBwd = mkHand(-0.018, C_BWD);
 
-  // ── Center void (equator crossing) ───────────────────────────────────────────
+  // ── Center void (equator crossing, in the flat) ──────────────────────────────
   { const g = new THREE.TorusGeometry(0.20, 0.038, 8, 40);
-    const m = new THREE.MeshBasicMaterial({ color: 0x2a1a44, transparent: true, opacity: 0.50 });
+    const m = new THREE.MeshBasicMaterial({ color: 0x2a1a44, transparent: true, opacity: 0.55 });
     R.disposables.push(g, m);
-    const mesh = new THREE.Mesh(g, m); mesh.rotation.x = Math.PI / 2; scene.add(mesh); }
+    scene.add(new THREE.Mesh(g, m)); }   // already in XY plane by default
   { const div = document.createElement('div');
     div.textContent = '9';
     div.style.cssText = `font-family:'Courier New',monospace;font-size:9px;color:#333355;pointer-events:none;user-select:none`;
@@ -323,12 +326,13 @@ export function buildS11() {
     if (dA < -Math.PI) dA += Math.PI * 2;
     const handAngle = aFrom + dA * stepFrac;
 
+    // Hands sweep in XY plane (the flat)
     const hx = CLOCK_R * 0.82 * Math.cos(handAngle);
-    const hz = CLOCK_R * 0.82 * Math.sin(handAngle);
+    const hy = CLOCK_R * 0.82 * Math.sin(handAngle);
 
-    handFwd.arr[3] =  hx; handFwd.arr[4] =  CLOCK_Y; handFwd.arr[5] =  hz;
+    handFwd.arr[3] =  hx; handFwd.arr[4] =  hy; handFwd.arr[5] =  0.018;
     handFwd.attr.needsUpdate = true;
-    handBwd.arr[3] = -hx; handBwd.arr[4] = -CLOCK_Y; handBwd.arr[5] =  hz;
+    handBwd.arr[3] = -hx; handBwd.arr[4] =  hy; handBwd.arr[5] = -0.018;  // x-mirrored = backward
     handBwd.attr.needsUpdate = true;
 
     // Node highlights
