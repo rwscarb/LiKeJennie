@@ -29,7 +29,7 @@ export const scenes = [
   { id: 'greek-letters',     num: '05', label: 'GREEK LETTERS',     build: buildS4  },
   { id: 'sunflower',         num: '06', label: 'SUNFLOWER',         build: buildS5  },
   { id: 'trit-matrix',       num: '07', label: 'TRIT MATRIX',       build: buildS6  },
-  { id: 'mod9-orbit',        num: '08', label: 'HELIX',             build: buildS7  },
+  { id: 'mod9-orbit',        num: '08', label: 'HARMONY',           build: buildS7  },
   { id: 'clock',             num: '09', label: 'CLOCK',             build: buildS8  },
   { id: 'orbit-cycle',       num: '10', label: 'ORBIT CYCLE',       build: buildS10 },
   { id: 'oliver42',          num: '11', label: 'OLIVER 42',         build: buildS11 },

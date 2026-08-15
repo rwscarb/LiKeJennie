@@ -550,7 +550,7 @@ afterUpdate(() => {
     <div class="cset" class:on={active === 7}>
       <button class="btn lit" id="p8rot">AUTO-ROTATE</button>
       <button class="btn lit" id="p8comp">COMPLEMENT</button>
-      <button class="btn" id="p8center" title="recenter view on the helix axis">⊙ CENTER</button>
+      <button class="btn" id="p8center" title="recenter view on the axis">⊙ CENTER</button>
       <button class="btn" id="p8v_top">TOP</button>
       <button class="btn" id="p8v_bottom">BOTTOM</button>
       <button class="btn" style="opacity:.35;letter-spacing:.18em;padding:3px 7px" on:click={() => { p8adv = !p8adv; }} title="advanced controls">···</button>
@@ -692,7 +692,7 @@ while n not in seen:
     <h2>Echo Pairs</h2>
     <p>Each orbit value has one echo value. Add an orbit value to its echo value to get 9.</p>
     <p>1↔8 &nbsp;·&nbsp; 2↔7 &nbsp;·&nbsp; 4↔5</p>
-    <p>This visualization uses two helix strands. Strand A carries the orbit values. Strand B carries the echo values. Strand B is offset by π radians (180°) from Strand A.</p>
+    <p>This visualization uses two strands in harmony. Strand A carries the orbit values. Strand B carries the echo values. Strand B is offset by π radians (180°) from Strand A.</p>
     <p>Each rung connects a node on Strand A to its echo node on Strand B.</p>
     <p>The orbit values form two groups: &#123;2, 4, 7&#125; with sum 13, and &#123;5, 8&#125; with sum 13. Both groups have the same sum.</p>
 
@@ -726,7 +726,7 @@ while n not in seen:
     <p>The golden angle (GA) is 137.508°. It equals 2π × (2 − φ), where φ = (1 + √5) / 2.</p>
     <p>Each new node rotates 137.508° from the previous one. Because GA is irrational, no two nodes share the same angle.</p>
     <p>Nodes also move outward and upward, forming a cone — a vertical sunflower.</p>
-    <p>From above: Fibonacci sunflower pattern. From the side: expanding double helix.</p>
+    <p>From above: Fibonacci sunflower pattern. From the side: expanding double strand.</p>
     <pre><code>const PHI = (1 + Math.sqrt(5)) / 2;
 const GA  = 2 * Math.PI * (2 - PHI);   // ≈ 137.508°
 
@@ -740,10 +740,10 @@ const nodePos = (step, offset = 0) => (&#123;
 
     <hr>
 
-    <h2>The Helix Is in the Field, Not the Path</h2>
+    <h2>The Harmony Is in the Field, Not the Path</h2>
     <p>Photons do not travel in spirals. They travel in straight lines at <em>c</em>. The wave behavior is in the electromagnetic field oscillating perpendicular to that line — the path itself is always straight.</p>
-    <p>But photons can carry <strong>orbital angular momentum (OAM)</strong>. This gives the wavefront a helical phase structure: corkscrew-shaped phase fronts that rotate as the photon moves forward. The photon goes straight; its field rotates. This is called <em>twisted light</em>.</p>
-    <p>The helix here is closer to that geometry than to a literal trajectory. The spiral is in the <em>structure</em> — the arrangement of phase, value, and position — not in the motion of any single thing through it.</p>
+    <p>But photons can carry <strong>orbital angular momentum (OAM)</strong>. This gives the wavefront a phase structure: corkscrew-shaped phase fronts that rotate as the photon moves forward. The photon goes straight; its field rotates. This is called <em>twisted light</em>.</p>
+    <p>The harmony here is in the same category: structural, not trajectorial. The arrangement of phase, value, and position — two strands in counterphase — is the harmony. No single thing moves in a spiral. The relationship between the strands does.</p>
     <pre><code># OAM mode number ℓ describes the helical phase front:
 # ℓ = 0  → flat wavefront (ordinary light)
 # ℓ = 1  → one full twist per wavelength
@@ -754,7 +754,7 @@ const nodePos = (step, offset = 0) => (&#123;
 
     <h2>The 21 Arc</h2>
     <p>After 21 steps, total rotation is 21 × 137.508° = 2887.7° ≈ 8 full turns + 7.7°.</p>
-    <p>21 is F₈, the 8th Fibonacci number. At step 21 the helix completes 8 turns + 7.7° — nearly closed.</p>
+    <p>21 is F₈, the 8th Fibonacci number. At step 21 the structure completes 8 turns + 7.7° — nearly closed.</p>
 
     <hr>
 
@@ -767,7 +767,7 @@ const nodePos = (step, offset = 0) => (&#123;
     <hr>
 
     <h2>The Clock: Pivot Between Two Worlds</h2>
-    <p>A 12-hour clock face sits at the center of the helix, acting as the pivot point between the main helix above and the driver helix below.</p>
+    <p>A 12-hour clock face sits at the center, acting as the pivot point between the main strand above and the driver strand below.</p>
     <p>Three faces are marked as trit digits in balanced ternary:</p>
     <ul>
       <li><strong>h=5</strong> → −1 (contraction)</li>
@@ -780,10 +780,10 @@ const nodePos = (step, offset = 0) => (&#123;
 
     <h2>The Driver: 13 Below</h2>
     <p>The orbit values split into two groups that each sum to 13: &#123;2, 4, 7&#125; and &#123;1, 5, 8&#125;−1. The group &#123;2, 4, 7&#125; is called the driver. 13 is not in the orbit — it sits outside, pulling.</p>
-    <p>Press <strong>INVERSION</strong> to reveal the driver helix below the clock. It is amber — the color of {2, 4, 7} — and grows downward in counter-phase to the main helix above.</p>
-    <pre><code>const breath    = 1 + 0.10 * Math.sin(t * 0.50);  // main helix: inhales up
+    <p>Press <strong>INVERSION</strong> to reveal the driver strand below the clock. It is amber — the color of {2, 4, 7} — and grows downward in counter-phase to the main strand above.</p>
+    <pre><code>const breath    = 1 + 0.10 * Math.sin(t * 0.50);  // main strand: inhales up
 const breathInv = 1 - 0.10 * Math.sin(t * 0.50);  // driver: exhales down</code></pre>
-    <p>When the main helix contracts, the driver expands. When the main helix expands, the driver contracts. The clock face between them does not move.</p>
+    <p>When the main strand contracts, the driver expands. When the main strand expands, the driver contracts. The clock face between them does not move.</p>
     <p>Phase-tension lines connect each node to its mirror below. The amber ring at the clock boundary is the anchor.</p>
 
     <hr>
@@ -849,9 +849,9 @@ const h = CLK_Y - dip * (1 - (r / R_MAX) ** 2);
 
     <hr>
 
-    <h2>Connection to the Helix</h2>
-    <p>The orbit cycle is the hidden rhythm inside the helix. The 21 nodes of the helix repeat the sequence 1→2→4→8→7→5 three and a half times (21 ÷ 6 = 3.5). Each node inherits the properties of its orbit value: color, echo relationship, driver status.</p>
-    <p>The clock at the helix midpoint sits at step 10-11 of the 21-node sequence — at the transition between orbit values 7 and 5. The driver group is below the clock. The echo group is above it.</p>
+    <h2>Connection to the Harmony</h2>
+    <p>The orbit cycle is the hidden rhythm inside the structure. The 21 nodes repeat the sequence 1→2→4→8→7→5 three and a half times (21 ÷ 6 = 3.5). Each node inherits the properties of its orbit value: color, echo relationship, driver status.</p>
+    <p>The clock at the midpoint sits at step 10-11 of the 21-node sequence — at the transition between orbit values 7 and 5. The driver group is below the clock. The echo group is above it.</p>
 
     <hr>
 
