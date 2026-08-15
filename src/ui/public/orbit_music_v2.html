@@ -28,7 +28,8 @@ canvas { display:block; }
 /* ── Panel ── */
 .panel {
   background:var(--panel);
-  display:flex; flex-direction:column; gap:0; overflow-y:auto; flex:1;
+  display:flex; flex-direction:column; gap:0; overflow-y:scroll; flex:1;
+  overflow-anchor:none;
 }
 .section { padding:10px 14px; border-bottom:1px solid var(--dim); }
 .section-title {
@@ -45,6 +46,7 @@ canvas { display:block; }
 .row input[type=range] {
   flex:1; accent-color:var(--accent);
   height:3px; background:var(--dim); appearance:none;
+  touch-action:none; -webkit-user-select:none; user-select:none;
 }
 .row input[type=range]::-webkit-slider-thumb {
   -webkit-appearance:none; width:10px; height:10px;
@@ -920,7 +922,7 @@ document.getElementById('bpmSlider').addEventListener('input', function() {
 document.getElementById('reverbSlider').addEventListener('input', function() {
   reverbAmt=+this.value;
   document.getElementById('reverbVal').textContent=Math.round(reverbAmt*100)+'%';
-  if(wetGain) wetGain.gain.value=reverbAmt;
+  if(wetGain && audioCtx) wetGain.gain.setTargetAtTime(reverbAmt, audioCtx.currentTime, 0.015);
 });
 document.getElementById('bassSlider').addEventListener('input', function() {
   bassAmt=+this.value;
@@ -965,17 +967,17 @@ document.querySelectorAll('[data-dpreset]').forEach(btn => {
 document.getElementById('eqBassSlider').addEventListener('input', function() {
   const v = +this.value;
   document.getElementById('eqBassVal').textContent = (v>0?'+':'')+v+' dB';
-  if (eqBass) eqBass.gain.value = v;
+  if (eqBass && audioCtx) eqBass.gain.setTargetAtTime(v, audioCtx.currentTime, 0.015);
 });
 document.getElementById('eqMidSlider').addEventListener('input', function() {
   const v = +this.value;
   document.getElementById('eqMidVal').textContent = (v>0?'+':'')+v+' dB';
-  if (eqMid) eqMid.gain.value = v;
+  if (eqMid && audioCtx) eqMid.gain.setTargetAtTime(v, audioCtx.currentTime, 0.015);
 });
 document.getElementById('eqTrebSlider').addEventListener('input', function() {
   const v = +this.value;
   document.getElementById('eqTrebVal').textContent = (v>0?'+':'')+v+' dB';
-  if (eqTreb) eqTreb.gain.value = v;
+  if (eqTreb && audioCtx) eqTreb.gain.setTargetAtTime(v, audioCtx.currentTime, 0.015);
 });
 
 // ── Saved presets (localStorage) ──────────────────────────────────────────────
@@ -1261,6 +1263,20 @@ function drawViz() {
   }
 }
 drawViz();
+
+// ── Prevent focus-scroll on sliders (stops panel bounce) ─────────────────────
+(function() {
+  const panel = document.querySelector('.panel');
+  document.querySelectorAll('input[type=range]').forEach(el => {
+    el.addEventListener('focus', function() {
+      if (!panel) return;
+      const top = panel.scrollTop;
+      requestAnimationFrame(() => { panel.scrollTop = top; });
+    }, { passive: true });
+    // Prevent slider drag from leaking as scroll events
+    el.addEventListener('pointerdown', e => e.stopPropagation(), { passive: true });
+  });
+})();
 
 // ── Collapsible sections ──────────────────────────────────────────────────────
 document.querySelectorAll('.section-title').forEach(title => {
