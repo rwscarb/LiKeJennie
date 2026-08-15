@@ -20,7 +20,7 @@ const ORBIT_BWD = [1, 5, 7, 8, 4, 2];
 const LEMON_L = 5.5;
 const LEMON_W = 2.0;
 const CLOCK_R = 1.55;
-const CLOCK_Z = 0.45;
+const CLOCK_Z = 0.012;  // back-to-back, no gap — essentially coincident planes
 const TIP_A   = 1.05;
 const N_ARC   = 192;
 const TIP_SEGS = 256;
@@ -170,8 +170,9 @@ export function buildS11() {
   addRing( CLOCK_Z, C_FWD, 0.55);
   addRing(-CLOCK_Z, C_BWD, 0.42);
 
-  // Clock nodes: 6 positions equally spaced, CW from top
-  const nodeAngles = ORBIT_FWD.map((_, i) => Math.PI / 2 - (i / 6) * Math.PI * 2);
+  // Clock nodes: 6 positions equally spaced — never at 12 (top) or 6 (bottom).
+  // Rotate by π/6 (30°) so nodes land at odd-hour positions: 1,3,5,7,9,11.
+  const nodeAngles = ORBIT_FWD.map((_, i) => Math.PI / 2 - Math.PI / 6 - (i / 6) * Math.PI * 2);
   const fwdNodeMats = [], bwdNodeMats = [];
 
   for (let i = 0; i < 6; i++) {
