@@ -112,10 +112,10 @@ export function buildS19() {
 
   // AU → pixel scale; center slightly left of middle to leave room for legend
   const AU  = Math.min(W, H) * 0.195;
-  const CX  = W * 0.48;
-  const CY  = H * 0.52;
-  const scX = x => CX + x * AU;
-  const scY = y => CY - y * AU;   // y-flip
+  const Cx  = W * 0.48;
+  const Cy  = H * 0.52;
+  const scX = x => Cx + x * AU;
+  const scY = y => Cy - y * AU;   // y-flip
 
   // ── Defs: glow filter ────────────────────────────────────────────────────
   const defs = svg.append('defs');
