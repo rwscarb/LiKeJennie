@@ -490,6 +490,7 @@ afterUpdate(() => {
   <div class="canvaswrap" bind:this={labelHost}>
     <canvas id="glc" bind:this={glc} on:click={e => pinTip(e)}></canvas>
     <canvas id="staticOverlay" bind:this={staticCanvas} style="position:absolute;inset:0;pointer-events:none;opacity:0;z-index:20"></canvas>
+    <canvas id="tangoOverlay" style="position:absolute;inset:0;pointer-events:none;display:none;z-index:24"></canvas>
     <div id="camCoords" bind:this={camCoords}></div>
     <div class="ov" bind:this={ov}></div>
     <div id="clkDisplay" bind:this={clkDisplay}></div>
@@ -569,6 +570,7 @@ afterUpdate(() => {
       <button class="btn" id="p8collapse">COLLAPSE</button>
       <button class="btn lit" id="p8tribar">TRIBAR</button>
       <button class="btn lit" id="p8corpus">CORPUS</button>
+      <button class="btn" id="p8tango">TANGO</button>
       <span class="clbl">A</span>
       <button class="btn" id="p8a_cw">CW</button>
       <button class="btn" id="p8a_ccw">CCW</button>
