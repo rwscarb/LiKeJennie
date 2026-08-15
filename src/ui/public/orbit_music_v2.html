@@ -60,7 +60,7 @@ btn, .btn {
   padding:4px 10px; cursor:pointer; transition:all .12s;
 }
 .btn:hover { border-color:var(--accent); color:var(--accent); }
-.btn.lit   { border-color:var(--accent); color:#fff; background:#00ff8818; }
+.btn.lit   { border-color:var(--accent); color:#fff; background:#00ff8818; box-shadow:0 0 7px #00ff8830; }
 .btn.play  { border-color:var(--accent); color:var(--accent); font-size:11px; padding:5px 16px; }
 .btn.play.lit { background:#00ff8828; color:#fff; }
 /* ── Step sequencer grid (melody) ── */
@@ -366,6 +366,27 @@ function applyDrumPreset(name) {
   renderDrumGrid();
 }
 
+// ── Active preset tracking ────────────────────────────────────────────────────
+let _activePreset = { name: null, source: null };
+
+function setPresetActive(name, source) {
+  _activePreset = { name, source };
+  updatePresetGlows();
+}
+function clearPresetActive() {
+  if (!_activePreset.name) return;
+  _activePreset = { name: null, source: null };
+  updatePresetGlows();
+}
+function updatePresetGlows() {
+  document.querySelectorAll('[data-preset]').forEach(b => {
+    b.classList.toggle('lit', _activePreset.source === 'melody' && b.dataset.preset === _activePreset.name);
+  });
+  document.querySelectorAll('.preset-load-btn').forEach(b => {
+    b.classList.toggle('lit', _activePreset.source === 'saved' && b.dataset.presetName === _activePreset.name);
+  });
+}
+
 // ── Build melody sequencer UI ─────────────────────────────────────────────────
 const seqGrid   = document.getElementById('seqGrid');
 const rowLabels = document.getElementById('rowLabels');
@@ -383,7 +404,7 @@ for (let r=0; r<ROWS; r++) {
     cell.className='seq-cell';
     cell.style.setProperty('--on-col', stepColor(r,.55));
     cell.dataset.r=r; cell.dataset.s=s;
-    cell.addEventListener('click', () => { grid[r][s]=!grid[r][s]; renderGrid(); });
+    cell.addEventListener('click', () => { grid[r][s]=!grid[r][s]; renderGrid(); clearPresetActive(); });
     seqGrid.appendChild(cell);
     cells[r].push(cell);
   }
@@ -413,7 +434,7 @@ for (let dr=0; dr<D_ROWS; dr++) {
     cell.className='drum-cell';
     cell.style.setProperty('--d-col', DRUM_COLS[dr]+'99');
     cell.dataset.dr=dr; cell.dataset.s=s;
-    cell.addEventListener('click', () => { drumSeq[dr][s]=!drumSeq[dr][s]; renderDrumGrid(); });
+    cell.addEventListener('click', () => { drumSeq[dr][s]=!drumSeq[dr][s]; renderDrumGrid(); clearPresetActive(); });
     drumSeqGrid.appendChild(cell);
     drumCells[dr].push(cell);
   }
@@ -954,6 +975,7 @@ document.getElementById('octUp').addEventListener('click', () => {
 document.getElementById('presets').addEventListener('click', function(e) {
   const btn=e.target.closest('[data-preset]'); if(!btn) return;
   applyPreset(btn.dataset.preset);
+  setPresetActive(btn.dataset.preset, 'melody');
   if(playing){stopPlay();startPlay();}
 });
 
@@ -1043,9 +1065,12 @@ function renderSavedPresets() {
     nameEl.style.cssText = 'flex:1;font-size:9px;color:var(--fg);letter-spacing:.05em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
     nameEl.textContent = name;
     const loadBtn = document.createElement('button');
-    loadBtn.className='btn'; loadBtn.textContent='LOAD';
+    loadBtn.className='btn preset-load-btn'; loadBtn.textContent='LOAD';
+    loadBtn.dataset.presetName = name;
+    if (_activePreset.source === 'saved' && _activePreset.name === name) loadBtn.classList.add('lit');
     loadBtn.addEventListener('click', () => {
       restoreState(saved[name]);
+      setPresetActive(name, 'saved');
       if (playing) { stopPlay(); startPlay();
         document.getElementById('playBtn').textContent='■ STOP';
         document.getElementById('playBtn').classList.add('lit');
@@ -1263,6 +1288,14 @@ function drawViz() {
   }
 }
 drawViz();
+
+// ── Space → Play/Stop ────────────────────────────────────────────────────────
+document.addEventListener('keydown', function(e) {
+  if (e.code === 'Space' && e.target.tagName !== 'INPUT') {
+    e.preventDefault();
+    document.getElementById('playBtn').click();
+  }
+});
 
 // ── Prevent focus-scroll on sliders (stops panel bounce) ─────────────────────
 (function() {
