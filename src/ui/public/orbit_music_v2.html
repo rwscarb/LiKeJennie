@@ -128,6 +128,7 @@ btn, .btn {
 <header>
   <h1>ORBIT SEQUENCER &nbsp;·&nbsp; {1,2,4,8,7,5} × 55 Hz &nbsp;·&nbsp; TR-808</h1>
   <div class="transport">
+    <button class="btn" id="backBtn" onclick="window.parent?.postMessage('orbit:back','*')" style="opacity:0.5;padding:4px 8px">← BACK</button>
     <span id="bpmVal" style="font-size:9px;color:var(--muted)">120 BPM</span>
     <input type="range" id="bpmSlider" min="60" max="240" value="120" style="width:80px">
     <button class="btn" id="stanzaBtn" title="1/4 break after each stanza · 5-voice 3/4 echo">STANZA</button>
