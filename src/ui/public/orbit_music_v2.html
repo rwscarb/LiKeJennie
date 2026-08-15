@@ -117,6 +117,12 @@ btn, .btn {
 .note-name.active { color:var(--accent); }
 /* ── Visualizer pane ── */
 #vizCanvas { image-rendering:pixelated; cursor:grab; }
+#vizSection:fullscreen,#vizSection:-webkit-full-screen {
+  background:#000; display:flex; flex-direction:column; padding:8px 14px;
+}
+#vizSection:fullscreen #vizCanvas,#vizSection:-webkit-full-screen #vizCanvas {
+  flex:1; height:auto !important;
+}
 #vizResizeHandle {
   position:absolute; top:0; left:0; right:0; height:7px;
   cursor:row-resize; z-index:10; background:transparent;
@@ -251,7 +257,12 @@ btn, .btn {
   <!-- Visualizer -->
   <div class="section" id="vizSection" style="padding:0 14px 10px;flex-shrink:0;position:relative">
     <div id="vizResizeHandle" title="Drag to resize"></div>
-    <div class="section-title" style="padding-top:8px">VISUALIZER</div>
+    <div class="section-title" style="padding-top:8px">
+      <span>VISUALIZER</span>
+      <button id="vizFsBtn" onclick="toggleVizFullscreen();event.stopPropagation()"
+        style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;padding:0 2px;opacity:0.55;line-height:1"
+        title="Fullscreen (F)">⛶</button>
+    </div>
     <div class="preset-row" id="vizModes" style="margin-bottom:5px">
       <button class="btn lit" data-viz="tunnel">TUNNEL</button>
       <button class="btn" data-viz="bars">BARS</button>
@@ -1289,12 +1300,26 @@ function drawViz() {
 }
 drawViz();
 
+// ── Visualizer fullscreen ─────────────────────────────────────────────────────
+const vizSection = document.getElementById('vizSection');
+function toggleVizFullscreen() {
+  if (!document.fullscreenElement) {
+    (vizSection.requestFullscreen || vizSection.webkitRequestFullscreen).call(vizSection);
+  } else {
+    (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+  }
+}
+document.addEventListener('fullscreenchange', () => {
+  resizeVizCanvas();
+  const btn = document.getElementById('vizFsBtn');
+  if (btn) btn.textContent = document.fullscreenElement ? '✕' : '⛶';
+});
+
 // ── Space → Play/Stop ────────────────────────────────────────────────────────
 document.addEventListener('keydown', function(e) {
-  if (e.code === 'Space' && e.target.tagName !== 'INPUT') {
-    e.preventDefault();
-    document.getElementById('playBtn').click();
-  }
+  if (e.target.tagName === 'INPUT') return;
+  if (e.code === 'Space') { e.preventDefault(); document.getElementById('playBtn').click(); }
+  if (e.code === 'KeyF') toggleVizFullscreen();
 });
 
 // ── Prevent focus-scroll on sliders (stops panel bounce) ─────────────────────
