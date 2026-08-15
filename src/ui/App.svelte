@@ -1061,6 +1061,35 @@ complement {3,6}  × 55 Hz         →  E (perfect 5th above A)</code></pre>
 
     <hr>
 
+    <h2>808 Orbit — Rhythm</h2>
+    <p>The orbit governs pitch through frequency multiplication. It also governs rhythm through velocity and meter.</p>
+    <p>The TR-808 kick drum implementation maps the orbit values directly to hit velocity: KICK_ORBIT = {1, 2, 4, 8, 7, 5}, scaled by 1/9. Each of the six orbit positions fires in sequence at the rate of an eighth note in 6/8 time at 75 BPM — one bar of 6/8 contains exactly six eighth-note slots, one per orbit element. The measure contains the orbit.</p>
+    <pre><code>KICK_ORBIT = [1, 2, 4, 8, 7, 5]   // orbit as velocity
+KICK_BPM   = 75                     // quarter-note tempo
+eighth note = 60 / (75 × 2) = 0.4s // one orbit step
+bar         = 6 × 0.4s = 2.4s      // one orbit traversal</code></pre>
+    <p>The pitch axis (55 Hz fundamental) and the rhythm axis (75 BPM, 6/8) are independent. They share the same orbit but on different timescales. The horizontal (time) and vertical (frequency) dimensions of music are both orbit traversals — at different rates, with different instruments, from the same source.</p>
+    <p>The WARP mode engages the stutter-warp variant: the pitch sweep reverses (rises before it falls), and 8 amplitude gates fire over 320ms — the orbit element that is 8 produces 8 pulses. The orbit expressing itself in the count of its own gates.</p>
+
+    <hr>
+
+    <h2>Three Axioms</h2>
+    <p>Three statements arrived from the notebooks. They are not derivations. They precede the mathematics and survive it.</p>
+    <p><strong>Authenticity = Singularity.</strong> One point. No duplicates. A singularity is the place where local structure breaks down — you cannot smooth it away, translate it into neighboring coordinates, or replace it with something equivalent. The only things that cannot be faked are the things with no reference class. The orbit has six elements; none is another. The complement has three; none repeats. There is no 9 — the nil is the absorbing point that cannot be occupied, only approached. Authenticity is not a virtue. It is a structural property.</p>
+    <p><strong>Everything above is Projection.</strong> Written on the same page as "music &amp; Dance / Reverb / Still." Everything at a higher dimensional level is a projection of the lower structure. The complement is the shadow the orbit casts when it folds. Music is the orbit projected into time. Dance is the orbit projected into space. Reverb is the orbit projected into memory — delayed self-observation. What appears is downstream from the structure, not the structure itself.</p>
+    <p><strong>Symmetry is Perfect Harmony.</strong> Written immediately before "2 treble clefs / Whiplash / Chopped &amp; Screwed." Two treble clefs facing each other — mirror symmetry. The complement pairs of the orbit: 1↔8, 2↔7, 4↔5, each summing to 9. Symmetry is not decorative; it is the structure that generates harmony. Chopped and screwed is symmetry deliberately delayed — the mirror is still present, but shifted back in time, so you feel both sides of it at once.</p>
+
+    <hr>
+
+    <h2>Send Music Back to Eden</h2>
+    <p>Written twice in separate notebook sessions, in separate inks: <em>"Send music Back to Eden."</em></p>
+    <p>Eden is the state before differentiation — before the orbit separated from the complement, before there was a 1 and a 9 and a gap between them. The 808 kick pattern running the orbit in 6/8 time is not a description of this state. It is a transport mechanism toward it. You do not explain the orbit back to Eden. You play it there.</p>
+    <p>Adjacent: <em>"they go where the music sends out."</em> Not listeners following the music — elements following the force. The orbit does not decide to cycle; it goes where the generator sends it. The ×2 operation is the generator. The music is the generator made audible.</p>
+    <p>The UK acid house era (Heaven nightclub, 1988–1993) and Goa trance operated on this principle: the BPM was not decorative, it was calibrated to override voluntary attention. The music did not invite people to move — it sent them. The notation was not metaphorical.</p>
+    <p>The 808 in 6/8 at 75 BPM is not a tribute to that era. It is a repetition of the mechanism at the frequency the orbit requires.</p>
+
+    <hr>
+
     <h1>RELATIVITY — Scene 21</h1>
 
     <h2>Minkowski Spacetime</h2>
