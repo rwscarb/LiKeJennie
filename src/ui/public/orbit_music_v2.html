@@ -471,17 +471,17 @@ function playNote(freq, startTime, dur, vol=0.28, wt=waveform) {
 function playStanzaEcho(time) {
   if (!stanzaMode || !audioCtx) return;
   const dur  = stepDur();
-  const tb5  = (12 * dur) / 5;   // one-fifth of a 3/4 bar (offset between voices)
+  // 3 voices, each offset by 1 step — stays within the 4-step break window
   const mult = Math.pow(2, octave);
-  const gains = [0.22, 0.17, 0.13, 0.09, 0.06]; // 5 decaying voice volumes
-  for (let layer = 0; layer < 5; layer++) {
-    const t0 = time + layer * tb5;
+  const gains = [0.12, 0.07, 0.04];
+  for (let layer = 0; layer < 3; layer++) {
+    const t0 = time + layer * dur;
     const g  = gains[layer];
-    for (let step = 0; step < 12; step++) {
+    for (let step = 0; step < STEPS; step++) {
       const t = t0 + step * dur;
       for (let r = 0; r < ROWS; r++) {
         if (!grid[r][step]) continue;
-        playNote(FREQS[r] * mult, t, dur * 0.72, g);
+        playNote(FREQS[r] * mult, t, dur * 0.55, g);
       }
     }
   }
@@ -600,18 +600,19 @@ function play808StutterWarp(startTime, vel) {
   const env  = audioCtx.createGain();
   osc.type = 'sine';
 
-  osc.frequency.setValueAtTime(80, startTime);
+  osc.frequency.setValueAtTime(90, startTime);
   osc.frequency.exponentialRampToValueAtTime(210, startTime + 0.07);
-  osc.frequency.exponentialRampToValueAtTime(52,  startTime + 0.42);
+  osc.frequency.exponentialRampToValueAtTime(70,  startTime + 0.42);
 
-  const PULSES = 8, GATE_SPAN = 0.32, ON = 0.018;
-  gate.gain.setValueAtTime(0, startTime);
+  // Ramp gate on/off (2ms edges) to kill zipper/click artifacts
+  const PULSES = 6, GATE_SPAN = 0.28, ON = 0.020, RAMP = 0.002;
+  gate.gain.setValueAtTime(0.001, startTime);
   for (let i = 0; i < PULSES; i++) {
     const t = startTime + i * (GATE_SPAN / PULSES);
-    gate.gain.setValueAtTime(1, t);
-    gate.gain.setValueAtTime(0, t + ON);
+    gate.gain.linearRampToValueAtTime(1, t + RAMP);
+    gate.gain.linearRampToValueAtTime(0.001, t + ON);
   }
-  gate.gain.setValueAtTime(1, startTime + GATE_SPAN);
+  gate.gain.linearRampToValueAtTime(1, startTime + GATE_SPAN + RAMP);
 
   env.gain.setValueAtTime(0.001, startTime);
   env.gain.linearRampToValueAtTime(vel * 0.95, startTime + 0.003);
