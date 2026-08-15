@@ -6,8 +6,8 @@
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 :root {
-  --bg:#020c08; --fg:#00ff88; --dim:#0a2010; --cyan:#00e5ff;
-  --orng:#ff9800; --muted:#2a5a2a; --panel:#04160a;
+  --bg:#050a06; --fg:#adc4b6; --dim:#0e1910; --cyan:#78d4b6;
+  --orng:#d4845a; --muted:#3d5544; --panel:#070e09; --accent:#00ff88;
 }
 body {
   background:var(--bg); color:var(--fg);
@@ -31,17 +31,24 @@ canvas { display:block; }
   display:flex; flex-direction:column; gap:0; overflow-y:auto; flex:1;
 }
 .section { padding:10px 14px; border-bottom:1px solid var(--dim); }
-.section-title { font-size:9px; color:var(--muted); letter-spacing:.15em; margin-bottom:8px; }
+.section-title {
+  font-size:9px; color:var(--muted); letter-spacing:.15em; margin-bottom:8px;
+  cursor:pointer; user-select:none; display:flex; justify-content:space-between; align-items:center;
+}
+.section-title::after { content:'▾'; opacity:0.35; font-size:8px; }
+.section.collapsed .section-title { margin-bottom:0; }
+.section.collapsed .section-title::after { content:'▸'; }
+.section.collapsed > *:not(.section-title) { display:none !important; }
 /* ── Controls ── */
 .row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
 .row label { font-size:9px; color:var(--muted); width:58px; flex-shrink:0; }
 .row input[type=range] {
-  flex:1; accent-color:var(--fg);
+  flex:1; accent-color:var(--accent);
   height:3px; background:var(--dim); appearance:none;
 }
 .row input[type=range]::-webkit-slider-thumb {
   -webkit-appearance:none; width:10px; height:10px;
-  border-radius:50%; background:var(--fg);
+  border-radius:50%; background:var(--accent);
 }
 .row .val { font-size:9px; color:var(--fg); width:36px; text-align:right; }
 /* ── Buttons ── */
@@ -50,10 +57,10 @@ btn, .btn {
   background:none; border:1px solid var(--muted); color:var(--muted);
   padding:4px 10px; cursor:pointer; transition:all .12s;
 }
-.btn:hover { border-color:var(--fg); color:var(--fg); }
-.btn.lit   { border-color:var(--fg); color:#fff; background:#00ff8820; }
-.btn.play  { border-color:var(--fg); color:var(--fg); font-size:11px; padding:5px 16px; }
-.btn.play.lit { background:#00ff8830; color:#fff; }
+.btn:hover { border-color:var(--accent); color:var(--accent); }
+.btn.lit   { border-color:var(--accent); color:#fff; background:#00ff8818; }
+.btn.play  { border-color:var(--accent); color:var(--accent); font-size:11px; padding:5px 16px; }
+.btn.play.lit { background:#00ff8828; color:#fff; }
 /* ── Step sequencer grid (melody) ── */
 .seq-grid {
   display:grid;
@@ -95,9 +102,9 @@ btn, .btn {
   padding:4px 0;
 }
 .freq-bar {
-  flex:1; background:var(--fg); border-radius:1px 1px 0 0;
+  flex:1; background:var(--accent); border-radius:1px 1px 0 0;
   transition:height .08s;
-  min-height:1px;
+  min-height:1px; opacity:0.6;
 }
 /* ── Note labels ── */
 .note-names { display:flex; gap:2px; }
@@ -105,7 +112,7 @@ btn, .btn {
   flex:1; font-size:7px; color:var(--muted); text-align:center;
   border-top:1px solid var(--dim); padding-top:2px;
 }
-.note-name.active { color:var(--fg); }
+.note-name.active { color:var(--accent); }
 /* ── Visualizer pane ── */
 #vizCanvas { image-rendering:pixelated; cursor:grab; }
 #vizResizeHandle {
@@ -113,7 +120,7 @@ btn, .btn {
   cursor:row-resize; z-index:10; background:transparent;
   border-top:1px solid var(--dim); transition:background .15s;
 }
-#vizResizeHandle:hover, #vizResizeHandle.dragging { background:#00ff8822; border-top-color:#00ff8860; }
+#vizResizeHandle:hover, #vizResizeHandle.dragging { background:#00ff8812; border-top-color:#00ff8840; }
 </style>
 </head>
 <body>
@@ -1178,6 +1185,11 @@ function drawViz() {
   }
 }
 drawViz();
+
+// ── Collapsible sections ──────────────────────────────────────────────────────
+document.querySelectorAll('.section-title').forEach(title => {
+  title.addEventListener('click', () => title.parentElement.classList.toggle('collapsed'));
+});
 
 </script>
 </body>
