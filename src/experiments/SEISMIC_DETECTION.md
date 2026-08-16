@@ -341,6 +341,63 @@ Random permutations are safer because they don't impose a specific attractor —
 
 ---
 
+## 10. Orbit Permutation Ablation (2026-08-16)
+
+Three targeted experiments answering the core question: is the orbit permutation [0,1,3,7,6,4] load-bearing for the seismic sensor, or is it architectural inspiration without causal effect?
+
+Full results: `ABLATION.md`. Experiment scripts: `exp_1_error_correlation.py`, `exp_2_ensemble_mixing.py`, `exp_3_variance_source.py`.
+
+### 10.1 Error Correlation (Exp 1)
+
+Trained 3 orbit + 3 random models on STEAD chunk2 (val n=2400). Compared error sets via Jaccard similarity and Cohen's kappa.
+
+| pair | Jaccard | kappa |
+|---|---|---|
+| orbit-vs-orbit | 0.511 ± 0.070 | 0.864 ± 0.034 |
+| rand-vs-rand | 0.416 ± 0.056 | 0.859 ± 0.023 |
+| orbit-vs-rand | 0.458 ± 0.102 | 0.858 ± 0.039 |
+
+Orbit errors are *slightly* more diverse from random than random-vs-random, but not strongly so. **Verdict: AMBIGUOUS** — proceed to ensemble mixing.
+
+### 10.2 Ensemble Mixing (Exp 2)
+
+| Strategy | Size | Best F1% | @ thr |
+|---|---|---|---|
+| all_orbit | 3 | 92.51% | 0.550 |
+| **all_random** | **3** | **94.21%** | **0.675** |
+| mixed_50_50 | 6 | 93.86% | 0.600 |
+| mixed_1orbit | 3 | 93.25% | 0.650 |
+
+mixed_50_50 vs all_random: **−0.35pp F1**
+
+**Verdict: ORBIT HURTS.** The small error-set diversity doesn't offset orbit's lower mean precision. Pure random-perm ensembles are strictly better.
+
+### 10.3 Variance Source (Exp 3)
+
+Why does orbit have std=3.3% while random has std=0.4%?
+
+| Hypothesis | Orbit std | Random std | Explains? |
+|---|---|---|---|
+| H1: Init sensitivity | 4.28% | 2.76% | **YES** |
+| H2: Data split sensitivity | 3.68% | 2.82% | no |
+| H3: Specific sequence vs shuffled | 2.56% | 3.62% (shuffled mean) | **YES (inverted)** |
+
+H1 explains: the tiled periodic structure creates a rugged loss landscape with multiple basins. Which basin you find depends on weight init. Random perms converge reliably because they lack this periodicity.
+
+H3 inversion: canonical [0,1,3,7,6,4] is the *most stable* arrangement of its values (std 2.56% vs shuffled variants mean 3.62%). The algebraic sequence is not arbitrary — it's the minimum-variance orbit ordering.
+
+### 10.4 Conclusions
+
+1. **Orbit perm is not load-bearing.** Random fixed perms outperform it on mean precision and stability.
+2. **Orbit hurts ensembles.** Mixing adds noise, not signal.
+3. **Variance is init sensitivity.** Periodic tiling → rugged loss landscape.
+4. **Canonical sequence is structurally special** in a narrow sense: least chaotic of all orbit orderings, but can't close the gap to random.
+5. **Math is unaffected.** Lean proofs, Bitcoin inscriptions, algebraic structure all stand.
+
+**Production recommendation:** Random fixed perm (current sensor config). Do not use orbit perm in StreamingNet.
+
+---
+
 ## 5. Experiment Files
 
 | file | description |

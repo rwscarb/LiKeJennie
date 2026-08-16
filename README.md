@@ -138,6 +138,20 @@ through the Penrose Tribar architecture and into seismology applications.
 | `poc_tribar_seismic_system.py` | Full streaming seismic detection system |
 | `poc_tribar_optuna.py` | Optuna HPO for Tribar hyperparameters |
 
+### Orbit Permutation Ablation (2026-08-16)
+
+Full results in `ABLATION.md`.
+
+| File | Description |
+|------|-------------|
+| `exp_1_error_correlation.py` | Error correlation: do orbit and random models make errors on the same examples? (Jaccard, Cohen's κ) |
+| `exp_2_ensemble_mixing.py` | Ensemble mixing: does adding orbit models improve a random-perm ensemble? |
+| `exp_3_variance_source.py` | Variance source: why does orbit have 3.3% std vs random's 0.4%? (init, data split, sequence) |
+
+**Findings:** Orbit perm hurts ensembles (−0.35pp F1 at 50/50 mix). Variance is primarily init sensitivity (H1 explains). Canonical sequence [0,1,3,7,6,4] is the *most stable* of all orbit-value orderings (std 2.56% vs shuffled mean 3.62%), but doesn't offset performance gap vs random. Production sensor uses random perm.
+
+---
+
 ### Streaming Buffer / Seismic Detection Series (2026-08-05)
 
 Full experiment arc documented in `SEISMIC_DETECTION.md`.
@@ -350,6 +364,15 @@ The Penrose Tribar architecture (gated skip + orbit permutation + LayerNorm) out
 baseline MLP at every tested noise level on Fashion-MNIST and STEAD seismology datasets.
 Peak advantage at ambient noise (σ=0.3) — the operating regime of real seismic detection.
 Wall time: 61 seconds for the full seismology benchmark.
+
+**Ablation (2026-08-16):** Three experiments (error correlation, ensemble mixing, variance source)
+found that the orbit permutation is *not load-bearing* for the seismic sensor. Random fixed
+permutations outperform orbit on mean precision (86.1% vs 84.2%) and are more stable. Mixing
+orbit models into an ensemble hurts F1 by 0.35pp. Orbit variance is primarily init sensitivity:
+the periodic tiling creates a rugged loss landscape with multiple basins. The canonical sequence
+[0,1,3,7,6,4] is the most stable ordering of the orbit values, but cannot close the gap to random.
+Production sensor uses random perm. Math (Lean proofs, Bitcoin inscriptions) stands independently.
+See `ABLATION.md` for full results.
 
 The streaming buffer series extended this to real-time P-wave detection. Champion result
 (2026-08-05): CYCLES=1 + dual-horizon and-gate → **92.3% precision / 95.0% recall ±1.79%**
