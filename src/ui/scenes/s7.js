@@ -2087,6 +2087,6 @@ export function buildS7() {
     // Resize tango canvas when window resizes (if active)
     addEventListener('resize', () => { if (showTango) sizeTC(); });
 
-    setTango(true);
+    setTango(false);
   })();
 }
