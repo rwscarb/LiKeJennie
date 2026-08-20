@@ -1938,7 +1938,7 @@ export function buildS7() {
     const GLD = Math.PI * (3 - Math.sqrt(5)); // golden angle
     const LUTZ_POS = -Math.PI / 2 + GLD;      // one position on the clock dial
 
-    let showTango = true;
+    let showTango = false;
     let tangoRAF  = null;
     let tFrame = 0, tPhase = 'orbit', tPhaseF = 0;
     const tTrail = [];
