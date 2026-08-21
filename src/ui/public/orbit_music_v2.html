@@ -570,9 +570,23 @@ function initAudio() {
   delayL.connect(masterGain); delayR.connect(masterGain);
 }
 
+// Attack scaled to the note's own period, not a flat constant — a fixed
+// 15ms ramp covers 3+ cycles at a normal-register note but only ~1/5 of a
+// cycle down at octave -2 (13.75Hz, 72.7ms period). Gating an oscillator
+// faster than its own period injects real broadband energy — audible as
+// clicking/static, worse the lower the note, which is exactly the pattern
+// reported. Target half a cycle, floor at the original 15ms so normal and
+// high notes are unaffected, cap at a fraction of the note's own duration
+// so a short low note's attack can't run past where its release needs to
+// start.
+function attackTime(freq, dur, floor=0.015) {
+  return Math.min(Math.max(floor, 0.5 / freq), dur * 0.35);
+}
+
 function playNote(freq, startTime, dur, vol=0.28, wt=waveform) {
   const osc=audioCtx.createOscillator(), env=audioCtx.createGain();
   osc.type=wt; osc.frequency.value=freq;
+  const atk = attackTime(freq, dur);
   if (detuneAmt>0) {
     const osc2=audioCtx.createOscillator(), env2=audioCtx.createGain();
     osc2.type=wt; osc2.frequency.value=freq*(1+detuneAmt/1200);
@@ -582,8 +596,12 @@ function playNote(freq, startTime, dur, vol=0.28, wt=waveform) {
   }
   osc.connect(env); env.connect(dryGain); env.connect(wetGain);
   env.gain.setValueAtTime(0,startTime);
-  env.gain.linearRampToValueAtTime(vol,startTime+0.015);
-  env.gain.setValueAtTime(vol*0.80,startTime+dur*0.30);
+  env.gain.linearRampToValueAtTime(vol,startTime+atk);
+  // atk can be clamped up to dur*0.35 for very low notes, past the old
+  // fixed dur*0.30 sustain checkpoint — keeping that checkpoint anchored
+  // to a time before the attack finishes would put automation events out
+  // of chronological order and truncate the ramp mid-flight.
+  env.gain.setValueAtTime(vol*0.80,startTime+Math.max(dur*0.30, atk));
   env.gain.linearRampToValueAtTime(0,startTime+dur);
   osc.start(startTime); osc.stop(startTime+dur+0.1);
 }
@@ -592,9 +610,10 @@ function playBass(freq, startTime, dur) {
   const osc=audioCtx.createOscillator(), env=audioCtx.createGain();
   osc.type='sine'; osc.frequency.value=freq;
   osc.connect(env); env.connect(dryGain);
+  const atk = attackTime(freq, dur, 0.05);
   env.gain.setValueAtTime(0,startTime);
-  env.gain.linearRampToValueAtTime(bassAmt*0.35,startTime+0.05);
-  env.gain.linearRampToValueAtTime(bassAmt*0.15,startTime+dur*0.7);
+  env.gain.linearRampToValueAtTime(bassAmt*0.35,startTime+atk);
+  env.gain.linearRampToValueAtTime(bassAmt*0.15,startTime+Math.max(dur*0.7, atk));
   env.gain.linearRampToValueAtTime(0,startTime+dur);
   osc.start(startTime); osc.stop(startTime+dur+0.1);
 }
