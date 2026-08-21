@@ -618,7 +618,8 @@ function play808Snare(t) {
   if (!audioCtx) return;
   const osc = audioCtx.createOscillator(), tEnv = audioCtx.createGain();
   osc.type = 'triangle'; osc.frequency.value = 200;
-  tEnv.gain.setValueAtTime(drumVol * 0.45, t);
+  tEnv.gain.setValueAtTime(0, t);
+  tEnv.gain.linearRampToValueAtTime(drumVol * 0.45, t + 0.001);
   tEnv.gain.exponentialRampToValueAtTime(0.001, t + 0.13);
   osc.connect(tEnv); tEnv.connect(masterGain);
   osc.start(t); osc.stop(t + 0.16);
@@ -631,7 +632,8 @@ function play808Snare(t) {
   const hpf = audioCtx.createBiquadFilter(); hpf.type='highpass'; hpf.frequency.value=1800;
   const nEnv = audioCtx.createGain();
   src.buffer = buf;
-  nEnv.gain.setValueAtTime(drumVol * 0.52, t);
+  nEnv.gain.setValueAtTime(0, t);
+  nEnv.gain.linearRampToValueAtTime(drumVol * 0.52, t + 0.001);
   nEnv.gain.exponentialRampToValueAtTime(0.001, t + 0.19);
   src.connect(hpf); hpf.connect(nEnv); nEnv.connect(masterGain);
   src.start(t); src.stop(t + 0.22);
@@ -649,7 +651,8 @@ function play808Hat(t) {
   const hpf = audioCtx.createBiquadFilter(); hpf.type='highpass'; hpf.frequency.value=9500;
   const env = audioCtx.createGain();
   src.buffer = buf;
-  env.gain.setValueAtTime(drumVol * 0.35, t);
+  env.gain.setValueAtTime(0, t);
+  env.gain.linearRampToValueAtTime(drumVol * 0.35, t + 0.001);
   env.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.85);
   src.connect(hpf); hpf.connect(env); env.connect(masterGain);
   src.start(t); src.stop(t + dur + 0.01);
@@ -668,7 +671,8 @@ function play808Clap(t) {
     const env = audioCtx.createGain();
     src.buffer = buf;
     const st = t + off;
-    env.gain.setValueAtTime(drumVol * 0.52, st);
+    env.gain.setValueAtTime(0, st);
+    env.gain.linearRampToValueAtTime(drumVol * 0.52, st + 0.001);
     env.gain.exponentialRampToValueAtTime(0.001, st + 0.052);
     src.connect(bpf); bpf.connect(env); env.connect(masterGain);
     src.start(st); src.stop(st + 0.06);
