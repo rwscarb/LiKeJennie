@@ -753,8 +753,18 @@ function initAudio() {
   // well within one step at any reasonable tempo; softer ratio/threshold
   // since the waveshaper after this is already the hard ceiling, so the
   // compressor doesn't need to work as hard on its own.
-  limiter.threshold.value = -18; limiter.knee.value = 6;
-  limiter.ratio.value = 8; limiter.attack.value = 0.002; limiter.release.value = 0.04;
+  // Measured, not guessed: with the settings below at -18/8:1, the clip
+  // detector showed reduction jumping -2 to -6dB rapidly on ordinary
+  // material while true clips stayed at 0 the whole time — meaning the
+  // waveshaper safety net was already catching every real peak on its
+  // own, and the compressor was doing constant, audible, unnecessary work
+  // on normal-level hits. That fast reduction cycling is what read as
+  // "grating." Threshold raised close to the waveshaper's own ceiling so
+  // the compressor only engages on genuinely loud moments (chords+drums
+  // stacking), not on everyday hits; ratio eased since the waveshaper
+  // remains the real backstop regardless of what happens here.
+  limiter.threshold.value = -6; limiter.knee.value = 6;
+  limiter.ratio.value = 4; limiter.attack.value = 0.002; limiter.release.value = 0.04;
   // Safety net after the compressor: a soft-clip waveshaper. Unlike a
   // compressor, a WaveShaperNode applies its curve per-sample with zero
   // attack/lookahead — it cannot pass an over through, no matter how fast
