@@ -32,8 +32,17 @@ canvas { display:block; }
   overflow-anchor:none;
 }
 .section { padding:10px 14px; border-bottom:1px solid var(--dim); }
-.section-row { display:flex; flex-direction:row; border-bottom:1px solid var(--dim); }
-.section-row > .section { flex:1; min-width:0; border-bottom:none; border-right:1px solid var(--dim); }
+/* .section-group wraps a .section-title + a .section-row so the whole
+   group collapses as one unit — reuses the existing generic .section-title
+   click handler (querySelectorAll('.section-title'), toggles .collapsed on
+   parentElement) for free, since the group title's parentElement is now
+   .section-group instead of .section. No new JS needed for this. */
+.section-group { border-bottom:1px solid var(--dim); }
+.section-group > .section-title { padding:10px 14px 8px; margin-bottom:0; }
+.section-group.collapsed > .section-title { padding-bottom:10px; }
+.section-group.collapsed .section-row { display:none !important; }
+.section-row { display:flex; flex-direction:row; }
+.section-row > .section { flex:1; min-width:0; border-bottom:none; border-right:1px solid var(--dim); padding-top:0; }
 .section-row > .section:last-child { border-right:none; }
 .section-title {
   font-size:9px; color:var(--muted); letter-spacing:.15em; margin-bottom:8px;
@@ -173,6 +182,8 @@ btn, .btn {
   </div>
 
   <!-- Synth / EQ / Filters — one row, was three stacked sections eating height -->
+  <div class="section-group">
+  <div class="section-title">SYNTH · EQ · FILTERS</div>
   <div class="section-row">
   <div class="section">
     <div class="section-title">SYNTH</div>
@@ -256,8 +267,12 @@ btn, .btn {
     </div>
   </div>
   </div>
+  </div>
 
-  <!-- TR-808 Drums -->
+  <!-- TR-808 Drums + Step Sequencer — one row, one collapsible group -->
+  <div class="section-group">
+  <div class="section-title">TR-808 · STEP SEQUENCER</div>
+  <div class="section-row">
   <div class="section">
     <div class="section-title">TR-808 &nbsp;<span style="color:#1e1e28;font-size:8px">kick · snare · hat · clap</span></div>
     <div class="row">
@@ -275,6 +290,15 @@ btn, .btn {
       <div id="drumRowLabels" style="display:flex;flex-direction:column;gap:2px"></div>
       <div class="drum-grid" id="drumSeqGrid"></div>
     </div>
+  </div>
+  <div class="section">
+    <div class="section-title">STEP SEQUENCER &nbsp;<span style="color:#1e1e2e">16 steps · 6 orbit notes</span></div>
+    <div style="display:grid;grid-template-columns:34px 1fr;gap:4px">
+      <div id="rowLabels" style="display:flex;flex-direction:column;gap:2px"></div>
+      <div class="seq-grid" id="seqGrid"></div>
+    </div>
+  </div>
+  </div>
   </div>
 
   <!-- Keyboard -->
@@ -304,15 +328,6 @@ btn, .btn {
       <button class="btn" id="savePresetBtn">SAVE</button>
     </div>
     <div id="savedPresetList" style="display:flex;flex-direction:column;gap:3px;margin-top:4px"></div>
-  </div>
-
-  <!-- Melody step sequencer -->
-  <div class="section" style="flex:1">
-    <div class="section-title">STEP SEQUENCER &nbsp;<span style="color:#1e1e2e">16 steps · 6 orbit notes</span></div>
-    <div style="display:grid;grid-template-columns:34px 1fr;gap:4px">
-      <div id="rowLabels" style="display:flex;flex-direction:column;gap:2px"></div>
-      <div class="seq-grid" id="seqGrid"></div>
-    </div>
   </div>
 
   <!-- Visualizer -->
