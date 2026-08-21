@@ -177,6 +177,10 @@ btn, .btn {
       <input type="range" id="detuneSlider" min="0" max="20" step=".5" value="3">
       <span class="val" id="detuneVal">3¢</span>
     </div>
+    <div class="row"><label>attack</label>
+      <input type="range" id="attackSlider" min="0.1" max="4" step=".1" value="1">
+      <span class="val" id="attackVal">1.0x</span>
+    </div>
   </div>
 
   <!-- EQ -->
@@ -501,7 +505,7 @@ function drawKeys() {
 let audioCtx=null, masterGain, wetGain, dryGain, delayL, delayR, limiter, hardLimiter;
 let eqBass, eqMid, eqTreb;
 let analyser=null, freqData=null, waveData=null;
-let waveform='triangle', reverbAmt=0.25, bassAmt=0.18, detuneAmt=3;
+let waveform='triangle', reverbAmt=0.25, bassAmt=0.18, detuneAmt=3, attackScale=1.0;
 
 function initAudio() {
   if (audioCtx) { if (audioCtx.state==='suspended') audioCtx.resume(); return; }
@@ -579,8 +583,12 @@ function initAudio() {
 // high notes are unaffected, cap at a fraction of the note's own duration
 // so a short low note's attack can't run past where its release needs to
 // start.
+// attackScale (user slider) only scales the target-cycle-count portion —
+// the floor and the dur*0.35 cap stay fixed regardless of the slider, so
+// no setting can reintroduce the sub-cycle click this was built to fix,
+// or push the ramp past where the sustain checkpoint needs to land.
 function attackTime(freq, dur, floor=0.015) {
-  return Math.min(Math.max(floor, 0.5 / freq), dur * 0.35);
+  return Math.min(Math.max(floor, (0.5 / freq) * attackScale), dur * 0.35);
 }
 
 function playNote(freq, startTime, dur, vol=0.28, wt=waveform) {
@@ -1027,6 +1035,11 @@ document.getElementById('detuneSlider').addEventListener('input', function() {
   document.getElementById('detuneVal').textContent=this.value+'¢';
 });
 
+document.getElementById('attackSlider').addEventListener('input', function() {
+  attackScale=+this.value;
+  document.getElementById('attackVal').textContent=attackScale.toFixed(1)+'x';
+});
+
 document.getElementById('drumVolSlider').addEventListener('input', function() {
   drumVol=+this.value;
   document.getElementById('drumVolVal').textContent=Math.round(drumVol*100)+'%';
@@ -1084,7 +1097,7 @@ function getStoredPresets() {
 
 function captureState() {
   return { grid: grid.map(r=>[...r]), drumSeq: drumSeq.map(r=>[...r]),
-           bpm, waveform, octave, reverbAmt, bassAmt, detuneAmt };
+           bpm, waveform, octave, reverbAmt, bassAmt, detuneAmt, attackScale };
 }
 
 function restoreState(s) {
@@ -1118,6 +1131,11 @@ function restoreState(s) {
     detuneAmt = s.detuneAmt;
     document.getElementById('detuneSlider').value = detuneAmt;
     document.getElementById('detuneVal').textContent = detuneAmt+'¢';
+  }
+  if (s.attackScale !== undefined) {
+    attackScale = s.attackScale;
+    document.getElementById('attackSlider').value = attackScale;
+    document.getElementById('attackVal').textContent = attackScale.toFixed(1)+'x';
   }
   renderGrid(); renderDrumGrid();
 }
