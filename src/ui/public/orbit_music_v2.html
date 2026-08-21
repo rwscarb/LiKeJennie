@@ -53,6 +53,12 @@ canvas { display:block; }
   border-radius:50%; background:var(--accent);
 }
 .row .val { font-size:9px; color:var(--fg); width:48px; text-align:right; white-space:nowrap; overflow:hidden; }
+.row select {
+  font-family:'Courier New',monospace; font-size:9px; letter-spacing:.06em;
+  background:var(--dim); border:1px solid var(--muted); color:var(--fg);
+  padding:2px 3px; width:78px; flex-shrink:0;
+}
+.row select:hover { border-color:var(--accent); }
 /* ── Buttons ── */
 btn, .btn {
   font-family:'Courier New',monospace; font-size:9px; letter-spacing:.10em;
@@ -197,6 +203,46 @@ btn, .btn {
     <div class="row"><label>treble</label>
       <input type="range" id="eqTrebSlider" min="-12" max="12" step="0.5" value="0">
       <span class="val" id="eqTrebVal">0 dB</span>
+    </div>
+  </div>
+
+  <!-- Per-voice filters -->
+  <div class="section">
+    <div class="section-title">FILTERS &nbsp;<span style="color:#1e1e28;font-size:8px">per voice — type + cutoff</span></div>
+    <div class="row"><label>melody</label>
+      <select id="filterType_melody"></select>
+      <input type="range" id="filterFreq_melody" min="0" max="100" step="1" value="50">
+      <span class="val" id="filterFreqVal_melody">20000Hz</span>
+    </div>
+    <div class="row"><label>bass</label>
+      <select id="filterType_bass"></select>
+      <input type="range" id="filterFreq_bass" min="0" max="100" step="1" value="50">
+      <span class="val" id="filterFreqVal_bass">20000Hz</span>
+    </div>
+    <div class="row"><label>kick</label>
+      <select id="filterType_kick"></select>
+      <input type="range" id="filterFreq_kick" min="0" max="100" step="1" value="50">
+      <span class="val" id="filterFreqVal_kick">20000Hz</span>
+    </div>
+    <div class="row"><label>snare tone</label>
+      <select id="filterType_snareTone"></select>
+      <input type="range" id="filterFreq_snareTone" min="0" max="100" step="1" value="50">
+      <span class="val" id="filterFreqVal_snareTone">20000Hz</span>
+    </div>
+    <div class="row"><label>snare noise</label>
+      <select id="filterType_snareNoise"></select>
+      <input type="range" id="filterFreq_snareNoise" min="0" max="100" step="1" value="50">
+      <span class="val" id="filterFreqVal_snareNoise">1800Hz</span>
+    </div>
+    <div class="row"><label>hihat</label>
+      <select id="filterType_hihat"></select>
+      <input type="range" id="filterFreq_hihat" min="0" max="100" step="1" value="50">
+      <span class="val" id="filterFreqVal_hihat">9500Hz</span>
+    </div>
+    <div class="row"><label>clap</label>
+      <select id="filterType_clap"></select>
+      <input type="range" id="filterFreq_clap" min="0" max="100" step="1" value="50">
+      <span class="val" id="filterFreqVal_clap">1100Hz</span>
     </div>
   </div>
 
@@ -591,6 +637,35 @@ function attackTime(freq, dur, floor=0.015) {
   return Math.min(Math.max(floor, (0.5 / freq) * attackScale), dur * 0.35);
 }
 
+// Per-voice filters. melody/bass/kick/snareTone had no filter at all before
+// this — default lowpass at 20000Hz is effectively transparent, so adding
+// the control doesn't change how anything already sounded. snareNoise/
+// hihat/clap already had a fixed, hardcoded filter; their defaults here
+// are exactly those old hardcoded values (highpass 1800, highpass 9500,
+// bandpass 1100), same reasoning — the new control shouldn't change the
+// default sound, only make it adjustable. Q is fixed per voice (not user-
+// exposed — one more control per voice was more than this panel needed);
+// clap keeps its original Q=0.7, everything else uses the Web Audio
+// default of 1.
+const voiceFilters = {
+  melody:     { type: 'lowpass',  freq: 20000, q: 1 },
+  bass:       { type: 'lowpass',  freq: 20000, q: 1 },
+  kick:       { type: 'lowpass',  freq: 20000, q: 1 },
+  snareTone:  { type: 'lowpass',  freq: 20000, q: 1 },
+  snareNoise: { type: 'highpass', freq: 1800,  q: 1 },
+  hihat:      { type: 'highpass', freq: 9500,  q: 1 },
+  clap:       { type: 'bandpass', freq: 1100,  q: 0.7 },
+};
+
+function makeVoiceFilter(voiceName) {
+  const cfg = voiceFilters[voiceName];
+  const f = audioCtx.createBiquadFilter();
+  f.type = cfg.type;
+  f.frequency.value = cfg.freq;
+  f.Q.value = cfg.q;
+  return f;
+}
+
 function playNote(freq, startTime, dur, vol=0.28, wt=waveform) {
   const osc=audioCtx.createOscillator(), env=audioCtx.createGain();
   osc.type=wt; osc.frequency.value=freq;
@@ -602,7 +677,8 @@ function playNote(freq, startTime, dur, vol=0.28, wt=waveform) {
     osc2.connect(env2); env2.connect(env);
     osc2.start(startTime); osc2.stop(startTime+dur+0.1);
   }
-  osc.connect(env); env.connect(dryGain); env.connect(wetGain);
+  const filt = makeVoiceFilter('melody');
+  osc.connect(env); env.connect(filt); filt.connect(dryGain); filt.connect(wetGain);
   env.gain.setValueAtTime(0,startTime);
   env.gain.linearRampToValueAtTime(vol,startTime+atk);
   // atk can be clamped up to dur*0.35 for very low notes, past the old
@@ -617,7 +693,8 @@ function playNote(freq, startTime, dur, vol=0.28, wt=waveform) {
 function playBass(freq, startTime, dur) {
   const osc=audioCtx.createOscillator(), env=audioCtx.createGain();
   osc.type='sine'; osc.frequency.value=freq;
-  osc.connect(env); env.connect(dryGain);
+  const filt = makeVoiceFilter('bass');
+  osc.connect(env); env.connect(filt); filt.connect(dryGain);
   const atk = attackTime(freq, dur, 0.05);
   env.gain.setValueAtTime(0,startTime);
   env.gain.linearRampToValueAtTime(bassAmt*0.35,startTime+atk);
@@ -645,7 +722,8 @@ function play808Kick(t) {
   env.gain.linearRampToValueAtTime(drumVol * 1.15, t + 0.004);
   env.gain.exponentialRampToValueAtTime(0.001, t + 0.68);
 
-  osc.connect(env); env.connect(shaper); shaper.connect(masterGain);
+  const filt = makeVoiceFilter('kick');
+  osc.connect(env); env.connect(shaper); shaper.connect(filt); filt.connect(masterGain);
   osc.start(t); osc.stop(t + 0.72);
 }
 
@@ -657,7 +735,8 @@ function play808Snare(t) {
   tEnv.gain.setValueAtTime(0, t);
   tEnv.gain.linearRampToValueAtTime(drumVol * 0.45, t + 0.001);
   tEnv.gain.exponentialRampToValueAtTime(0.001, t + 0.13);
-  osc.connect(tEnv); tEnv.connect(masterGain);
+  const tFilt = makeVoiceFilter('snareTone');
+  osc.connect(tEnv); tEnv.connect(tFilt); tFilt.connect(masterGain);
   osc.start(t); osc.stop(t + 0.16);
 
   const frames = Math.floor(audioCtx.sampleRate * 0.20);
@@ -665,7 +744,7 @@ function play808Snare(t) {
   const d = buf.getChannelData(0);
   for (let i=0; i<frames; i++) d[i] = Math.random()*2-1;
   const src = audioCtx.createBufferSource();
-  const hpf = audioCtx.createBiquadFilter(); hpf.type='highpass'; hpf.frequency.value=1800;
+  const hpf = makeVoiceFilter('snareNoise');
   const nEnv = audioCtx.createGain();
   src.buffer = buf;
   nEnv.gain.setValueAtTime(0, t);
@@ -684,7 +763,7 @@ function play808Hat(t) {
   const d = buf.getChannelData(0);
   for (let i=0; i<frames; i++) d[i] = Math.random()*2-1;
   const src = audioCtx.createBufferSource();
-  const hpf = audioCtx.createBiquadFilter(); hpf.type='highpass'; hpf.frequency.value=9500;
+  const hpf = makeVoiceFilter('hihat');
   const env = audioCtx.createGain();
   src.buffer = buf;
   env.gain.setValueAtTime(0, t);
@@ -703,7 +782,7 @@ function play808Clap(t) {
     const d = buf.getChannelData(0);
     for (let i=0; i<frames; i++) d[i] = Math.random()*2-1;
     const src = audioCtx.createBufferSource();
-    const bpf = audioCtx.createBiquadFilter(); bpf.type='bandpass'; bpf.frequency.value=1100; bpf.Q.value=0.7;
+    const bpf = makeVoiceFilter('clap');
     const env = audioCtx.createGain();
     src.buffer = buf;
     const st = t + off;
@@ -1040,6 +1119,43 @@ document.getElementById('attackSlider').addEventListener('input', function() {
   document.getElementById('attackVal').textContent=attackScale.toFixed(1)+'x';
 });
 
+// ── Per-voice filter controls ───────────────────────────────────────────────
+// Log-scale slider (0-100) mapped to 20Hz-20000Hz — filter cutoff is
+// perceived logarithmically, so a linear slider would waste most of its
+// range on frequencies above what most of these voices ever use.
+const FILTER_TYPES = ['lowpass','highpass','bandpass','notch','allpass','lowshelf','highshelf','peaking'];
+const FILTER_FREQ_MIN = 20, FILTER_FREQ_MAX = 20000;
+function sliderToFreq(v) { return FILTER_FREQ_MIN * Math.pow(FILTER_FREQ_MAX/FILTER_FREQ_MIN, v/100); }
+function freqToSlider(f) { return 100 * Math.log(f/FILTER_FREQ_MIN) / Math.log(FILTER_FREQ_MAX/FILTER_FREQ_MIN); }
+
+function initFilterControls() {
+  Object.keys(voiceFilters).forEach(voice => {
+    const cfg = voiceFilters[voice];
+    const sel = document.getElementById('filterType_'+voice);
+    const rng = document.getElementById('filterFreq_'+voice);
+    const val = document.getElementById('filterFreqVal_'+voice);
+    if (!sel || !rng || !val) return;
+    FILTER_TYPES.forEach(t => {
+      const o = document.createElement('option');
+      o.value = t; o.textContent = t;
+      sel.appendChild(o);
+    });
+    sel.value = cfg.type;
+    rng.value = freqToSlider(cfg.freq);
+    val.textContent = Math.round(cfg.freq)+'Hz';
+
+    sel.addEventListener('change', function() {
+      voiceFilters[voice].type = this.value;
+    });
+    rng.addEventListener('input', function() {
+      const f = sliderToFreq(+this.value);
+      voiceFilters[voice].freq = f;
+      val.textContent = Math.round(f)+'Hz';
+    });
+  });
+}
+initFilterControls();
+
 document.getElementById('drumVolSlider').addEventListener('input', function() {
   drumVol=+this.value;
   document.getElementById('drumVolVal').textContent=Math.round(drumVol*100)+'%';
@@ -1097,7 +1213,8 @@ function getStoredPresets() {
 
 function captureState() {
   return { grid: grid.map(r=>[...r]), drumSeq: drumSeq.map(r=>[...r]),
-           bpm, waveform, octave, reverbAmt, bassAmt, detuneAmt, attackScale };
+           bpm, waveform, octave, reverbAmt, bassAmt, detuneAmt, attackScale,
+           voiceFilters: JSON.parse(JSON.stringify(voiceFilters)) };
 }
 
 function restoreState(s) {
@@ -1136,6 +1253,21 @@ function restoreState(s) {
     attackScale = s.attackScale;
     document.getElementById('attackSlider').value = attackScale;
     document.getElementById('attackVal').textContent = attackScale.toFixed(1)+'x';
+  }
+  if (s.voiceFilters) {
+    // voiceFilters is const — mutate the existing per-voice objects in
+    // place rather than reassigning, and only touch voices the saved
+    // state actually has (forward-compatible if voices are ever added).
+    Object.keys(s.voiceFilters).forEach(voice => {
+      if (!voiceFilters[voice]) return;
+      Object.assign(voiceFilters[voice], s.voiceFilters[voice]);
+      const sel = document.getElementById('filterType_'+voice);
+      const rng = document.getElementById('filterFreq_'+voice);
+      const val = document.getElementById('filterFreqVal_'+voice);
+      if (sel) sel.value = voiceFilters[voice].type;
+      if (rng) rng.value = freqToSlider(voiceFilters[voice].freq);
+      if (val) val.textContent = Math.round(voiceFilters[voice].freq)+'Hz';
+    });
   }
   renderGrid(); renderDrumGrid();
 }
