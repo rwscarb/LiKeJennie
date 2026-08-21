@@ -571,6 +571,7 @@ afterUpdate(() => {
       <button class="btn lit" id="p8tribar">TRIBAR</button>
       <button class="btn lit" id="p8corpus">CORPUS</button>
       <button class="btn" id="p8tango">TANGO</button>
+      <button class="btn" id="p8waltz">WALTZ</button>
       <span class="clbl">A</span>
       <button class="btn" id="p8a_cw">CW</button>
       <button class="btn" id="p8a_ccw">CCW</button>

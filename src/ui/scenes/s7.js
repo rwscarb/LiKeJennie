@@ -1939,6 +1939,7 @@ export function buildS7() {
     const LUTZ_POS = -Math.PI / 2 + GLD;      // one position on the clock dial
 
     let showTango = false;
+    let dragMode  = false;   // WALTZ: mutual-drag / back-to-back / periodic-reset variant
     let tangoRAF  = null;
     let tFrame = 0, tPhase = 'orbit', tPhaseF = 0;
     const tTrail = [];
@@ -1964,6 +1965,39 @@ export function buildS7() {
       const fa   = la + Math.PI + GLD * 0.65;
       const fx   = ex + Math.cos(fa) * ARM * 0.88;
       const fy   = ey + Math.sin(fa) * ARM * 0.88;
+      return { ea, er, ex, ey, lx, ly, fx, fy, R0, ARM, CX, CY };
+    };
+
+    // WALTZ: lead and follow aren't fixed offsets from the anchor anymore —
+    // both relax toward a target over elapsed time (pressure, not force:
+    // first-order exponential decay of a displacement, no velocity term
+    // anywhere). Follow's target is lead's *exact* opposite point (back to
+    // back, not a mirror/reflection), and unlike a tango's one-shot settle,
+    // the gap resets every T_WALTZ frames instead of converging once and
+    // staying there — drag, then close, every measure, the way a waltz box
+    // step returns to itself instead of drifting to a single resting point.
+    const T_WALTZ = 180;               // one "measure" — 3 counts, drag-then-close
+    const K_LEAD  = 0.05, K_FOLLOW = 0.02;   // lead settles faster than follow confirms
+    const GAP_LEAD0  = GLD * 0.25, GAP_FOLLOW0 = GLD * 0.60;
+
+    const dragState = f => {
+      const R0  = Math.min(TC.width, TC.height) * 0.34;
+      const ARM = Math.min(TC.width, TC.height) * 0.095;
+      const CX  = TC.width / 2, CY = TC.height / 2;
+      const prog = Math.min(f / 660, 1);
+      const ea   = -f * 0.012;              // drive/intention signal — unchanged
+      const er   = R0 * (1 - prog * 0.82);  // radius spiral — unchanged
+      const ex   = CX + Math.cos(ea) * er;
+      const ey   = CY + Math.sin(ea) * er;
+
+      const fLocal = f % T_WALTZ;
+      const la = (ea + GLD) - GAP_LEAD0 * Math.exp(-K_LEAD * fLocal);
+      const lx = ex + Math.cos(la) * ARM;
+      const ly = ey + Math.sin(la) * ARM;
+
+      const fa = (la + Math.PI) - GAP_FOLLOW0 * Math.exp(-K_FOLLOW * fLocal);
+      const fx = ex + Math.cos(fa) * ARM * 0.88;
+      const fy = ey + Math.sin(fa) * ARM * 0.88;
       return { ea, er, ex, ey, lx, ly, fx, fy, R0, ARM, CX, CY };
     };
 
@@ -1996,7 +2030,7 @@ export function buildS7() {
       tctx.fillStyle = '#080808'; tctx.fill();
 
       if (tPhase === 'orbit') {
-        const s = tangoState(tFrame);
+        const s = dragMode ? dragState(tFrame) : tangoState(tFrame);
         tTrail.push({ x: s.lx, y: s.ly, age: 0 });
         tTrail.forEach(p => {
           const a = Math.max(0, 1 - p.age / 160) * 0.45;
@@ -2083,6 +2117,17 @@ export function buildS7() {
     };
 
     btn.onclick = () => setTango(!showTango);
+
+    // WALTZ toggle — switches the physics (dragState vs tangoState) used
+    // while TANGO is showing; doesn't touch showTango or the phase machine,
+    // so turning it on/off mid-orbit doesn't restart or glitch the scene.
+    const waltzBtn = document.getElementById('p8waltz');
+    if (waltzBtn) {
+      waltzBtn.onclick = () => {
+        dragMode = !dragMode;
+        waltzBtn.classList.toggle('lit', dragMode);
+      };
+    }
 
     // Resize tango canvas when window resizes (if active)
     addEventListener('resize', () => { if (showTango) sizeTC(); });

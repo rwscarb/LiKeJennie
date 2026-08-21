@@ -498,7 +498,7 @@ function drawKeys() {
 }
 
 // ── Web Audio ─────────────────────────────────────────────────────────────────
-let audioCtx=null, masterGain, wetGain, dryGain, delayL, delayR, limiter;
+let audioCtx=null, masterGain, wetGain, dryGain, delayL, delayR, limiter, hardLimiter;
 let eqBass, eqMid, eqTreb;
 let analyser=null, freqData=null, waveData=null;
 let waveform='triangle', reverbAmt=0.25, bassAmt=0.18, detuneAmt=3;
@@ -516,13 +516,34 @@ function initAudio() {
   // Limiter on the master bus — kick+snare+hats+bass+melody(+octave layer)
   // can all land on the same beat and sum well past 0dBFS with nothing to
   // catch it, which is what hard-clips into that harsh, low-bitrate-mp3-ish
-  // crunch. Fast attack so it catches the kick's transient, not just the
-  // sustained parts.
+  // crunch. The step sequencer has 6 rows that can all fire on the same
+  // step (chords), each with its own detuned octave layer, plus drums and
+  // bass on top — worst case that's 2-3x full scale hitting this node, and
+  // -6dB/12:1 alone doesn't give a DynamicsCompressorNode enough headroom
+  // to tame that without still passing through overs on fast transients
+  // (a compressor has real attack time, however short; a kick hit can be
+  // faster than 3ms). Lower threshold buys more room for the compressor to
+  // work with before things get audibly squashed.
   limiter = audioCtx.createDynamicsCompressor();
-  limiter.threshold.value = -6; limiter.knee.value = 6;
-  limiter.ratio.value = 12; limiter.attack.value = 0.003; limiter.release.value = 0.15;
+  limiter.threshold.value = -24; limiter.knee.value = 6;
+  limiter.ratio.value = 16; limiter.attack.value = 0.002; limiter.release.value = 0.15;
+  // Safety net after the compressor: a soft-clip waveshaper. Unlike a
+  // compressor, a WaveShaperNode applies its curve per-sample with zero
+  // attack/lookahead — it cannot pass an over through, no matter how fast
+  // the transient. tanh saturates smoothly rather than hard-clipping, so
+  // on the rare beat where the compressor still isn't enough this rounds
+  // the peak off instead of the harsh flat-top digital clip that started
+  // this whole conversation.
+  hardLimiter = audioCtx.createWaveShaper();
+  const N = 4096, curve = new Float32Array(N);
+  for (let i = 0; i < N; i++) {
+    const x = (i / (N - 1)) * 2 - 1;
+    curve[i] = Math.tanh(x * 1.5) / Math.tanh(1.5);
+  }
+  hardLimiter.curve = curve;
+  hardLimiter.oversample = '4x';
   masterGain.connect(eqBass); eqBass.connect(eqMid); eqMid.connect(eqTreb);
-  eqTreb.connect(limiter); limiter.connect(audioCtx.destination);
+  eqTreb.connect(limiter); limiter.connect(hardLimiter); hardLimiter.connect(audioCtx.destination);
   analyser = audioCtx.createAnalyser();
   analyser.fftSize = 2048; analyser.smoothingTimeConstant = 0.82;
   masterGain.connect(analyser);
