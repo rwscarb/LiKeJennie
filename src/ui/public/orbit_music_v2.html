@@ -99,7 +99,10 @@ btn, .btn {
 /* ── Drum grid ── */
 .drum-grid {
   display:grid;
-  grid-template-rows:repeat(4,20px);
+  /* 40px × 4 rows + 3×2px gaps = 166px, exactly matching .seq-grid's
+     6×26px + 5×2px — same total height so the two grids (now siblings in
+     the same row) don't leave one looking shorter than the other. */
+  grid-template-rows:repeat(4,40px);
   grid-template-columns:repeat(16,1fr);
   gap:2px;
 }
