@@ -525,8 +525,17 @@ function initAudio() {
   // faster than 3ms). Lower threshold buys more room for the compressor to
   // work with before things get audibly squashed.
   limiter = audioCtx.createDynamicsCompressor();
-  limiter.threshold.value = -24; limiter.knee.value = 6;
-  limiter.ratio.value = 16; limiter.attack.value = 0.002; limiter.release.value = 0.15;
+  // release was 0.15s — longer than a 16th-note step at the default 120bpm
+  // (60/(120*4) = 0.125s), so the compressor never fully recovered between
+  // consecutive hits and rode gain reduction up and down in sync with the
+  // beat: audible pumping, which reads as a rhythmic, bassy thump rather
+  // than the sharp click the earlier envelope fix addressed — two
+  // different artifacts, this is the second one. Faster release clears
+  // well within one step at any reasonable tempo; softer ratio/threshold
+  // since the waveshaper after this is already the hard ceiling, so the
+  // compressor doesn't need to work as hard on its own.
+  limiter.threshold.value = -18; limiter.knee.value = 6;
+  limiter.ratio.value = 8; limiter.attack.value = 0.002; limiter.release.value = 0.04;
   // Safety net after the compressor: a soft-clip waveshaper. Unlike a
   // compressor, a WaveShaperNode applies its curve per-sample with zero
   // attack/lookahead — it cannot pass an over through, no matter how fast
