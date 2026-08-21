@@ -146,6 +146,7 @@ btn, .btn {
     <span id="bpmVal" style="font-size:9px;color:var(--muted)">120 BPM</span>
     <input type="range" id="bpmSlider" min="60" max="240" value="120" style="width:80px">
     <button class="btn play" id="playBtn">▶ PLAY</button>
+    <button class="btn" id="fireBtn" title="Drone + off-grid pluck + measure-boundary pop — the fire scene">FIRE</button>
   </div>
 </header>
 
@@ -357,6 +358,107 @@ const D_ROWS = 4;
 let drumSeq = Array.from({length:D_ROWS}, () => Array(STEPS).fill(false));
 let drumVol = 0.70;
 const drumCells = [];
+
+// ── FIRE mode ────────────────────────────────────────────────────────────────
+// Built from tonight's back-to-back/pressure-relaxation math (same formula
+// as WALTZ in s7.js), reused here as audio instead of angle. "Temperature
+// oscillation" = a drone's filter cutoff exponentially approaching one of
+// two targets, alternating every measure, never quite arriving before it
+// flips — the same never-settles character the visual drag has. "Pluck
+// offset by the golden angle" = a second voice landing at a fixed
+// fractional-step offset derived from GLD instead of on the beat grid, so
+// it never locks into the main rhythm. "Popping" = a real decrepitation
+// event (the properly zero-start-ramped noise burst technique from
+// tonight's actual click bugfixes) fired at each measure boundary, on
+// purpose this time.
+const GLD = Math.PI * (3 - Math.sqrt(5));          // golden angle — same constant as s7.js
+const FIRE_MEASURE_STEPS = 4;                       // one "measure" = 4 steps, matches the existing bass phrase length
+const FIRE_K = 0.12;                                // relaxation rate for setTargetAtTime (time constant = 1/FIRE_K)
+let fireMode = false;
+let fireDrone = null;   // { osc, filt, gain }
+let fireMeasureN = 0;
+
+function startFireDrone() {
+  if (!audioCtx || fireDrone) return;
+  const osc = audioCtx.createOscillator();
+  const filt = audioCtx.createBiquadFilter();
+  const gain = audioCtx.createGain();
+  osc.type = 'sawtooth';
+  osc.frequency.value = BASE / 2;   // an octave under the root — the hum, not a note
+  filt.type = 'lowpass';
+  filt.frequency.value = 400;       // starting "cool" — first measure boundary will start the oscillation
+  filt.Q.value = 0.7;
+  gain.gain.value = 0;
+  osc.connect(filt); filt.connect(gain); gain.connect(dryGain);
+  osc.start();
+  // Drone fades in over a real attack, not a click — same reasoning as
+  // every other voice tonight, this one's just much longer since it's
+  // meant to sit underneath everything, not announce itself.
+  gain.gain.setValueAtTime(0, audioCtx.currentTime);
+  gain.gain.linearRampToValueAtTime(0.05, audioCtx.currentTime + 0.8);
+  fireDrone = { osc, filt, gain };
+}
+
+function stopFireDrone() {
+  if (!fireDrone) return;
+  const { osc, filt, gain } = fireDrone;
+  const t = audioCtx.currentTime;
+  gain.gain.cancelScheduledValues(t);
+  gain.gain.setValueAtTime(gain.gain.value, t);
+  gain.gain.linearRampToValueAtTime(0, t + 0.3);
+  osc.stop(t + 0.35);
+  fireDrone = null;
+}
+
+// Fires once per measure from scheduleStep. Flips the drone's filter
+// target and fires a pop at the same instant — tension closing and the
+// bell striking are the same event, same as the TANGO changeup.
+function fireMeasureBoundary(time) {
+  if (!fireDrone) return;
+  const hot = (fireMeasureN % 2 === 0);
+  const target = hot ? 2200 : 400;
+  fireDrone.filt.frequency.cancelScheduledValues(time);
+  fireDrone.filt.frequency.setTargetAtTime(target, time, 1 / FIRE_K);
+  fireMeasureN++;
+
+  // The pop — reuses the exact zero-start-ramp pattern from the earlier
+  // click bugfix, now used on purpose as the decrepitation hit.
+  const frames = Math.floor(audioCtx.sampleRate * 0.06);
+  const buf = audioCtx.createBuffer(1, frames, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i=0; i<frames; i++) d[i] = Math.random()*2-1;
+  const src = audioCtx.createBufferSource();
+  const bpf = audioCtx.createBiquadFilter(); bpf.type='bandpass'; bpf.frequency.value=hot?3000:900; bpf.Q.value=2;
+  const env = audioCtx.createGain();
+  src.buffer = buf;
+  env.gain.setValueAtTime(0, time);
+  env.gain.linearRampToValueAtTime(0.30, time + 0.001);
+  env.gain.exponentialRampToValueAtTime(0.001, time + 0.055);
+  src.connect(bpf); bpf.connect(env); env.connect(masterGain);
+  src.start(time); src.stop(time + 0.06);
+}
+
+// The offset pluck — never lands on the beat grid. Fires once per measure
+// (same cadence as the bass) but at a fixed fractional-measure offset
+// derived from the golden angle rather than on any of the 4 step
+// positions, so its timing relationship to the main grid never lines up
+// with a subdivision — the same non-resonant reasoning GLD is used for
+// everywhere else tonight.
+function firePluck(measureStartTime, measureDuration) {
+  const offsetFrac = (GLD % (Math.PI*2)) / (Math.PI*2);   // GLD as a fraction of a full turn, ~0.382
+  const t = measureStartTime + offsetFrac * measureDuration;
+  const freq = FREQS[Math.floor(Math.random()*ROWS)] * 2;  // an octave up — the pluck rides above the drone
+  const osc = audioCtx.createOscillator();
+  const filt = audioCtx.createBiquadFilter();
+  const env = audioCtx.createGain();
+  osc.type = 'triangle'; osc.frequency.value = freq;
+  filt.type = 'bandpass'; filt.frequency.value = freq*2; filt.Q.value = 4;
+  env.gain.setValueAtTime(0, t);
+  env.gain.linearRampToValueAtTime(0.10, t + attackTime(freq, 0.18));
+  env.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+  osc.connect(filt); filt.connect(env); env.connect(dryGain); env.connect(wetGain);
+  osc.start(t); osc.stop(t + 0.2);
+}
 
 // ── Melody presets ────────────────────────────────────────────────────────────
 const PRESETS = {
@@ -831,6 +933,12 @@ function scheduleStep(step, time) {
   for (let dr=0; dr<D_ROWS; dr++) {
     if (drumSeq[dr][step]) schedDrum(dr, time);
   }
+  // FIRE mode — measure boundary drives the drone's temperature swing and
+  // the pop; the pluck fires once per measure at its golden-angle offset.
+  if (fireMode && step % FIRE_MEASURE_STEPS === 0) {
+    fireMeasureBoundary(time);
+    firePluck(time, dur * FIRE_MEASURE_STEPS);
+  }
 }
 
 function runSched() {
@@ -1094,6 +1202,14 @@ function schedDrumWithLevel(row, t) {
 document.getElementById('playBtn').addEventListener('click', function() {
   if(playing){stopPlay();this.textContent='▶ PLAY';this.classList.remove('lit');}
   else{startPlay();this.textContent='■ STOP';this.classList.add('lit');}
+});
+
+document.getElementById('fireBtn').addEventListener('click', function() {
+  initAudio();
+  fireMode = !fireMode;
+  this.classList.toggle('lit', fireMode);
+  if (fireMode) { fireMeasureN = 0; startFireDrone(); }
+  else { stopFireDrone(); }
 });
 
 document.getElementById('bpmSlider').addEventListener('input', function() {
