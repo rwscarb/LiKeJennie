@@ -147,6 +147,11 @@ btn, .btn {
     <input type="range" id="bpmSlider" min="60" max="240" value="120" style="width:80px">
     <button class="btn play" id="playBtn">▶ PLAY</button>
     <button class="btn" id="fireBtn" title="Drone + off-grid pluck + measure-boundary pop — the fire scene">FIRE</button>
+    <span style="display:flex;align-items:center;gap:5px;font-size:9px;color:var(--muted);margin-left:8px" title="Real-time clip diagnostics — measures the actual output signal, not source code">
+      <span id="clipLed" style="width:8px;height:8px;border-radius:50%;border:1px solid var(--muted);display:inline-block;transition:background .05s"></span>
+      clips: <span id="clipCount" style="color:var(--fg)">0</span>
+      &nbsp;|&nbsp; comp: <span id="reductionVal" style="color:var(--fg)">0.0 dB</span>
+    </span>
   </div>
 </header>
 
@@ -417,7 +422,13 @@ function fireMeasureBoundary(time) {
   if (!fireDrone) return;
   const hot = (fireMeasureN % 2 === 0);
   const target = hot ? 2200 : 400;
-  fireDrone.filt.frequency.cancelScheduledValues(time);
+  // cancelAndHoldAtTime, not cancelScheduledValues — the plain cancel call
+  // only removes future automation events, it doesn't guarantee the
+  // AudioParam holds its current interpolated value at the cancel point.
+  // Starting a new setTargetAtTime right after a plain cancel is a known
+  // discontinuity risk across browsers — exactly an extra, unintended pop
+  // layered on top of the deliberate one, every single measure.
+  fireDrone.filt.frequency.cancelAndHoldAtTime(time);
   fireDrone.filt.frequency.setTargetAtTime(target, time, 1 / FIRE_K);
   fireMeasureN++;
 
@@ -655,6 +666,62 @@ let eqBass, eqMid, eqTreb;
 let analyser=null, freqData=null, waveData=null;
 let waveform='triangle', reverbAmt=0.25, bassAmt=0.18, detuneAmt=3, attackScale=1.0;
 
+// ── Clip diagnostics ─────────────────────────────────────────────────────────
+// Four rounds of source-reading fixes and it's reportedly still happening —
+// time to stop guessing and actually measure the real output signal instead
+// of theorizing about it. Two separate things get watched, because "clips/
+// pops/grating" could mean either or both:
+//   1. True digital ceiling hits on the FINAL signal, after the waveshaper.
+//      The tanh curve mathematically bounds output to exactly [-1,1] at its
+//      domain edges, so real overs here should be rare-to-none — UNLESS the
+//      WaveShaperNode's 4x oversampling is causing overshoot/ringing from
+//      its internal upsampling filter, which is a real, documented
+//      possibility distinct from anything fixed so far.
+//   2. How much the compressor is squashing at any given moment
+//      (DynamicsCompressorNode.reduction, a live readable dB value). If
+//      it's constantly engaged rather than only on real peaks, that's
+//      audible as coloration/"grating" even with zero true clipping —
+//      a completely different failure mode than an unprevented over.
+let clipCount = 0, clipDetector = null;
+function installClipDetector() {
+  if (!audioCtx || !hardLimiter || clipDetector) return;
+  const sp = audioCtx.createScriptProcessor(1024, 1, 1);
+  let lastLogTime = -1;
+  sp.onaudioprocess = (e) => {
+    const data = e.inputBuffer.getChannelData(0);
+    let peak = 0;
+    for (let i = 0; i < data.length; i++) {
+      const a = Math.abs(data[i]);
+      if (a > peak) peak = a;
+    }
+    const led = document.getElementById('clipLed');
+    const countEl = document.getElementById('clipCount');
+    const redEl = document.getElementById('reductionVal');
+    if (redEl && limiter) redEl.textContent = limiter.reduction.toFixed(1) + ' dB';
+    if (peak >= 0.98) {
+      clipCount++;
+      if (countEl) countEl.textContent = clipCount;
+      const now = audioCtx.currentTime;
+      if (now - lastLogTime > 0.05) {  // throttle console spam, not detection
+        console.warn('[CLIP]', now.toFixed(3) + 's', 'peak=' + peak.toFixed(4), 'reduction=' + (limiter?limiter.reduction.toFixed(1):'?') + 'dB');
+        lastLogTime = now;
+      }
+      if (led) {
+        led.style.background = '#ff3333';
+        clearTimeout(led._t);
+        led._t = setTimeout(() => { led.style.background = ''; }, 150);
+      }
+    }
+  };
+  // Output is left unwritten (silent) — this taps the signal for measurement
+  // only, it does not add anything audible back into the chain. Still has
+  // to route to destination for onaudioprocess to fire reliably in every
+  // browser — a known ScriptProcessorNode quirk, not a design choice.
+  hardLimiter.connect(sp);
+  sp.connect(audioCtx.destination);
+  clipDetector = sp;
+}
+
 function initAudio() {
   if (audioCtx) { if (audioCtx.state==='suspended') audioCtx.resume(); return; }
   audioCtx = new (window.AudioContext||window.webkitAudioContext)();
@@ -705,6 +772,7 @@ function initAudio() {
   hardLimiter.oversample = '4x';
   masterGain.connect(eqBass); eqBass.connect(eqMid); eqMid.connect(eqTreb);
   eqTreb.connect(limiter); limiter.connect(hardLimiter); hardLimiter.connect(audioCtx.destination);
+  installClipDetector();
   analyser = audioCtx.createAnalyser();
   analyser.fftSize = 2048; analyser.smoothingTimeConstant = 0.82;
   masterGain.connect(analyser);
