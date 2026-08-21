@@ -498,7 +498,7 @@ function drawKeys() {
 }
 
 // ── Web Audio ─────────────────────────────────────────────────────────────────
-let audioCtx=null, masterGain, wetGain, dryGain, delayL, delayR;
+let audioCtx=null, masterGain, wetGain, dryGain, delayL, delayR, limiter;
 let eqBass, eqMid, eqTreb;
 let analyser=null, freqData=null, waveData=null;
 let waveform='triangle', reverbAmt=0.25, bassAmt=0.18, detuneAmt=3;
@@ -513,7 +513,16 @@ function initAudio() {
   eqMid.type='peaking'; eqMid.frequency.value=1000; eqMid.Q.value=1; eqMid.gain.value=0;
   eqTreb = audioCtx.createBiquadFilter();
   eqTreb.type='highshelf'; eqTreb.frequency.value=8000; eqTreb.gain.value=0;
-  masterGain.connect(eqBass); eqBass.connect(eqMid); eqMid.connect(eqTreb); eqTreb.connect(audioCtx.destination);
+  // Limiter on the master bus — kick+snare+hats+bass+melody(+octave layer)
+  // can all land on the same beat and sum well past 0dBFS with nothing to
+  // catch it, which is what hard-clips into that harsh, low-bitrate-mp3-ish
+  // crunch. Fast attack so it catches the kick's transient, not just the
+  // sustained parts.
+  limiter = audioCtx.createDynamicsCompressor();
+  limiter.threshold.value = -6; limiter.knee.value = 6;
+  limiter.ratio.value = 12; limiter.attack.value = 0.003; limiter.release.value = 0.15;
+  masterGain.connect(eqBass); eqBass.connect(eqMid); eqMid.connect(eqTreb);
+  eqTreb.connect(limiter); limiter.connect(audioCtx.destination);
   analyser = audioCtx.createAnalyser();
   analyser.fftSize = 2048; analyser.smoothingTimeConstant = 0.82;
   masterGain.connect(analyser);
