@@ -32,6 +32,9 @@ canvas { display:block; }
   overflow-anchor:none;
 }
 .section { padding:10px 14px; border-bottom:1px solid var(--dim); }
+.section-row { display:flex; flex-direction:row; border-bottom:1px solid var(--dim); }
+.section-row > .section { flex:1; min-width:0; border-bottom:none; border-right:1px solid var(--dim); }
+.section-row > .section:last-child { border-right:none; }
 .section-title {
   font-size:9px; color:var(--muted); letter-spacing:.15em; margin-bottom:8px;
   cursor:pointer; user-select:none; display:flex; justify-content:space-between; align-items:center;
@@ -169,7 +172,8 @@ btn, .btn {
     </div>
   </div>
 
-  <!-- Synth controls -->
+  <!-- Synth / EQ / Filters — one row, was three stacked sections eating height -->
+  <div class="section-row">
   <div class="section">
     <div class="section-title">SYNTH</div>
     <div class="row"><label>octave</label>
@@ -250,6 +254,7 @@ btn, .btn {
       <input type="range" id="filterFreq_clap" min="0" max="100" step="1" value="50">
       <span class="val" id="filterFreqVal_clap">1100Hz</span>
     </div>
+  </div>
   </div>
 
   <!-- TR-808 Drums -->
