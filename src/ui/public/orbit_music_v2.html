@@ -293,6 +293,13 @@ btn, .btn {
   </div>
   <div class="section">
     <div class="section-title">STEP SEQUENCER &nbsp;<span style="color:#1e1e2e">16 steps · 6 orbit notes</span></div>
+    <div class="preset-row" id="presets" style="margin-bottom:6px">
+      <button class="btn" data-preset="zen">ZEN</button>
+      <button class="btn" data-preset="orbit">ORBIT</button>
+      <button class="btn" data-preset="bass">BASS</button>
+      <button class="btn" data-preset="scatter">SCATTER</button>
+      <button class="btn" data-preset="clear">CLEAR</button>
+    </div>
     <div style="display:grid;grid-template-columns:34px 1fr;gap:4px">
       <div id="rowLabels" style="display:flex;flex-direction:column;gap:2px"></div>
       <div class="seq-grid" id="seqGrid"></div>
@@ -301,25 +308,14 @@ btn, .btn {
   </div>
   </div>
 
-  <!-- Keyboard -->
+  <!-- Keyboard + Saved Presets — one row, one collapsible group -->
+  <div class="section-group">
+  <div class="section-title">KEYBOARD · SAVED PRESETS</div>
+  <div class="section-row">
   <div class="section">
     <div class="section-title">KEYBOARD</div>
     <canvas id="keyCanvas" style="width:100%;height:56px;display:block;border-radius:2px"></canvas>
   </div>
-
-  <!-- Melody presets -->
-  <div class="section">
-    <div class="section-title">MELODY PRESETS</div>
-    <div class="preset-row" id="presets">
-      <button class="btn" data-preset="zen">ZEN</button>
-      <button class="btn" data-preset="orbit">ORBIT</button>
-      <button class="btn" data-preset="bass">BASS</button>
-      <button class="btn" data-preset="scatter">SCATTER</button>
-      <button class="btn" data-preset="clear">CLEAR</button>
-    </div>
-  </div>
-
-  <!-- Saved presets -->
   <div class="section">
     <div class="section-title">SAVED PRESETS</div>
     <div class="row" style="gap:4px">
@@ -328,6 +324,8 @@ btn, .btn {
       <button class="btn" id="savePresetBtn">SAVE</button>
     </div>
     <div id="savedPresetList" style="display:flex;flex-direction:column;gap:3px;margin-top:4px"></div>
+  </div>
+  </div>
   </div>
 
   <!-- Visualizer -->
